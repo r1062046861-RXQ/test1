@@ -1,0 +1,447 @@
+export type EnemyTier = 'common' | 'elite' | 'boss';
+export type GlossaryCategory = 'resource' | 'buff' | 'debuff' | 'mechanic';
+export type GlossaryTarget = 'player' | 'enemy' | 'both';
+
+export interface EnemyCodexMeta {
+  act: 1 | 2 | 3;
+  tier: EnemyTier;
+  summary: string;
+  mechanics: string[];
+  tags: string[];
+}
+
+export interface GlossaryEntry {
+  id: string;
+  name: string;
+  category: GlossaryCategory;
+  target: GlossaryTarget;
+  summary: string;
+  rules: string;
+  relatedCardIds?: string[];
+  relatedEnemyIds?: string[];
+}
+
+export const CARD_ACT_LABELS: Record<1 | 2 | 3, string> = {
+  1: 'Act 1 基础药库',
+  2: 'Act 2 辨证进阶',
+  3: 'Act 3 终局方药',
+};
+
+export const ENEMY_ACT_LABELS: Record<1 | 2 | 3, string> = {
+  1: 'Act 1 外感病邪',
+  2: 'Act 2 内伤杂病',
+  3: 'Act 3 五行失调',
+};
+
+export const ENEMY_TIER_LABELS: Record<EnemyTier, string> = {
+  common: '普通敌人',
+  elite: '精英敌人',
+  boss: 'Boss',
+};
+
+export const GLOSSARY_CATEGORY_LABELS: Record<GlossaryCategory, string> = {
+  resource: '核心资源',
+  buff: '玩家增益',
+  debuff: '常见减益',
+  mechanic: '特殊机制',
+};
+
+export const GLOSSARY_TARGET_LABELS: Record<GlossaryTarget, string> = {
+  player: '玩家',
+  enemy: '敌人',
+  both: '双方',
+};
+
+export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
+  wind_cold_guest: {
+    act: 1,
+    tier: 'common',
+    summary: '外感风寒型普通敌人，以稳定单段攻击与寒邪压制为主。',
+    mechanics: ['以“寒邪侵袭”为基础动作。', '会持续向玩家施加寒邪与虚弱，压缩出牌节奏。'],
+    tags: ['寒邪', '虚弱', '外感'],
+  },
+  wind_heat_attack: {
+    act: 1,
+    tier: 'common',
+    summary: '风热型快攻敌人，擅长多段攻击与热邪累计。',
+    mechanics: ['核心动作是“热邪连击”。', '通过热邪叠层把回合末灼烧压力推高。'],
+    tags: ['热邪', '连击', '外感'],
+  },
+  damp_turbidity: {
+    act: 1,
+    tier: 'common',
+    summary: '湿浊路线敌人，输出不高但会持续压低玩家防御收益。',
+    mechanics: ['以“湿邪困脾”削弱玩家格挡效率。', '偏向拖长战斗，配合湿邪与减防机制。'],
+    tags: ['湿邪', '拖延', '防御压制'],
+  },
+  external_combination: {
+    act: 1,
+    tier: 'elite',
+    summary: '会在风寒态与风热态间切换的精英敌人。',
+    mechanics: ['风寒态更偏寒邪与虚弱。', '风热态更偏热邪与易伤。', '形态切换会同步改变意图与施加的负面状态。'],
+    tags: ['双形态', '寒邪', '热邪', '易伤'],
+  },
+  boss_wind_cold: {
+    act: 1,
+    tier: 'boss',
+    summary: 'Act 1 Boss，以寒邪、虚弱和寒转血瘀为核心。',
+    mechanics: ['会频繁叠加寒邪与虚弱。', '二阶段会把 3 层寒邪转化为 1 层血瘀。', '持续拖垮玩家输出效率。'],
+    tags: ['Boss', '寒邪', '血瘀', '二阶段'],
+  },
+  boss_liver_fire: {
+    act: 1,
+    tier: 'boss',
+    summary: 'Act 1 Boss，以热邪成长和伤阴机制为核心。',
+    mechanics: ['热邪会转化成更强攻击压力。', '二阶段可偷取滋阴；若无法偷取，则禁止玩家下回合获得滋阴。'],
+    tags: ['Boss', '热邪', '伤阴', '禁滋阴'],
+  },
+  qi_blood_stasis: {
+    act: 2,
+    tier: 'common',
+    summary: '以气滞与血瘀联动压制玩家手牌节奏。',
+    mechanics: ['会施加气滞，使下张卡牌费用上升。', '血瘀使玩家更容易吃到爆发伤害。'],
+    tags: ['气滞', '血瘀', '费用干扰'],
+  },
+  spleen_dampness: {
+    act: 2,
+    tier: 'common',
+    summary: '主打湿邪与卡牌加费的拖节奏敌人。',
+    mechanics: ['稳定施加湿邪。', '通过加费与减防机制削弱玩家运转。'],
+    tags: ['湿邪', '卡牌加费', '拖节奏'],
+  },
+  heart_kidney_gap: {
+    act: 2,
+    tier: 'common',
+    summary: '擅长干扰防御与抽牌结构的控制型敌人。',
+    mechanics: ['会造成少抽、无法获得格挡等控制效果。', '部分行为会制造眩晕或强制空过。'],
+    tags: ['少抽', '无法获得格挡', '控制'],
+  },
+  phlegm_stasis: {
+    act: 2,
+    tier: 'elite',
+    summary: '精英敌人，围绕痰凝、血瘀和自我成长展开。',
+    mechanics: ['可叠加自身正面状态。', '会通过痰凝/血瘀联动放大对玩家的持续压制。'],
+    tags: ['精英', '痰凝', '血瘀', '成长'],
+  },
+  boss_spleen_damp: {
+    act: 2,
+    tier: 'boss',
+    summary: 'Act 2 Boss，以湿邪转热与阶段变化为核心。',
+    mechanics: ['会积累湿邪并在合适时机“化热”。', '有召唤或阶段推进节奏。', '湿邪转热后会显著提升战斗压迫感。'],
+    tags: ['Boss', '湿邪', '化热', '阶段变化'],
+  },
+  yin_yang_split: {
+    act: 3,
+    tier: 'common',
+    summary: '在阴阳两态之间切换的高阶敌人。',
+    mechanics: ['不同形态对应不同压制方向。', '会根据当前阴/阳态切换技能与数值侧重。'],
+    tags: ['阴阳双态', '切换', '高阶'],
+  },
+  chong_ren_instability: {
+    act: 3,
+    tier: 'common',
+    summary: '以冲任失调、真气干扰为核心的高阶敌人。',
+    mechanics: ['擅长干扰真气或上限。', '偏向持续性减益和节奏破坏。'],
+    tags: ['真气干扰', '冲任', '减益'],
+  },
+  jueyin_complex: {
+    act: 3,
+    tier: 'elite',
+    summary: '寒热错杂的精英敌人，行为切换复杂。',
+    mechanics: ['会在寒与热、控制与爆发之间切换。', '常见组合是寒热混压与资源限制。'],
+    tags: ['精英', '寒热错杂', '复杂机制'],
+  },
+  boss_five_elements: {
+    act: 3,
+    tier: 'boss',
+    summary: '最终 Boss，按木→火→土→金→水循环推进阶段。',
+    mechanics: ['阶段会按回合或血量阈值推进。', '不同阶段拥有不同 aura 与技能。', '要求玩家根据五行轮转及时调整解法。'],
+    tags: ['最终 Boss', '五行循环', '阶段 Boss', 'Aura'],
+  },
+};
+
+export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
+  {
+    id: 'energy',
+    name: '真气',
+    category: 'resource',
+    target: 'player',
+    summary: '打出大多数卡牌时消耗的核心资源。',
+    rules: '每回合开始恢复到当前真气上限。部分敌人和状态会偷取或降低真气上限。',
+    relatedCardIds: ['maidong', 'yuzhu', 'dangshen'],
+    relatedEnemyIds: ['chong_ren_instability', 'boss_five_elements'],
+  },
+  {
+    id: 'block',
+    name: '格挡',
+    category: 'resource',
+    target: 'player',
+    summary: '优先抵消受到的伤害。',
+    rules: '通常在回合结束后清空；若有保留格挡等能力，则可以留到下回合。',
+    relatedCardIds: ['huangqi', 'guizhi', 'zhenwu'],
+    relatedEnemyIds: ['spleen_dampness', 'boss_spleen_damp'],
+  },
+  {
+    id: 'shield',
+    name: '护盾',
+    category: 'resource',
+    target: 'player',
+    summary: '当前 UI 中与格挡同义，用于表示已积累的防御值。',
+    rules: '界面会把 block 直接显示成护盾/格挡；它们对应同一套防御资源。',
+    relatedCardIds: ['huangqi', 'danggui'],
+  },
+  {
+    id: 'draw',
+    name: '抽牌',
+    category: 'resource',
+    target: 'player',
+    summary: '从抽牌堆获得更多可用卡牌。',
+    rules: '抽牌会影响每回合可操作性；少抽与费用压制常一起出现。',
+    relatedCardIds: ['chenpi', 'chuanxiong', 'baishao'],
+    relatedEnemyIds: ['heart_kidney_gap'],
+  },
+  {
+    id: 'discard',
+    name: '弃牌',
+    category: 'resource',
+    target: 'player',
+    summary: '把手牌丢入弃牌堆，用于换牌或触发特定联动。',
+    rules: '弃牌通常不是纯负面；部分卡牌通过抽弃改善手牌质量。',
+    relatedCardIds: ['chenpi'],
+  },
+  {
+    id: 'exhaust',
+    name: '消耗牌',
+    category: 'resource',
+    target: 'both',
+    summary: '打出后进入消耗堆，本场战斗通常不会再回到牌组。',
+    rules: '用于控制高强度效果的频率；消耗牌常代表关键爆发或保命资源。',
+    relatedCardIds: ['shengjiang', 'angong', 'liuwei'],
+  },
+  {
+    id: 'strength',
+    name: '力量',
+    category: 'buff',
+    target: 'both',
+    summary: '提高攻击造成的伤害。',
+    rules: '通常可叠层；玩家与敌人都可能获得力量类成长。',
+    relatedCardIds: ['fuzi', 'jingui'],
+    relatedEnemyIds: ['boss_liver_fire', 'boss_five_elements'],
+  },
+  {
+    id: 'dexterity',
+    name: '敏捷',
+    category: 'buff',
+    target: 'player',
+    summary: '提高获得格挡时的收益。',
+    rules: '常与防御流、保留格挡和格挡翻倍体系联动。',
+    relatedCardIds: ['fuzi', 'jingui'],
+  },
+  {
+    id: 'yin',
+    name: '滋阴',
+    category: 'buff',
+    target: 'player',
+    summary: '阴虚体系的核心层数资源。',
+    rules: '可叠层、可被消耗，并能驱动回能、治疗、翻倍伤害等效果；部分 Boss 会偷取或禁止获得滋阴。',
+    relatedCardIds: ['maidong', 'shihu', 'qinggu'],
+    relatedEnemyIds: ['boss_liver_fire'],
+  },
+  {
+    id: 'yin_cap',
+    name: '滋阴上限',
+    category: 'buff',
+    target: 'player',
+    summary: '决定玩家最多能持有多少层滋阴。',
+    rules: '默认上限有限，提升后可让滋阴流更容易积累后期爆发。',
+    relatedCardIds: ['shihu'],
+  },
+  {
+    id: 'retain_block',
+    name: '保留格挡',
+    category: 'buff',
+    target: 'player',
+    summary: '让回合结束时已有格挡不消失。',
+    rules: '是防御构筑的重要门槛，适合与双倍格挡、格挡转收益组合。',
+    relatedCardIds: ['wenzhen'],
+  },
+  {
+    id: 'zusanli',
+    name: '攻击回血',
+    category: 'buff',
+    target: 'player',
+    summary: '攻击时恢复生命的持续能力。',
+    rules: '可来自足三里等能力牌，也可由初始体质被动触发。',
+    relatedCardIds: ['zusanli'],
+  },
+  {
+    id: 'cold_evil',
+    name: '寒邪',
+    category: 'debuff',
+    target: 'player',
+    summary: '常见负面状态，代表风寒、寒凝等病机压制。',
+    rules: '可叠层；常与虚弱、血瘀联动。某些 Boss 会把寒邪进一步转化为血瘀。',
+    relatedCardIds: ['mahuang'],
+    relatedEnemyIds: ['wind_cold_guest', 'external_combination', 'boss_wind_cold'],
+  },
+  {
+    id: 'heat_evil',
+    name: '热邪',
+    category: 'debuff',
+    target: 'both',
+    summary: '代表热毒、内热与灼烧压力的持续状态。',
+    rules: '通常在回合结束时造成伤害；热邪层数越高，拖回合越危险。',
+    relatedCardIds: ['banlangen', 'qingying'],
+    relatedEnemyIds: ['wind_heat_attack', 'boss_liver_fire', 'boss_spleen_damp'],
+  },
+  {
+    id: 'dampness_evil',
+    name: '湿邪',
+    category: 'debuff',
+    target: 'both',
+    summary: '代表运化迟滞、行动迟缓与防御效率下降。',
+    rules: '常降低格挡收益；部分敌人会把湿邪转化成热邪，形成二段压制。',
+    relatedCardIds: ['yiyi', 'fuling'],
+    relatedEnemyIds: ['damp_turbidity', 'spleen_dampness', 'boss_spleen_damp'],
+  },
+  {
+    id: 'blood_stasis',
+    name: '血瘀',
+    category: 'debuff',
+    target: 'both',
+    summary: '使目标更容易承受额外伤害。',
+    rules: '偏向增伤类负面，适合与多段攻击或爆发牌联动。',
+    relatedCardIds: ['danshen', 'sanqi'],
+    relatedEnemyIds: ['qi_blood_stasis', 'boss_wind_cold'],
+  },
+  {
+    id: 'weak',
+    name: '虚弱',
+    category: 'debuff',
+    target: 'both',
+    summary: '降低造成的伤害。',
+    rules: '通常有持续回合；被频繁施加时会显著拖慢输出节奏。',
+    relatedCardIds: ['baishao'],
+    relatedEnemyIds: ['boss_wind_cold', 'external_combination'],
+  },
+  {
+    id: 'vulnerable',
+    name: '易伤',
+    category: 'debuff',
+    target: 'both',
+    summary: '让目标在下一次或持续期间承受更高伤害。',
+    rules: '与爆发攻击或多段攻击组合时非常危险。',
+    relatedCardIds: ['chaihu'],
+    relatedEnemyIds: ['external_combination', 'boss_five_elements'],
+  },
+  {
+    id: 'stun',
+    name: '眩晕',
+    category: 'debuff',
+    target: 'both',
+    summary: '跳过一次行动或失去本回合操作权。',
+    rules: '通常持续 1 回合；是最强控制类状态之一。',
+    relatedCardIds: ['zhusha', 'banxia'],
+    relatedEnemyIds: ['heart_kidney_gap'],
+  },
+  {
+    id: 'cost_up_next',
+    name: '气滞',
+    category: 'debuff',
+    target: 'player',
+    summary: '让下一张卡牌费用提高，打乱行动节奏。',
+    rules: '常与血瘀并行，迫使玩家在资源与伤害之间做妥协。',
+    relatedEnemyIds: ['qi_blood_stasis'],
+  },
+  {
+    id: 'draw_down',
+    name: '下回合少抽',
+    category: 'debuff',
+    target: 'player',
+    summary: '下回合起手牌更少，降低可操作性。',
+    rules: '常用于拖慢玩家找关键解牌的速度。',
+    relatedEnemyIds: ['heart_kidney_gap'],
+  },
+  {
+    id: 'no_block',
+    name: '无法获得格挡',
+    category: 'debuff',
+    target: 'player',
+    summary: '在持续期间内无法通过卡牌或效果获得新的格挡。',
+    rules: '会显著压制防御流，通常只有及时解除或抢节奏才能缓解。',
+    relatedEnemyIds: ['heart_kidney_gap'],
+  },
+  {
+    id: 'cost_up',
+    name: '卡牌加费',
+    category: 'debuff',
+    target: 'player',
+    summary: '让手牌整体或短期内更难运转。',
+    rules: '与湿邪、真气压制配合时会让回合质量明显下降。',
+    relatedEnemyIds: ['spleen_dampness', 'boss_spleen_damp'],
+  },
+  {
+    id: 'max_energy_down',
+    name: '真气上限下降',
+    category: 'debuff',
+    target: 'player',
+    summary: '下回合或持续期间真气上限减少。',
+    rules: '会直接削弱出牌数量，是高压 Boss 常见的节奏压制方式。',
+    relatedEnemyIds: ['chong_ren_instability', 'boss_five_elements'],
+  },
+  {
+    id: 'no_yin_gain',
+    name: '无法获得滋阴',
+    category: 'mechanic',
+    target: 'player',
+    summary: '在持续期间内，任何“获得滋阴”的效果都会被阻断。',
+    rules: '专门克制阴虚流；若不及时处理，会让滋阴体系完全停摆。',
+    relatedCardIds: ['maidong', 'shihu', 'liuwei'],
+    relatedEnemyIds: ['boss_liver_fire'],
+  },
+  {
+    id: 'fire_growth',
+    name: '火势成长',
+    category: 'mechanic',
+    target: 'enemy',
+    summary: '敌方热/火相关成长机制，会逐回合提升输出。',
+    rules: '常体现在肝火旺、热邪成长、阶段 aura 等身上，战斗拖得越久越危险。',
+    relatedEnemyIds: ['boss_liver_fire', 'boss_five_elements'],
+  },
+  {
+    id: 'transform_damp_to_heat',
+    name: '化热',
+    category: 'mechanic',
+    target: 'enemy',
+    summary: '把积累的湿邪转化为热邪，形成二段式压迫。',
+    rules: '通常先用湿邪拖慢玩家，再在阶段推进时把湿邪转化为更致命的热邪。',
+    relatedEnemyIds: ['boss_spleen_damp'],
+  },
+  {
+    id: 'steal_energy',
+    name: '偷真气',
+    category: 'mechanic',
+    target: 'enemy',
+    summary: '敌人直接偷取真气或压低真气上限，破坏爆发回合。',
+    rules: '会使高费手牌无法顺利展开，尤其针对依赖 2~3 费爆发的构筑。',
+    relatedEnemyIds: ['chong_ren_instability', 'boss_five_elements'],
+  },
+  {
+    id: 'injure_yin',
+    name: '伤阴',
+    category: 'mechanic',
+    target: 'enemy',
+    summary: '直接消耗玩家已有滋阴，或阻止后续滋阴收益。',
+    rules: '属于阴虚流天敌，常与热邪、禁滋阴一起出现。',
+    relatedEnemyIds: ['boss_liver_fire'],
+  },
+  {
+    id: 'enemy_aura',
+    name: '敌方 Aura',
+    category: 'mechanic',
+    target: 'enemy',
+    summary: '敌人持续生效的阶段或场地光环效果。',
+    rules: '不一定表现为单独状态图标，但会稳定改变整场战斗的规则或数值环境。',
+    relatedEnemyIds: ['boss_five_elements', 'boss_spleen_damp'],
+  },
+];

@@ -1,0 +1,12 @@
+.playwright-cli/
+output/
+tmp/
+
+game/dist/
+game/node_modules/
+game/.vite/
+
+game-mini/dist/
+game-mini/node_modules/
+
+*.log

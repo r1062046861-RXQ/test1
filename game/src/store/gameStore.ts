@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import { CARD_LIBRARY, STARTING_DECK } from '../data/cards';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
+import { createRuntimeId } from '../utils/id';
 import {
   INITIAL_PLAYER,
   INITIAL_TURN_FLAGS,
@@ -169,12 +170,12 @@ const scheduleEnemyTurn = (fn: () => void) => {
 
 const createCardInstance = (cardId: string): Card => ({
   ...CARD_LIBRARY[cardId],
-  id: crypto.randomUUID()
+  id: createRuntimeId(),
 });
 
 const cloneEnemyTemplate = (enemy: Enemy): Enemy => ({
   ...enemy,
-  id: `enemy_${crypto.randomUUID()}`,
+  id: createRuntimeId('enemy_'),
   currentHp: enemy.maxHp,
   statusEffects: [],
   meta: enemy.meta ? { ...enemy.meta } : undefined

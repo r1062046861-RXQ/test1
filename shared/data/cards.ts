@@ -330,6 +330,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shengdi': {
     id: 'shengdi',
     name: '生地凉血',
+    image: '/assets/cards_player/12.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 2,
@@ -345,6 +346,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'zhimu': {
     id: 'zhimu',
     name: '知母清热',
+    image: '/assets/cards_player/13.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -359,6 +361,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'xuanshen': {
     id: 'xuanshen',
     name: '玄参泻火',
+    image: '/assets/cards_player/14.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -372,6 +375,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'yuzhu': {
     id: 'yuzhu',
     name: '玉竹生津',
+    image: '/assets/cards_player/15.png',
     type: 'power',
     rarity: 'rare',
     cost: 2,
@@ -385,6 +389,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'baihe': {
     id: 'baihe',
     name: '百合安神',
+    image: '/assets/cards_player/16.png',
     type: 'skill',
     rarity: 'common',
     cost: 1,
@@ -398,6 +403,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'biejia': {
     id: 'biejia',
     name: '鳖甲软坚',
+    image: '/assets/cards_player/17.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 2,
@@ -412,6 +418,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shihu': {
     id: 'shihu',
     name: '石斛益胃',
+    image: '/assets/cards_player/18.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 0,
@@ -427,6 +434,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shanyurou': {
     id: 'shanyurou',
     name: '山萸肉固涩',
+    image: '/assets/cards_player/19.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -455,6 +463,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'baizhu': {
     id: 'baizhu',
     name: '白术健脾',
+    image: '/assets/cards_player/22.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -470,6 +479,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'gancao': {
     id: 'gancao',
     name: '甘草和中',
+    image: '/assets/cards_player/23.png',
     type: 'skill',
     rarity: 'common',
     cost: 1,
@@ -485,6 +495,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shanyao': {
     id: 'shanyao',
     name: '山药平补',
+    image: '/assets/cards_player/24.png',
     type: 'power',
     rarity: 'uncommon',
     cost: 2,
@@ -499,6 +510,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'dangshen': {
     id: 'dangshen',
     name: '党参补气',
+    image: '/assets/cards_player/25.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -514,6 +526,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'dazao': {
     id: 'dazao',
     name: '大枣养血',
+    image: '/assets/cards_player/26.png',
     type: 'skill',
     rarity: 'common',
     cost: 0,
@@ -530,6 +543,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'fangfeng': {
     id: 'fangfeng',
     name: '防风祛风',
+    image: '/assets/cards_player/27.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -544,6 +558,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shengma': {
     id: 'shengma',
     name: '升麻升提',
+    image: '/assets/cards_player/29.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -570,6 +585,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'fuzi': {
     id: 'fuzi',
     name: '附子回阳',
+    image: '/assets/cards_player/33.png',
     type: 'skill',
     rarity: 'rare',
     cost: 3,
@@ -586,6 +602,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'zhusha': {
     id: 'zhusha',
     name: '朱砂安神',
+    image: '/assets/cards_player/35.png',
     type: 'power',
     rarity: 'rare',
     cost: 1,
@@ -614,6 +631,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'aiye': {
     id: 'aiye',
     name: '艾叶温经',
+    image: '/assets/cards_player/40.png',
     type: 'skill',
     rarity: 'common',
     cost: 1,
@@ -628,6 +646,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'suanzaoren': {
     id: 'suanzaoren',
     name: '酸枣仁安眠',
+    image: '/assets/cards_player/41.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -641,6 +660,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'zexie': {
     id: 'zexie',
     name: '泽泻利水',
+    image: '/assets/cards_player/42.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -654,6 +674,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'zhishi': {
     id: 'zhishi',
     name: '枳实行气',
+    image: '/assets/cards_player/43.png',
     type: 'skill',
     rarity: 'common',
     cost: 0,
@@ -667,6 +688,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'lianqiao': {
     id: 'lianqiao',
     name: '连翘解毒',
+    image: '/assets/cards_player/44.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -681,6 +703,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'rougui': {
     id: 'rougui',
     name: '肉桂引火',
+    image: '/assets/cards_player/45.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 2,
@@ -964,6 +987,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'aijiu': {
     id: 'aijiu',
     name: '艾灸：关元',
+    image: '/assets/cards_player/67.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 2,
@@ -979,6 +1003,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'tuina': {
     id: 'tuina',
     name: '推拿：捏脊',
+    image: '/assets/cards_player/68.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -992,6 +1017,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'zouguan': {
     id: 'zouguan',
     name: '拔罐：走罐',
+    image: '/assets/cards_player/69.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -1006,6 +1032,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shenmen': {
     id: 'shenmen',
     name: '耳穴：神门',
+    image: '/assets/cards_player/70.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 0,
@@ -1021,6 +1048,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'guasha': {
     id: 'guasha',
     name: '刮痧：大椎',
+    image: '/assets/cards_player/71.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -1034,6 +1062,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'sanyinjiao': {
     id: 'sanyinjiao',
     name: '温针灸：三阴交',
+    image: '/assets/cards_player/72.png',
     type: 'power',
     rarity: 'rare',
     cost: 1,
@@ -1047,6 +1076,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'hegu': {
     id: 'hegu',
     name: '点穴：合谷',
+    image: '/assets/cards_player/73.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 1,
@@ -1061,6 +1091,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'mingmen': {
     id: 'mingmen',
     name: '雷火灸：命门',
+    image: '/assets/cards_player/74.png',
     type: 'skill',
     rarity: 'rare',
     cost: 3,
@@ -1076,6 +1107,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'bianshi': {
     id: 'bianshi',
     name: '砭石：阿是穴',
+    image: '/assets/cards_player/75.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,

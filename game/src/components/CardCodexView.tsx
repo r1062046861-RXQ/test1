@@ -147,6 +147,22 @@ const CodexTile: React.FC<{
   </motion.button>
 );
 
+const CodexCardTile: React.FC<{
+  card: CardData;
+  onClick: () => void;
+}> = ({ card, onClick }) => (
+  <motion.button
+    type="button"
+    onClick={onClick}
+    whileHover={{ y: -3, scale: 1.01 }}
+    whileTap={{ scale: 0.99 }}
+    className="codex-card-grid-item"
+    aria-label={`${card.name} 图鉴详情`}
+  >
+    <Card card={card} interactive={false} hoverLift={false} layoutVariant="codex" className="codex-card-grid-item__card" />
+  </motion.button>
+);
+
 const CodexModalShell: React.FC<{
   title: string;
   subtitle: string;
@@ -308,9 +324,6 @@ export const CardCodexView: React.FC = () => {
           </div>
           <DetailBlock title="效果说明">{card.description}</DetailBlock>
           <DetailBlock title="中医说明">{card.tcmNote}</DetailBlock>
-          <DetailBlock title="实现备注">
-            effectId：<span className="font-mono text-stone-900">{card.effectId}</span>
-          </DetailBlock>
         </div>
       </div>
     </div>
@@ -330,7 +343,7 @@ export const CardCodexView: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1 space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="amber">HP {enemy.maxHp}</Badge>
+              <Badge variant="amber">生命 {enemy.maxHp}</Badge>
               <Badge variant="slate">初始格挡 {enemy.block}</Badge>
               <Badge variant="emerald">{ENEMY_ACT_LABELS[getEnemyAct(enemy)]}</Badge>
               <Badge variant={badgeVariantByTier[getEnemyTier(enemy)]}>{ENEMY_TIER_LABELS[getEnemyTier(enemy)]}</Badge>
@@ -533,30 +546,7 @@ export const CardCodexView: React.FC = () => {
                               </div>
                               <div className="codex-grid codex-grid--cards">
                                 {typedCards.map((card) => (
-                                  <CodexTile
-                                    key={card.id}
-                                    className="codex-tile--card"
-                                    eyebrow={CARD_TYPE_LABELS[card.type]}
-                                    title={card.name}
-                                    summary={card.description}
-                                    onClick={() => openEntry('card', card.id)}
-                                    media={
-                                      <div className="codex-tile__media-frame codex-tile__media-frame--card">
-                                        {card.image ? (
-                                          <img src={resolveAssetUrl(card.image)} alt={card.name} className="h-full w-full object-cover" />
-                                        ) : (
-                                          <div className="codex-tile__fallback">{CARD_TYPE_LABELS[card.type]}</div>
-                                        )}
-                                      </div>
-                                    }
-                                    badges={
-                                      <>
-                                        <Badge variant="amber">{card.cost} 费</Badge>
-                                        <Badge variant="slate">{CARD_RARITY_LABELS[card.rarity]}</Badge>
-                                        <Badge variant="blue">{CARD_TARGET_LABELS[card.target]}</Badge>
-                                      </>
-                                    }
-                                  />
+                                  <CodexCardTile key={card.id} card={card} onClick={() => openEntry('card', card.id)} />
                                 ))}
                               </div>
                             </div>
@@ -600,7 +590,7 @@ export const CardCodexView: React.FC = () => {
 
                   return (
                     <section key={act} className="space-y-4">
-                      <SectionTitle title={ENEMY_ACT_LABELS[act]} hint="按普通 / 精英 / Boss 分组浏览" />
+                      <SectionTitle title={ENEMY_ACT_LABELS[act]} hint="按普通 / 精英 / 首领分组浏览" />
                       <div className="space-y-4">
                         {ENEMY_TIER_ORDER.map((tier) => {
                           const tierEnemies = actEnemies.filter((enemy) => getEnemyTier(enemy) === tier);
@@ -634,7 +624,7 @@ export const CardCodexView: React.FC = () => {
                                         <Badge variant={badgeVariantByTier[getEnemyTier(enemy)]}>
                                           {ENEMY_TIER_LABELS[getEnemyTier(enemy)]}
                                         </Badge>
-                                        <Badge variant="amber">HP {enemy.maxHp}</Badge>
+                                        <Badge variant="amber">生命 {enemy.maxHp}</Badge>
                                         <Badge variant="slate">格挡 {enemy.block}</Badge>
                                       </>
                                     }

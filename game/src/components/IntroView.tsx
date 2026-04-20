@@ -28,8 +28,7 @@ export const IntroView: React.FC = () => {
         className="relative z-10 flex w-full justify-center px-6 pb-12 md:justify-start md:px-12 md:pb-16"
       >
         <div className="max-w-xl text-center md:text-left">
-          <div className="text-[13px] uppercase tracking-[0.42em] text-amber-100/78">五行初引</div>
-          <h1 className="mt-4 text-5xl font-bold tracking-[0.12em] text-amber-50 drop-shadow-[0_10px_26px_rgba(0,0,0,0.42)] md:text-7xl">
+          <h1 className="text-5xl font-bold tracking-[0.12em] text-amber-50 drop-shadow-[0_10px_26px_rgba(0,0,0,0.42)] md:text-7xl">
             五行医道
           </h1>
           <p className="mt-5 max-w-lg text-base leading-8 text-stone-100/90 md:text-lg md:leading-9">
@@ -37,7 +36,11 @@ export const IntroView: React.FC = () => {
           </p>
 
           <div className="mt-8">
-            <ActionButton variant="primary" className="px-8 py-4 text-base md:text-lg" onClick={() => setPhase('start_menu')}>
+            <ActionButton
+              variant="primary"
+              className="border-amber-100/35 bg-white/12 px-8 py-4 text-base text-amber-50 shadow-[0_14px_32px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/16 md:text-lg"
+              onClick={() => setPhase('start_menu')}
+            >
               进入主菜单
               <ArrowRight size={18} />
             </ActionButton>

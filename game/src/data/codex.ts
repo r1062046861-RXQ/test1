@@ -22,21 +22,21 @@ export interface GlossaryEntry {
 }
 
 export const CARD_ACT_LABELS: Record<1 | 2 | 3, string> = {
-  1: 'Act 1 基础药库',
-  2: 'Act 2 辨证进阶',
-  3: 'Act 3 终局方药',
+  1: '第一幕 · 基础药库',
+  2: '第二幕 · 辨证进阶',
+  3: '第三幕 · 终局方药',
 };
 
 export const ENEMY_ACT_LABELS: Record<1 | 2 | 3, string> = {
-  1: 'Act 1 外感病邪',
-  2: 'Act 2 内伤杂病',
-  3: 'Act 3 五行失调',
+  1: '第一幕 · 外感病邪',
+  2: '第二幕 · 内伤杂病',
+  3: '第三幕 · 五行失调',
 };
 
 export const ENEMY_TIER_LABELS: Record<EnemyTier, string> = {
   common: '普通敌人',
   elite: '精英敌人',
-  boss: 'Boss',
+  boss: '首领',
 };
 
 export const GLOSSARY_CATEGORY_LABELS: Record<GlossaryCategory, string> = {
@@ -84,16 +84,16 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
   boss_wind_cold: {
     act: 1,
     tier: 'boss',
-    summary: 'Act 1 Boss，以寒邪、虚弱和寒转血瘀为核心。',
+    summary: '第一幕首领，以寒邪、虚弱和寒转血瘀为核心。',
     mechanics: ['会频繁叠加寒邪与虚弱。', '二阶段会把 3 层寒邪转化为 1 层血瘀。', '持续拖垮玩家输出效率。'],
-    tags: ['Boss', '寒邪', '血瘀', '二阶段'],
+    tags: ['首领', '寒邪', '血瘀', '二阶段'],
   },
   boss_liver_fire: {
     act: 1,
     tier: 'boss',
-    summary: 'Act 1 Boss，以热邪成长和伤阴机制为核心。',
+    summary: '第一幕首领，以热邪成长和伤阴机制为核心。',
     mechanics: ['热邪会转化成更强攻击压力。', '二阶段可偷取滋阴；若无法偷取，则禁止玩家下回合获得滋阴。'],
-    tags: ['Boss', '热邪', '伤阴', '禁滋阴'],
+    tags: ['首领', '热邪', '伤阴', '禁滋阴'],
   },
   qi_blood_stasis: {
     act: 2,
@@ -126,9 +126,9 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
   boss_spleen_damp: {
     act: 2,
     tier: 'boss',
-    summary: 'Act 2 Boss，以湿邪转热与阶段变化为核心。',
+    summary: '第二幕首领，以湿邪转热与阶段变化为核心。',
     mechanics: ['会积累湿邪并在合适时机“化热”。', '有召唤或阶段推进节奏。', '湿邪转热后会显著提升战斗压迫感。'],
-    tags: ['Boss', '湿邪', '化热', '阶段变化'],
+    tags: ['首领', '湿邪', '化热', '阶段变化'],
   },
   yin_yang_split: {
     act: 3,
@@ -154,9 +154,9 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
   boss_five_elements: {
     act: 3,
     tier: 'boss',
-    summary: '最终 Boss，按木→火→土→金→水循环推进阶段。',
-    mechanics: ['阶段会按回合或血量阈值推进。', '不同阶段拥有不同 aura 与技能。', '要求玩家根据五行轮转及时调整解法。'],
-    tags: ['最终 Boss', '五行循环', '阶段 Boss', 'Aura'],
+    summary: '最终首领，按木→火→土→金→水循环推进阶段。',
+    mechanics: ['阶段会按回合或血量阈值推进。', '不同阶段拥有不同光环与技能。', '要求玩家根据五行轮转及时调整解法。'],
+    tags: ['最终首领', '五行循环', '阶段首领', '光环'],
   },
 };
 
@@ -187,7 +187,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     category: 'resource',
     target: 'player',
     summary: '当前 UI 中与格挡同义，用于表示已积累的防御值。',
-    rules: '界面会把 block 直接显示成护盾/格挡；它们对应同一套防御资源。',
+    rules: '界面会把格挡值直接显示成护盾/格挡；它们对应同一套防御资源。',
     relatedCardIds: ['huangqi', 'danggui'],
   },
   {
@@ -243,7 +243,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     category: 'buff',
     target: 'player',
     summary: '阴虚体系的核心层数资源。',
-    rules: '可叠层、可被消耗，并能驱动回能、治疗、翻倍伤害等效果；部分 Boss 会偷取或禁止获得滋阴。',
+    rules: '可叠层、可被消耗，并能驱动回能、治疗、翻倍伤害等效果；部分首领会偷取或禁止获得滋阴。',
     relatedCardIds: ['maidong', 'shihu', 'qinggu'],
     relatedEnemyIds: ['boss_liver_fire'],
   },
@@ -280,7 +280,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     category: 'debuff',
     target: 'player',
     summary: '常见负面状态，代表风寒、寒凝等病机压制。',
-    rules: '可叠层；常与虚弱、血瘀联动。某些 Boss 会把寒邪进一步转化为血瘀。',
+    rules: '可叠层；常与虚弱、血瘀联动。某些首领会把寒邪进一步转化为血瘀。',
     relatedCardIds: ['mahuang'],
     relatedEnemyIds: ['wind_cold_guest', 'external_combination', 'boss_wind_cold'],
   },
@@ -386,7 +386,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     category: 'debuff',
     target: 'player',
     summary: '下回合或持续期间真气上限减少。',
-    rules: '会直接削弱出牌数量，是高压 Boss 常见的节奏压制方式。',
+    rules: '会直接削弱出牌数量，是高压首领常见的节奏压制方式。',
     relatedEnemyIds: ['chong_ren_instability', 'boss_five_elements'],
   },
   {
@@ -405,7 +405,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     category: 'mechanic',
     target: 'enemy',
     summary: '敌方热/火相关成长机制，会逐回合提升输出。',
-    rules: '常体现在肝火旺、热邪成长、阶段 aura 等身上，战斗拖得越久越危险。',
+    rules: '常体现在肝火旺、热邪成长、阶段光环等身上，战斗拖得越久越危险。',
     relatedEnemyIds: ['boss_liver_fire', 'boss_five_elements'],
   },
   {
@@ -437,7 +437,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   },
   {
     id: 'enemy_aura',
-    name: '敌方 Aura',
+    name: '敌方光环',
     category: 'mechanic',
     target: 'enemy',
     summary: '敌人持续生效的阶段或场地光环效果。',

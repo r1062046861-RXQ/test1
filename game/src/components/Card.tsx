@@ -1,4 +1,7 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import type { Card as CardType } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
@@ -11,8 +14,7 @@ interface CardProps {
   interactive?: boolean;
   hoverLift?: boolean;
   visualTone?: 'default' | 'playable' | 'focus' | 'muted';
-  layoutVariant?: 'default' | 'hand' | 'reward';
-  imageTreatment?: 'default' | 'muted';
+  layoutVariant?: 'default' | 'hand' | 'reward' | 'codex';
   className?: string;
 }
 
@@ -23,9 +25,9 @@ const TYPE_LABELS = {
 } satisfies Record<CardType['type'], string>;
 
 const typeTheme: Record<CardType['type'], string> = {
-  attack: 'from-red-100 to-red-50 border-red-900/55',
-  skill: 'from-sky-100 to-slate-50 border-sky-900/50',
-  power: 'from-amber-100 to-yellow-50 border-yellow-900/55',
+  attack: 'from-red-100/55 to-red-50/32 border-red-900/28',
+  skill: 'from-sky-100/52 to-slate-50/30 border-sky-900/24',
+  power: 'from-amber-100/5 to-yellow-50/28 border-yellow-900/26',
 };
 
 const rarityLabel = {
@@ -33,6 +35,13 @@ const rarityLabel = {
   uncommon: '非凡',
   rare: '稀有',
 } satisfies Record<CardType['rarity'], string>;
+
+const targetLabelShort = {
+  single_enemy: '单体',
+  all_enemies: '全体',
+  self: '自身',
+  random: '随机',
+} satisfies Record<CardType['target'], string>;
 
 export const Card: React.FC<CardProps> = ({
   card,
@@ -43,150 +52,239 @@ export const Card: React.FC<CardProps> = ({
   hoverLift = true,
   visualTone = 'default',
   layoutVariant = 'default',
-  imageTreatment = 'default',
   className,
 }) => {
   const [imageError, setImageError] = React.useState(false);
+  const [showTextModal, setShowTextModal] = React.useState(false);
   const resolvedImage = card.image ? resolveAssetUrl(card.image) : '';
+  const modalTitleId = React.useId();
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [resolvedImage]);
+
+  React.useEffect(() => {
+    if (!showTextModal) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowTextModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showTextModal]);
 
   const playable = visualTone === 'playable';
   const focus = visualTone === 'focus';
   const muted = visualTone === 'muted';
   const handLayout = layoutVariant === 'hand';
   const rewardLayout = layoutVariant === 'reward';
-  const compactLayout = handLayout || rewardLayout;
-  const mutedImage = handLayout && imageTreatment === 'muted';
+  const codexLayout = layoutVariant === 'codex';
+  const compactLayout = handLayout || codexLayout;
+  const showMeta = !handLayout;
+  const showDescription = !codexLayout;
+  const showNote = !handLayout && !codexLayout && Boolean(card.tcmNote);
+  const allowDescriptionModal = !handLayout && !codexLayout && Boolean(card.description || card.tcmNote);
+  const metaBadges = codexLayout
+    ? [rarityLabel[card.rarity], targetLabelShort[card.target]]
+    : [TYPE_LABELS[card.type], rarityLabel[card.rarity], targetLabelShort[card.target]];
+
+  const handleDescriptionOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setShowTextModal(true);
+  };
+
+  const detailModal =
+    typeof document !== 'undefined'
+      ? createPortal(
+          <AnimatePresence>
+            {showTextModal ? (
+              <motion.div
+                className="card-text-modal-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                onClick={() => setShowTextModal(false)}
+              >
+                <motion.div
+                  className="card-text-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={modalTitleId}
+                  initial={{ opacity: 0, scale: 0.96, y: 14 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="card-text-modal__header">
+                    <div className="min-w-0">
+                      <div className="card-text-modal__kicker">完整说明</div>
+                      <h3 id={modalTitleId} className="card-text-modal__title">
+                        {card.name}
+                      </h3>
+                      <div className="card-text-modal__meta">
+                        <span>{TYPE_LABELS[card.type]}</span>
+                        <span>·</span>
+                        <span>{rarityLabel[card.rarity]}</span>
+                        <span>·</span>
+                        <span>{targetLabelShort[card.target]}</span>
+                        <span>·</span>
+                        <span>{card.cost} 费</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="card-text-modal__close"
+                      aria-label={`关闭${card.name}完整说明`}
+                      onClick={() => setShowTextModal(false)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="card-text-modal__scroll ornate-scroll">
+                    <section className="card-text-modal__section">
+                      <div className="card-text-modal__section-title">效果说明</div>
+                      <p className="card-text-modal__copy">{card.description}</p>
+                    </section>
+
+                    {card.tcmNote ? (
+                      <section className="card-text-modal__section">
+                        <div className="card-text-modal__section-title">中医说明</div>
+                        <p className="card-text-modal__copy">{card.tcmNote}</p>
+                      </section>
+                    ) : null}
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
+          document.body,
+        )
+      : null;
 
   return (
-    <div
-      className={cn(
-        'combat-card group relative overflow-hidden rounded-[22px] border-2 bg-gradient-to-b shadow-[0_18px_30px_rgba(35,22,10,0.2)] transition-all duration-200 select-none',
-        'flex flex-col',
-        !handLayout && (rewardLayout ? 'h-[20.75rem] w-[13.75rem]' : 'h-[18rem] w-48'),
-        handLayout && 'combat-card--hand',
-        rewardLayout && 'combat-card--reward',
-        mutedImage && 'combat-card--image-muted',
-        typeTheme[card.type],
-        interactive && !disabled ? 'cursor-pointer' : 'cursor-default',
-        interactive && hoverLift && !disabled ? 'hover:-translate-y-3 hover:shadow-[0_24px_34px_rgba(35,22,10,0.28)]' : '',
-        disabled && 'cursor-not-allowed grayscale opacity-55',
-        selected && 'ring-4 ring-amber-300/90 -translate-y-2 shadow-[0_26px_36px_rgba(35,22,10,0.3)]',
-        playable && 'border-amber-500/75 shadow-[0_20px_36px_rgba(168,110,29,0.24)]',
-        focus && 'border-amber-600/80 shadow-[0_24px_42px_rgba(168,110,29,0.3)]',
-        muted && 'brightness-[0.94] saturate-[0.82] opacity-[0.92]',
-        className,
-      )}
-      style={handLayout ? { width: 'var(--combat-hand-card-width, 11.5rem)', height: 'var(--combat-hand-card-height, 16.75rem)' } : undefined}
-      onClick={!disabled ? onClick : undefined}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.45),transparent_28%,rgba(78,48,18,0.05)_100%)]" />
-      {(playable || focus) && (
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(252,211,77,0.18),transparent_32%)]" />
-      )}
-
-      {mutedImage ? (
-        <div className="combat-card__watermark pointer-events-none absolute inset-x-2 top-[3.25rem] bottom-[2.9rem] overflow-hidden rounded-[18px]">
+    <>
+      <div
+        className={cn(
+          'combat-card group relative isolate overflow-hidden rounded-[22px] border bg-gradient-to-b shadow-[0_18px_30px_rgba(35,22,10,0.2)] transition-all duration-200 select-none',
+          'flex min-h-0 flex-col justify-between',
+          !handLayout && !codexLayout && (rewardLayout ? 'h-[20.75rem] w-[13.75rem]' : 'h-[18rem] w-48'),
+          handLayout && 'combat-card--hand',
+          rewardLayout && 'combat-card--reward',
+          codexLayout && 'combat-card--codex',
+          typeTheme[card.type],
+          interactive && !disabled ? 'cursor-pointer' : 'cursor-default',
+          interactive && hoverLift && !disabled ? 'hover:-translate-y-3 hover:shadow-[0_24px_34px_rgba(35,22,10,0.28)]' : '',
+          disabled && 'cursor-not-allowed grayscale opacity-55',
+          selected && 'ring-4 ring-amber-300/90 -translate-y-2 shadow-[0_26px_36px_rgba(35,22,10,0.3)]',
+          playable && 'border-amber-500/75 shadow-[0_20px_36px_rgba(168,110,29,0.24)]',
+          focus && 'border-amber-600/80 shadow-[0_24px_42px_rgba(168,110,29,0.3)]',
+          muted && 'brightness-[0.96] saturate-[0.9] opacity-[0.94]',
+          className,
+        )}
+        style={handLayout ? { width: 'var(--combat-hand-card-width, 11.5rem)', height: 'var(--combat-hand-card-height, 16.75rem)' } : undefined}
+        onClick={!disabled ? onClick : undefined}
+      >
+        <div className="combat-card__art-shell">
           {card.image && !imageError ? (
-            <img
-              src={resolvedImage}
-              alt=""
-              aria-hidden="true"
-              className="combat-card__watermark-image absolute inset-0 h-full w-full object-cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className="combat-card__watermark-fallback absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/55 to-stone-200/35 font-semibold tracking-[0.22em] text-stone-500/55">
-              {TYPE_LABELS[card.type]}
-            </div>
-          )}
-          <div className="combat-card__watermark-veil absolute inset-0" />
-        </div>
-      ) : null}
-
-      <div className="combat-card__header relative z-10 px-3 pb-2 pt-3">
-        <div className="flex items-start justify-between gap-2">
-          <div
-            className={cn(
-              'combat-card__cost flex shrink-0 items-center justify-center rounded-full border-2 font-bold text-white shadow-md transition-all',
-              compactLayout ? 'h-9 w-9 text-base' : 'h-10 w-10 text-lg',
-              playable || focus
-                ? 'border-amber-100 bg-gradient-to-b from-amber-400 to-amber-700 shadow-[0_8px_18px_rgba(180,83,9,0.28)]'
-                : 'border-white/80 bg-gradient-to-b from-blue-600 to-blue-800',
-            )}
-          >
-            {card.cost}
-          </div>
-          <div
-            className={cn(
-              'combat-card__title-pill min-w-0 flex-1 rounded-xl border border-stone-900/10 bg-white/45 text-center shadow-sm',
-              handLayout ? 'px-2.5 py-1.5' : rewardLayout ? 'px-3 py-1.5' : 'px-3 py-2',
-            )}
-          >
-            <div className={cn('combat-card__title truncate font-bold text-stone-900', handLayout ? 'text-[15px]' : rewardLayout ? 'text-[16px]' : 'text-base')}>
-              {card.name}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {!mutedImage ? (
-        <div className="combat-card__art relative z-10 mx-3 overflow-hidden rounded-2xl border border-stone-900/15 bg-stone-100 shadow-inner">
-          {card.image && !imageError ? (
-            <img
-              src={resolvedImage}
-              alt={card.name}
-              className={cn(
-                'w-full object-cover transition-transform duration-300',
-                handLayout ? 'h-24' : rewardLayout ? 'h-32' : 'h-32',
-                interactive && hoverLift && !disabled ? 'group-hover:scale-[1.04]' : '',
-              )}
-              onError={() => setImageError(true)}
-            />
+            <>
+              <img
+                src={resolvedImage}
+                alt=""
+                aria-hidden="true"
+                className="combat-card__art-backdrop"
+                loading={codexLayout ? 'lazy' : undefined}
+                decoding="async"
+                onError={() => setImageError(true)}
+              />
+              <img
+                src={resolvedImage}
+                alt={card.name}
+                className={cn('combat-card__art-image', interactive && hoverLift && !disabled ? 'group-hover:scale-[1.02]' : '')}
+                loading={codexLayout ? 'lazy' : undefined}
+                decoding="async"
+                onError={() => setImageError(true)}
+              />
+            </>
           ) : (
             <div
               className={cn(
-                'flex w-full items-center justify-center bg-gradient-to-b from-white to-stone-200 font-semibold tracking-[0.22em] text-stone-500',
-                handLayout ? 'h-24 text-[14px]' : rewardLayout ? 'h-32 text-[15px]' : 'h-32 text-sm',
+                'combat-card__fallback flex h-full w-full items-center justify-center font-semibold tracking-[0.22em]',
+                compactLayout ? 'text-[12px]' : 'text-sm',
               )}
             >
               {TYPE_LABELS[card.type]}
             </div>
           )}
+          <div className="combat-card__art-ink" />
         </div>
-      ) : (
-        <div className="combat-card__divider relative z-10 mx-4 mt-1 h-px bg-gradient-to-r from-transparent via-stone-700/18 to-transparent" />
-      )}
 
-      <div
-        className={cn(
-          'combat-card__meta relative z-10 flex items-center justify-center gap-2 px-3 font-semibold uppercase tracking-[0.15em] text-stone-600',
-          handLayout ? 'pt-1.5 text-[12px]' : rewardLayout ? 'pt-2 text-[13px]' : 'pt-2 text-[13px]',
-        )}
-      >
-        <span>{TYPE_LABELS[card.type]}</span>
-        <span className="text-stone-400">•</span>
-        <span>{rarityLabel[card.rarity]}</span>
-      </div>
+        <div className="combat-card__frame" />
+        <div className="combat-card__edge-glow" />
+        <div className="combat-card__top-scrim" />
+        <div className="combat-card__bottom-scrim" />
+        {(playable || focus) && <div className="combat-card__focus-halo" />}
 
-      <div
-        className={cn(
-          'combat-card__description relative z-10 flex min-h-0 flex-1 items-center text-center text-stone-800',
-          handLayout ? 'px-3 pb-2 pt-1 text-[14px] leading-[1.46]' : rewardLayout ? 'px-4 pb-3 pt-2 text-[15px] leading-7' : 'px-4 pb-3 pt-2 text-sm leading-6',
-        )}
-      >
-        <div className={cn('w-full', handLayout ? 'line-clamp-3' : rewardLayout ? 'line-clamp-4' : 'line-clamp-4')}>
-          {card.description}
+        <div className="combat-card__header relative z-10">
+          <div className="combat-card__header-row">
+            <div className="combat-card__cost">{card.cost}</div>
+
+            <div className="combat-card__title-pill">
+              <div className="combat-card__title">{card.name}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="combat-card__footer relative z-10">
+          {showMeta ? (
+            <div className="combat-card__meta">
+              {metaBadges.map((badge) => (
+                <span key={`${card.id}_${badge}`} className="combat-card__meta-badge">
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {showDescription ? (
+            allowDescriptionModal ? (
+              <button
+                type="button"
+                className="combat-card__details-button"
+                aria-label={`查看${card.name}完整说明`}
+                onClick={handleDescriptionOpen}
+              >
+                <div className="combat-card__description text-stone-900">
+                  <span className={cn('combat-card__description-copy', handLayout ? 'line-clamp-2' : rewardLayout ? 'line-clamp-4' : 'line-clamp-4')}>
+                    {card.description}
+                  </span>
+                </div>
+
+                {showNote ? (
+                  <div className="combat-card__note">
+                    <span className="line-clamp-1">{card.tcmNote}</span>
+                  </div>
+                ) : null}
+              </button>
+            ) : (
+              <div className="combat-card__description text-stone-900">
+                <span className={cn('combat-card__description-copy', handLayout ? 'line-clamp-2' : rewardLayout ? 'line-clamp-4' : 'line-clamp-4')}>
+                  {card.description}
+                </span>
+              </div>
+            )
+          ) : null}
         </div>
       </div>
 
-      <div
-        className={cn(
-          'combat-card__note relative z-10 mt-auto border-t border-amber-900/10 bg-[rgba(255,247,227,0.82)] text-center italic text-amber-900/90',
-          handLayout ? 'px-3 py-1.5 text-[12px] leading-[1.4]' : rewardLayout ? 'px-3 py-2 text-[13px] leading-6' : 'px-3 py-2 text-[13px] leading-6',
-        )}
-      >
-        <div className={cn(handLayout ? 'line-clamp-2' : rewardLayout ? 'line-clamp-2' : '')}>{card.tcmNote}</div>
-      </div>
-    </div>
+      {detailModal}
+    </>
   );
 };

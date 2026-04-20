@@ -28,12 +28,12 @@ interface HandLayout {
 const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLayout => {
   const base =
     count <= 4
-      ? { spread: 68, angle: 4.0, scale: 1, curve: 9, hoverLift: 42, neighborShift: 26 }
+      ? { spread: 108, angle: 4.0, scale: 1, curve: 9, hoverLift: 42, neighborShift: 26 }
       : count <= 6
-        ? { spread: 58, angle: 3.2, scale: 0.98, curve: 8, hoverLift: 38, neighborShift: 24 }
+        ? { spread: 92, angle: 3.2, scale: 0.98, curve: 8, hoverLift: 38, neighborShift: 24 }
         : count <= 8
-          ? { spread: 48, angle: 2.6, scale: 0.94, curve: 6, hoverLift: 32, neighborShift: 20 }
-          : { spread: 40, angle: 2.1, scale: 0.9, curve: 5, hoverLift: 28, neighborShift: 16 };
+          ? { spread: 76, angle: 2.6, scale: 0.94, curve: 6, hoverLift: 32, neighborShift: 20 }
+          : { spread: 64, angle: 2.1, scale: 0.9, curve: 5, hoverLift: 28, neighborShift: 16 };
 
   const tierAdjust =
     viewportTier === 'regular'
@@ -52,7 +52,7 @@ const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLay
         }
       : viewportTier === 'compact'
         ? {
-            spread: 0.88,
+            spread: 0.92,
             angle: 0.88,
             scale: 0.95,
             curve: 0.84,
@@ -65,7 +65,7 @@ const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLay
             releaseRotateSkill: -12,
           }
         : {
-            spread: 0.8,
+            spread: 0.86,
             angle: 0.82,
             scale: 0.9,
             curve: 0.74,
@@ -201,7 +201,6 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular' }) => {
                 interactive={!isPlaying}
                 hoverLift={false}
                 layoutVariant="hand"
-                imageTreatment="muted"
                 visualTone={
                   isPlaying
                     ? 'focus'

@@ -12,15 +12,15 @@ const ACT_TITLES = {
   3: '第三幕 · 五行失衡',
 } as const;
 
-const NODE_META: Record<NodeType, { label: string; icon: React.ReactNode }> = {
-  start: { label: '起点', icon: <ScrollText size={18} /> },
-  combat: { label: '战斗', icon: <Skull size={18} /> },
-  elite: { label: '精英', icon: <ShieldAlert size={18} /> },
-  boss: { label: 'Boss', icon: <Crown size={18} /> },
-  event: { label: '事件', icon: <ScrollText size={18} /> },
-  shop: { label: '药铺', icon: <ShoppingBag size={18} /> },
-  rest: { label: '休憩', icon: <BedSingle size={18} /> },
-  chest: { label: '宝箱', icon: <Gift size={18} /> },
+const NODE_META: Record<NodeType, { label: string; hint: string; icon: React.ReactNode }> = {
+  start: { label: '起点', hint: '本幕路线的起始节点。', icon: <ScrollText size={18} /> },
+  combat: { label: '战斗', hint: '稳步推进并补充牌组。', icon: <Skull size={18} /> },
+  elite: { label: '精英', hint: '风险更高，回报也更高。', icon: <ShieldAlert size={18} /> },
+  boss: { label: '首领', hint: '每一幕顶层的关键战。', icon: <Crown size={18} /> },
+  event: { label: '事件', hint: '提供叙事与分支抉择。', icon: <ScrollText size={18} /> },
+  shop: { label: '药铺', hint: '购牌、净化与资源调整。', icon: <ShoppingBag size={18} /> },
+  rest: { label: '休憩', hint: '恢复生命或提升关键卡。', icon: <BedSingle size={18} /> },
+  chest: { label: '宝箱', hint: '获得额外奖励与资源。', icon: <Gift size={18} /> },
 };
 
 const LAYER_SPACING = 118;
@@ -45,6 +45,10 @@ export const MapView: React.FC = () => {
   if (!map || map.length === 0) {
     return (
       <PageShell
+        tone="immersive"
+        headerSurface="plain"
+        className="map-page"
+        headerClassName="map-page__header"
         title="巡诊地图"
         subtitle="当前还没有可用地图。"
         actions={<ActionButton onClick={() => setPhase('start_menu')}>返回主菜单</ActionButton>}
@@ -56,154 +60,162 @@ export const MapView: React.FC = () => {
     );
   }
 
-  const footer = (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap gap-1.5">
-        <Badge>楼层 {Math.max(1, currentFloor)}</Badge>
-        <Badge variant="emerald">生命 {player.hp}/{player.maxHp}</Badge>
-        <Badge variant="blue">真气 {player.maxEnergy}</Badge>
-        <Badge variant="amber">金币 {player.gold}</Badge>
-      </div>
-      <div className="text-xs tracking-[0.12em] text-stone-600 md:text-sm">选择高亮节点，规划下一段巡诊路径。</div>
-    </div>
-  );
-
   return (
     <PageShell
+      tone="immersive"
+      headerSurface="plain"
+      className="map-page"
+      headerClassName="map-page__header"
       title="巡诊地图"
       subtitle={`沿着当前路线推进至 ${ACT_TITLES[currentAct as 1 | 2 | 3] ?? ACT_TITLES[1]}`}
       kicker="巡诊卷轴"
+      style={{
+        backgroundImage:
+          `linear-gradient(180deg, rgba(8,11,18,0.4), rgba(6,8,14,0.84)), radial-gradient(circle at top, rgba(255,223,167,0.16), transparent 28%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 28%',
+      }}
       actions={<ActionButton onClick={() => setPhase('start_menu')}>返回主菜单</ActionButton>}
-      footer={footer}
+      contentClassName="map-page__layout"
     >
-      <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Panel className="relative min-h-0 overflow-hidden px-4 py-4 md:px-5">
-          <div
-            className="absolute inset-0 opacity-35"
-            style={{ backgroundImage: resolveAssetBackground('/assets/background_map.png'), backgroundSize: 'cover', backgroundPosition: 'center' }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,249,235,0.88),rgba(236,224,200,0.92))]" />
-          <div className="relative z-10 flex h-full min-h-0 flex-col">
-            <SectionTitle title={ACT_TITLES[currentAct as 1 | 2 | 3] ?? ACT_TITLES[1]} hint="沿节点推进巡诊，在战斗、际遇与调息之间规划路径。" />
-            <div
-              ref={mapContainerRef}
-              className="ornate-scroll relative min-h-0 flex-1 overflow-y-auto rounded-[22px] border border-amber-900/10 bg-white/20 px-2 py-4"
-            >
-              <div className="relative mx-auto w-full max-w-4xl" style={{ minHeight: `${mapHeight}px` }}>
-                <svg className="pointer-events-none absolute inset-0 h-full w-full">
-                  {map.map((layer, layerIdx) =>
-                    layer.nodes.flatMap((node) =>
-                      node.children.map((childId) => {
-                        const childLayer = map[layerIdx + 1];
-                        const childNode = childLayer?.nodes.find((entry) => entry.id === childId);
-                        if (!childNode) return null;
-                        const y1 = (totalLayers - 1 - layerIdx) * LAYER_SPACING + NODE_CENTER_OFFSET;
-                        const y2 = (totalLayers - 1 - (layerIdx + 1)) * LAYER_SPACING + NODE_CENTER_OFFSET;
-                        return (
-                          <line
-                            key={`${node.id}-${childId}`}
-                            x1={`${node.x}%`}
-                            y1={y1}
-                            x2={`${childNode.x}%`}
-                            y2={y2}
-                            stroke="rgba(92, 60, 26, 0.45)"
-                            strokeWidth="2.5"
-                            strokeDasharray={node.status === 'completed' ? '0' : '6 8'}
-                            strokeLinecap="round"
-                          />
-                        );
-                      }),
-                    ),
-                  )}
-                </svg>
-
-                {map.map((layer, layerIndex) => (
-                  <div
-                    key={layerIndex}
-                    className="absolute w-full"
-                    style={{ top: `${(totalLayers - 1 - layerIndex) * LAYER_SPACING}px` }}
-                  >
-                    {layer.nodes.map((node) => {
-                      const meta = NODE_META[node.type];
-                      const isAvailable = node.status === 'available';
-                      const isCurrent = node.status === 'current';
-                      const isCompleted = node.status === 'completed';
-                      const isLocked = node.status === 'locked';
-                      const canEnter = isAvailable && node.type !== 'start';
-
-                      return (
-                        <div
-                          key={node.id}
-                          className={[
-                            'absolute flex w-28 -translate-x-1/2 flex-col items-center gap-2 text-center',
-                            canEnter ? 'cursor-pointer' : isLocked ? 'cursor-not-allowed opacity-45 grayscale' : 'cursor-default',
-                          ].join(' ')}
-                          style={{ left: `${node.x}%` }}
-                        >
-                          <button
-                            type="button"
-                            className="relative flex items-center justify-center"
-                            disabled={!canEnter}
-                            onClick={() => canEnter && startCombat(node.id)}
-                          >
-                            <motion.div
-                              whileHover={canEnter ? { scale: 1.06, y: -3 } : undefined}
-                              whileTap={canEnter ? { scale: 0.98 } : undefined}
-                              className={[
-                                'flex h-14 w-14 items-center justify-center rounded-full border-2 shadow-[0_10px_20px_rgba(35,22,10,0.16)] transition-all',
-                                isAvailable
-                                  ? 'animate-soft-pulse border-amber-800 bg-gradient-to-b from-amber-200 to-amber-400 text-amber-950'
-                                  : isCurrent
-                                    ? 'border-amber-900 bg-gradient-to-b from-amber-300 to-amber-500 text-amber-950'
-                                    : isCompleted
-                                      ? 'border-stone-700 bg-gradient-to-b from-stone-300 to-stone-400 text-stone-800'
-                                      : 'border-stone-500 bg-stone-300 text-stone-600',
-                              ].join(' ')}
-                            >
-                              {meta.icon}
-                            </motion.div>
-                          </button>
-
-                          <div className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold tracking-[0.14em] text-stone-700 shadow-sm">
-                            {meta.label}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
+      <Panel className="map-page__aside map-page__aside--left px-5 py-5 md:px-6">
+        <div className="map-page__aside-kicker">当前幕次</div>
+        <h2 className="map-page__act-title">{ACT_TITLES[currentAct as 1 | 2 | 3] ?? ACT_TITLES[1]}</h2>
+        <p className="map-page__aside-copy">
+          先观察高亮可达节点，再决定这一段更该稳血、补牌，还是提前为下一幕积累金币与恢复机会。
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Badge>楼层 {Math.max(1, currentFloor)}</Badge>
+          <Badge variant="emerald">生命 {player.hp}/{player.maxHp}</Badge>
+          <Badge variant="blue">真气 {player.maxEnergy}</Badge>
+          <Badge variant="amber">金币 {player.gold}</Badge>
+        </div>
+        <div className="mt-5 grid gap-3">
+          <div className="map-page__note">
+            <div className="map-page__note-title">路径判断</div>
+            <div className="map-page__note-copy">普通战斗稳步补牌，事件改方向，药铺与休憩负责让后面的路线更可控。</div>
           </div>
-        </Panel>
+          <div className="map-page__note">
+            <div className="map-page__note-title">阶段目标</div>
+            <div className="map-page__note-copy">每一幕顶层都会通向首领节点，进入中后段前要留意血量、金币和关键牌是否齐备。</div>
+          </div>
+        </div>
+      </Panel>
 
-        <div className="grid min-h-0 gap-3 xl:grid-rows-[auto_minmax(0,1fr)]">
-          <Panel className="px-5 py-4">
-            <SectionTitle title="路线说明" hint="先看可达节点，再判断这轮更该补强牌组、保血还是攒金。" />
-            <div className="mt-3 space-y-3 text-sm leading-7 text-stone-700">
-              <p>起点会连向第一层可选节点，地图保留分支，方便你根据当前体质与牌组选择路线。</p>
-              <p>普通战斗稳步补充牌组，事件与药铺负责调整方向，精英节点则检验你的辨证与资源调度。</p>
-              <p>每一幕顶层都会通向 Boss 节点，请提前规划血量、金币与休憩节奏。</p>
-            </div>
-          </Panel>
+      <Panel className="map-page__stage relative min-h-0 overflow-hidden px-4 py-4 md:px-5 md:py-5">
+        <div className="relative z-10 flex h-full min-h-0 flex-col">
+          <SectionTitle title="当前路径" hint="地图居中展开，选择高亮节点即可进入下一段巡诊。" />
+          <div
+            ref={mapContainerRef}
+            className="ornate-scroll map-page__scroll relative min-h-0 flex-1 overflow-y-auto rounded-[26px] px-2 py-4"
+          >
+            <div className="relative mx-auto w-full max-w-4xl" style={{ minHeight: `${mapHeight}px` }}>
+              <svg className="pointer-events-none absolute inset-0 h-full w-full">
+                {map.map((layer, layerIdx) =>
+                  layer.nodes.flatMap((node) =>
+                    node.children.map((childId) => {
+                      const childLayer = map[layerIdx + 1];
+                      const childNode = childLayer?.nodes.find((entry) => entry.id === childId);
+                      if (!childNode) return null;
+                      const y1 = (totalLayers - 1 - layerIdx) * LAYER_SPACING + NODE_CENTER_OFFSET;
+                      const y2 = (totalLayers - 1 - (layerIdx + 1)) * LAYER_SPACING + NODE_CENTER_OFFSET;
+                      return (
+                        <line
+                          key={`${node.id}-${childId}`}
+                          x1={`${node.x}%`}
+                          y1={y1}
+                          x2={`${childNode.x}%`}
+                          y2={y2}
+                          stroke="rgba(243, 215, 160, 0.48)"
+                          strokeWidth="2.5"
+                          strokeDasharray={node.status === 'completed' ? '0' : '7 8'}
+                          strokeLinecap="round"
+                        />
+                      );
+                    }),
+                  ),
+                )}
+              </svg>
 
-          <Panel className="min-h-0 overflow-hidden px-4 py-4">
-            <SectionTitle title="节点图例" />
-            <div className="ornate-scroll grid max-h-full gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-              {(Object.entries(NODE_META) as Array<[NodeType, (typeof NODE_META)[NodeType]]>).map(([key, meta]) => (
-                <div key={key} className="inset-panel flex items-center gap-3 px-3 py-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-900/15 bg-amber-100 text-amber-950">
-                    {meta.icon}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-stone-900">{meta.label}</div>
-                    <div className="text-[12px] tracking-[0.12em] text-stone-500">{key}</div>
-                  </div>
+              {map.map((layer, layerIndex) => (
+                <div
+                  key={layerIndex}
+                  className="absolute w-full"
+                  style={{ top: `${(totalLayers - 1 - layerIndex) * LAYER_SPACING}px` }}
+                >
+                  {layer.nodes.map((node) => {
+                    const meta = NODE_META[node.type];
+                    const isAvailable = node.status === 'available';
+                    const isCompleted = node.status === 'completed';
+                    const isLocked = node.status === 'locked';
+                    const canEnter = isAvailable && node.type !== 'start';
+
+                    return (
+                      <div
+                        key={node.id}
+                        className={[
+                          'absolute flex w-28 -translate-x-1/2 flex-col items-center gap-2 text-center',
+                          canEnter ? 'cursor-pointer' : isLocked ? 'cursor-not-allowed opacity-45 grayscale' : 'cursor-default',
+                        ].join(' ')}
+                        style={{ left: `${node.x}%` }}
+                      >
+                        <button
+                          type="button"
+                          className="relative flex items-center justify-center"
+                          disabled={!canEnter}
+                          onClick={() => canEnter && startCombat(node.id)}
+                        >
+                          <motion.div
+                            whileHover={canEnter ? { scale: 1.08, y: -4 } : undefined}
+                            whileTap={canEnter ? { scale: 0.98 } : undefined}
+                            className={[
+                              'map-page__node-shell',
+                              isAvailable
+                                ? 'map-page__node-shell--available animate-soft-pulse'
+                                : isCompleted
+                                  ? 'map-page__node-shell--completed'
+                                  : 'map-page__node-shell--locked',
+                            ].join(' ')}
+                          >
+                            {meta.icon}
+                          </motion.div>
+                        </button>
+
+                        <div className="map-page__node-label">{meta.label}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
-          </Panel>
+          </div>
         </div>
+      </Panel>
+
+      <div className="map-page__aside-stack">
+        <Panel className="map-page__aside px-5 py-5 md:px-6">
+          <SectionTitle title="路线说明" hint="辅助信息放在两侧，不抢地图本体的视觉位置。" />
+          <div className="space-y-4 text-sm leading-7 text-stone-200/84">
+            <p>起点会连向第一层可选节点，地图保留分支，方便你根据当前体质与牌组选择路线。</p>
+            <p>普通战斗稳步补充牌组，事件与药铺负责调整方向，精英节点则检验你的辨证与资源调度。</p>
+            <p>进入首领战前，优先确认生命、真气与关键牌是否足够支撑长线战斗。</p>
+          </div>
+        </Panel>
+
+        <Panel className="map-page__aside px-5 py-5 md:px-6">
+          <SectionTitle title="节点图例" hint="图标代表节点职责，不再显示内部英文键名。" />
+          <div className="grid gap-3">
+            {(Object.values(NODE_META) as Array<(typeof NODE_META)[NodeType]>).map((meta) => (
+              <div key={meta.label} className="map-page__legend-item">
+                <div className="map-page__legend-icon">{meta.icon}</div>
+                <div>
+                  <div className="map-page__legend-title">{meta.label}</div>
+                  <div className="map-page__legend-copy">{meta.hint}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
       </div>
     </PageShell>
   );

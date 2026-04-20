@@ -1,0 +1,50 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="64" fill="#FFF9EE"/>
+  <rect x="24" y="24" width="464" height="464" rx="48" fill="url(#bg)"/>
+  <rect x="54" y="54" width="404" height="404" rx="36" fill="#FFFDF7" stroke="#D8BF92" stroke-width="12"/>
+  <g fill="#43311F">
+    <rect x="90" y="90" width="88" height="88" rx="14"/>
+    <rect x="334" y="90" width="88" height="88" rx="14"/>
+    <rect x="90" y="334" width="88" height="88" rx="14"/>
+    <rect x="114" y="114" width="40" height="40" rx="6" fill="#FFF8EA"/>
+    <rect x="358" y="114" width="40" height="40" rx="6" fill="#FFF8EA"/>
+    <rect x="114" y="358" width="40" height="40" rx="6" fill="#FFF8EA"/>
+    <rect x="224" y="100" width="28" height="28" rx="4"/>
+    <rect x="266" y="100" width="28" height="28" rx="4"/>
+    <rect x="224" y="142" width="28" height="28" rx="4"/>
+    <rect x="252" y="170" width="28" height="28" rx="4"/>
+    <rect x="280" y="198" width="28" height="28" rx="4"/>
+    <rect x="224" y="226" width="28" height="28" rx="4"/>
+    <rect x="266" y="226" width="28" height="28" rx="4"/>
+    <rect x="322" y="226" width="28" height="28" rx="4"/>
+    <rect x="196" y="198" width="28" height="28" rx="4"/>
+    <rect x="196" y="254" width="28" height="28" rx="4"/>
+    <rect x="238" y="282" width="28" height="28" rx="4"/>
+    <rect x="280" y="282" width="28" height="28" rx="4"/>
+    <rect x="322" y="282" width="28" height="28" rx="4"/>
+    <rect x="224" y="324" width="28" height="28" rx="4"/>
+    <rect x="266" y="324" width="28" height="28" rx="4"/>
+    <rect x="322" y="352" width="28" height="28" rx="4"/>
+    <rect x="224" y="380" width="28" height="28" rx="4"/>
+    <rect x="266" y="380" width="28" height="28" rx="4"/>
+    <rect x="308" y="128" width="14" height="14" rx="3"/>
+    <rect x="336" y="156" width="14" height="14" rx="3"/>
+    <rect x="364" y="184" width="14" height="14" rx="3"/>
+    <rect x="392" y="212" width="14" height="14" rx="3"/>
+    <rect x="364" y="240" width="14" height="14" rx="3"/>
+    <rect x="392" y="268" width="14" height="14" rx="3"/>
+    <rect x="196" y="324" width="14" height="14" rx="3"/>
+    <rect x="196" y="352" width="14" height="14" rx="3"/>
+    <rect x="196" y="380" width="14" height="14" rx="3"/>
+  </g>
+  <g>
+    <rect x="96" y="434" width="320" height="16" rx="8" fill="#E8D8B6"/>
+    <text x="256" y="447" text-anchor="middle" font-family="KaiTi, STKaiti, serif" font-size="20" fill="#704A24">王熠 二维码占位</text>
+  </g>
+  <defs>
+    <linearGradient id="bg" x1="256" y1="24" x2="256" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2E5C8"/>
+      <stop offset="1" stop-color="#E3C999"/>
+    </linearGradient>
+  </defs>
+</svg>

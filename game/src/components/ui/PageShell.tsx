@@ -2,19 +2,25 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
-type PageTone = 'parchment' | 'combat';
+type PageTone = 'parchment' | 'combat' | 'immersive';
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type ChromeSurface = 'panel' | 'plain';
 
 interface PageShellProps {
   title: string;
   subtitle?: string;
   kicker?: string;
   tone?: PageTone;
+  headerSurface?: ChromeSurface;
+  footerSurface?: ChromeSurface;
   scrollable?: boolean;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  containerClassName?: string;
+  headerClassName?: string;
+  footerClassName?: string;
   contentClassName?: string;
   style?: React.CSSProperties;
 }
@@ -38,31 +44,44 @@ export const PageShell: React.FC<PageShellProps> = ({
   subtitle,
   kicker = '卷轴章节',
   tone = 'parchment',
+  headerSurface = 'panel',
+  footerSurface = 'panel',
   scrollable = false,
   actions,
   footer,
   children,
   className,
+  containerClassName,
+  headerClassName,
+  footerClassName,
   contentClassName,
   style,
 }) => (
   <div
-    className={cn('page-shell', tone === 'combat' ? 'page-shell--combat' : 'page-shell--parchment', className)}
+    className={cn(
+      'page-shell',
+      tone === 'combat' ? 'page-shell--combat' : tone === 'immersive' ? 'page-shell--immersive' : 'page-shell--parchment',
+      className,
+    )}
     style={style}
   >
     <div className="page-shell__vignette" />
     <div className="page-shell__grain" />
     <div
       className={cn(
-        'relative z-10 mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-4 py-4 md:px-6 md:py-5',
+        'page-shell__container relative z-10 mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-4 py-4 md:px-6 md:py-5',
         scrollable && 'overflow-y-auto overflow-x-hidden ornate-scroll',
+        containerClassName,
       )}
     >
       <motion.header
         initial={{ opacity: 0, y: -18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="ornate-panel px-5 py-5 md:px-7"
+        className={cn(
+          headerSurface === 'plain' ? 'page-shell__header page-shell__header--plain' : 'page-shell__header ornate-panel px-5 py-5 md:px-7',
+          headerClassName,
+        )}
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
@@ -88,7 +107,10 @@ export const PageShell: React.FC<PageShellProps> = ({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-          className="ornate-panel px-4 py-3 md:px-5"
+          className={cn(
+            footerSurface === 'plain' ? 'page-shell__footer page-shell__footer--plain' : 'page-shell__footer ornate-panel px-4 py-3 md:px-5',
+            footerClassName,
+          )}
         >
           {footer}
         </motion.footer>

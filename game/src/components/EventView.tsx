@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CARD_LIBRARY } from '../data/cards';
 import { useGameStore } from '../store/gameStore';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
+import { resolveAssetBackground } from '../utils/assets';
 
 interface EventChoice {
   id: string;
@@ -30,7 +31,6 @@ export const EventView: React.FC = () => {
     healPlayer,
     addCardToDeck,
     removeCardById,
-    upgradeCardById,
     completeNonCombat,
   } = useGameStore();
 
@@ -43,12 +43,15 @@ export const EventView: React.FC = () => {
     () => Object.values(CARD_LIBRARY).filter((card) => (!card.act || card.act <= currentAct) && !card.unplayable),
     [currentAct],
   );
+  const eventRewardPool = useMemo(
+    () => cardPool.filter((card) => card.rarity === 'common' || card.rarity === 'uncommon'),
+    [cardPool],
+  );
 
   useEffect(() => {
     const goldReward = 55 + currentAct * 10;
     const tradeCost = 35 + currentAct * 5;
     const healAmount = Math.max(1, Math.floor(player.maxHp * 0.25));
-    const upgradableCards = player.deck.filter((card) => !card.upgraded);
 
     const events: EventData[] = [
       {
@@ -92,13 +95,12 @@ export const EventView: React.FC = () => {
           },
           {
             id: 'study',
-            label: '参悟残篇',
-            description: '随机升级 1 张未强化卡牌。',
-            disabled: upgradableCards.length === 0,
+            label: '领受残篇',
+            description: '获得 1 张当前幕次随机牌。',
             onPick: () => {
-              const picked = pickRandom(upgradableCards);
-              upgradeCardById(picked.id);
-              return `你参悟残篇，将「${picked.name}」升级了。`;
+              const picked = pickRandom(eventRewardPool.length > 0 ? eventRewardPool : cardPool);
+              addCardToDeck(picked.id);
+              return `你从石龛残篇中领得了「${picked.name}」。`;
             },
           },
           {
@@ -151,9 +153,21 @@ export const EventView: React.FC = () => {
 
   if (!eventData) {
     return (
-      <PageShell title="随机事件" subtitle="事件载入中…">
+      <PageShell
+        tone="immersive"
+        headerSurface="plain"
+        headerClassName="immersive-page__header"
+        title="随机事件"
+        subtitle="事件载入中…"
+        style={{
+          backgroundImage:
+            `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="flex h-full items-center justify-center">
-          <Panel className="px-8 py-10 text-center text-lg text-stone-700">事件载入中…</Panel>
+          <Panel className="px-8 py-10 text-center text-lg text-stone-200">事件载入中…</Panel>
         </div>
       </PageShell>
     );
@@ -170,10 +184,25 @@ export const EventView: React.FC = () => {
   );
 
   return (
-    <PageShell title={eventData.title} subtitle={eventData.description} kicker="巡诊际遇" footer={footer}>
+    <PageShell
+      tone="immersive"
+      headerSurface="plain"
+      footerSurface="plain"
+      headerClassName="immersive-page__header"
+      title={eventData.title}
+      subtitle={eventData.description}
+      kicker="巡诊际遇"
+      footer={footer}
+      style={{
+        backgroundImage:
+          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel className="px-5 py-5">
-          <SectionTitle title="事件抉择" hint="先读情境，再判断这次际遇更适合换资源、补状态还是调整牌组。" />
+          <SectionTitle title="事件抉择" hint="先看代价，再决定拿资源、补状态还是改方向。" />
           <div className="mt-5 space-y-4">
             {eventData.choices.map((choice) => (
               <button
@@ -182,21 +211,20 @@ export const EventView: React.FC = () => {
                 disabled={choice.disabled || Boolean(result) || selectionLocked}
                 className="inset-panel w-full px-5 py-4 text-left transition hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <div className="text-xl font-bold text-stone-900">{choice.label}</div>
-                <div className="mt-2 text-sm leading-7 text-stone-700">{choice.description}</div>
+                <div className="text-xl font-bold text-amber-50">{choice.label}</div>
+                <div className="mt-2 text-sm leading-7 text-stone-300">{choice.description}</div>
               </button>
             ))}
           </div>
 
-          {result ? <div className="mt-5 inset-panel px-5 py-5 text-base leading-8 text-stone-800">{result}</div> : null}
+          {result ? <div className="mt-5 inset-panel px-5 py-5 text-base leading-8 text-stone-200">{result}</div> : null}
         </Panel>
 
         <Panel className="px-5 py-5">
-          <SectionTitle title="事件说明" />
-          <div className="space-y-3 text-sm leading-7 text-stone-700">
-            <p>事件会打断原本的稳定成长，为你提供一次资源交换、方向转向或风险试探。</p>
-            <p>这类页面以叙事分支承载选择，让巡诊不只是在数值推进，也是在判断当前最需要什么。</p>
-            <p>作出选择后，结果会单独展示，方便你回看这次际遇究竟改变了什么。</p>
+          <SectionTitle title="事件提示" />
+          <div className="space-y-3 text-sm leading-7 text-stone-300">
+            <p>事件多半是换资源，不必每次都拿满。</p>
+            <p>先看代价，再决定要不要冒险。</p>
           </div>
         </Panel>
       </div>

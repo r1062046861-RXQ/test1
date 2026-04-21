@@ -15,6 +15,7 @@ interface CardProps {
   hoverLift?: boolean;
   visualTone?: 'default' | 'playable' | 'focus' | 'muted';
   layoutVariant?: 'default' | 'hand' | 'reward' | 'codex';
+  descriptionModalEnabled?: boolean;
   className?: string;
 }
 
@@ -52,6 +53,7 @@ export const Card: React.FC<CardProps> = ({
   hoverLift = true,
   visualTone = 'default',
   layoutVariant = 'default',
+  descriptionModalEnabled = true,
   className,
 }) => {
   const [imageError, setImageError] = React.useState(false);
@@ -88,7 +90,8 @@ export const Card: React.FC<CardProps> = ({
   const showMeta = !handLayout;
   const showDescription = !codexLayout;
   const showNote = !handLayout && !codexLayout && Boolean(card.tcmNote);
-  const allowDescriptionModal = !handLayout && !codexLayout && Boolean(card.description || card.tcmNote);
+  const allowDescriptionModal =
+    descriptionModalEnabled && !handLayout && !codexLayout && Boolean(card.description || card.tcmNote);
   const metaBadges = codexLayout
     ? [rarityLabel[card.rarity], targetLabelShort[card.target]]
     : [TYPE_LABELS[card.type], rarityLabel[card.rarity], targetLabelShort[card.target]];
@@ -207,7 +210,7 @@ export const Card: React.FC<CardProps> = ({
               <img
                 src={resolvedImage}
                 alt={card.name}
-                className={cn('combat-card__art-image', interactive && hoverLift && !disabled ? 'group-hover:scale-[1.02]' : '')}
+                className="combat-card__art-image"
                 loading={codexLayout ? 'lazy' : undefined}
                 decoding="async"
                 onError={() => setImageError(true)}

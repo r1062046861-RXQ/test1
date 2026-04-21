@@ -4,6 +4,7 @@ import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { CARD_LIBRARY } from '../data/cards';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
+import { resolveAssetBackground } from '../utils/assets';
 
 export const ChestView: React.FC = () => {
   const { currentAct, addGold, addCardToDeck, completeNonCombat } = useGameStore();
@@ -41,9 +42,18 @@ export const ChestView: React.FC = () => {
 
   return (
     <PageShell
+      tone="immersive"
+      headerSurface="plain"
+      headerClassName="immersive-page__header"
       title="宝箱奖励"
-      subtitle="开启宝箱后获得金币，并从三张牌中选择一张。"
+      subtitle="先拿金币，再从三张牌中补一张。"
       kicker="巡诊收获"
+      style={{
+        backgroundImage:
+          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
       actions={opened ? <Badge variant="amber">获得 {goldReward} 金币</Badge> : undefined}
     >
       <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -52,7 +62,7 @@ export const ChestView: React.FC = () => {
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-4 text-7xl">🧰</div>
               <SectionTitle title="尚未开启" className="text-center" />
-              <p className="mt-3 max-w-xl text-sm leading-7 text-stone-700">宝箱会先提供额外资源，再给你一次短暂的选牌机会。</p>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-stone-300">宝箱会先给资源，再给一次短暂选牌机会。</p>
               <ActionButton variant="primary" className="mt-6 px-7 py-4 text-base" onClick={handleOpen}>
                 开启宝箱
               </ActionButton>
@@ -78,11 +88,10 @@ export const ChestView: React.FC = () => {
         </Panel>
 
         <Panel className="px-5 py-5">
-          <SectionTitle title="宝箱说明" />
-          <div className="space-y-3 text-sm leading-7 text-stone-700">
-            <p>宝箱节点提供路线中的额外增益：先补金币，再进行一次轻量选牌。</p>
-            <p>它更像一次短暂停顿，让你在不进入战斗的情况下微调接下来的构筑方向。</p>
-            <p>如果当前牌组已经足够紧凑，也可以直接跳过卡牌奖励。</p>
+          <SectionTitle title="宝箱提示" />
+          <div className="space-y-3 text-sm leading-7 text-stone-300">
+            <p>宝箱是一次轻量补给，不必每次都拿牌。</p>
+            <p>如果当前牌组已经够紧，就拿金币继续前进。</p>
           </div>
 
           {opened ? (

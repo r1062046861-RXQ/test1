@@ -190,7 +190,7 @@ export const PlayerStats: React.FC = () => {
       <div className="pointer-events-none absolute inset-0 rounded-[26px] border border-white/5" />
       <div className="mb-3 flex items-start justify-between gap-4">
         <div>
-          <div className="text-[12px] uppercase tracking-[0.28em] text-amber-300/75">Player</div>
+          <div className="text-[12px] tracking-[0.28em] text-amber-300/75">巡诊者</div>
           <div className="mt-1 text-2xl font-bold text-amber-50">巡诊者</div>
         </div>
         <div className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs tracking-[0.2em] text-amber-100">

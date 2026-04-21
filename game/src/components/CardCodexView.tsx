@@ -20,7 +20,7 @@ import {
 } from '../data/codex';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
 import { detailRevealVariants, panelSettleVariants } from './ui/motionPresets';
-import { resolveAssetUrl } from '../utils/assets';
+import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
 type CodexSectionKey = 'cards' | 'enemies' | 'glossary';
 type ActiveEntry =
@@ -101,8 +101,8 @@ const joinEnemyNames = (enemyIds: string[]) =>
 
 const DetailBlock: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <Panel inset className="px-4 py-4">
-    <div className="text-[12px] font-semibold uppercase tracking-[0.26em] text-amber-800/80">{title}</div>
-    <div className="mt-3 text-sm leading-7 text-stone-700 md:text-base">{children}</div>
+    <div className="text-[12px] font-semibold uppercase tracking-[0.26em] text-amber-200/78">{title}</div>
+    <div className="mt-3 text-sm leading-7 text-stone-200 md:text-base">{children}</div>
   </Panel>
 );
 
@@ -338,7 +338,7 @@ export const CardCodexView: React.FC = () => {
             {enemy.image ? (
               <img src={resolveAssetUrl(enemy.image)} alt={enemy.name} className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full items-center justify-center bg-stone-100 text-stone-400">暂无敌人图像</div>
+              <div className="flex h-full items-center justify-center bg-black/25 text-stone-300">暂无敌人图像</div>
             )}
           </div>
           <div className="min-w-0 flex-1 space-y-4">
@@ -352,10 +352,10 @@ export const CardCodexView: React.FC = () => {
             <DetailBlock title="核心机制">
               <div>{meta?.summary ?? '暂无额外机制说明。'}</div>
               {meta?.mechanics?.length ? (
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-stone-700">
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-stone-200">
                   {meta.mechanics.map((item) => (
                     <li key={item} className="flex gap-2">
-                      <span className="mt-1 text-amber-600">◆</span>
+                      <span className="mt-1 text-amber-300">◆</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -395,16 +395,16 @@ export const CardCodexView: React.FC = () => {
         <DetailBlock title="叠层 / 持续规则">{entry.rules}</DetailBlock>
         {relatedCards || relatedEnemies ? (
           <DetailBlock title="关联对象">
-            <div className="space-y-3 text-sm leading-6 text-stone-700">
+            <div className="space-y-3 text-sm leading-6 text-stone-200">
               {relatedCards ? (
                 <div>
-                  <span className="font-semibold text-stone-900">代表卡牌：</span>
+                  <span className="font-semibold text-amber-50">代表卡牌：</span>
                   {relatedCards}
                 </div>
               ) : null}
               {relatedEnemies ? (
                 <div>
-                  <span className="font-semibold text-stone-900">关联敌人：</span>
+                  <span className="font-semibold text-amber-50">关联敌人：</span>
                   {relatedEnemies}
                 </div>
               ) : null}
@@ -460,9 +460,18 @@ export const CardCodexView: React.FC = () => {
 
   return (
     <PageShell
+      tone="immersive"
+      headerSurface="plain"
+      headerClassName="immersive-page__header"
       title="图鉴总览"
-      subtitle="沿卡牌、敌人、状态词典连续浏览，回看五行医道中的药理线索与巡诊知识。"
+      subtitle="连续浏览卡牌、敌人与术语，回看整套巡诊资料。"
       scrollable
+      style={{
+        backgroundImage:
+          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.92)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
       actions={
         <>
           <Badge variant="blue">{allCards.length} 张卡</Badge>
@@ -541,7 +550,7 @@ export const CardCodexView: React.FC = () => {
                           return (
                             <div key={type} className="space-y-3">
                               <div className="codex-section__subgroup">
-                                <div className="text-sm font-semibold text-amber-950">{CARD_TYPE_LABELS[type]}</div>
+                                <div className="text-sm font-semibold text-amber-100">{CARD_TYPE_LABELS[type]}</div>
                                 <Badge variant="slate">{typedCards.length}</Badge>
                               </div>
                               <div className="codex-grid codex-grid--cards">
@@ -599,7 +608,7 @@ export const CardCodexView: React.FC = () => {
                           return (
                             <div key={tier} className="space-y-3">
                               <div className="codex-section__subgroup">
-                                <div className="text-sm font-semibold text-amber-950">{ENEMY_TIER_LABELS[tier]}</div>
+                                <div className="text-sm font-semibold text-amber-100">{ENEMY_TIER_LABELS[tier]}</div>
                                 <Badge variant={badgeVariantByTier[tier]}>{tierEnemies.length}</Badge>
                               </div>
                               <div className="codex-grid codex-grid--enemies">

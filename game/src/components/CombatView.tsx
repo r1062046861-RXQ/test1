@@ -120,14 +120,14 @@ export const CombatView: React.FC = () => {
             transition={{ delay: 0.06 }}
             className="combat-view__sidebar grid min-h-0 xl:grid-rows-[auto_auto_minmax(0,1fr)_minmax(0,0.72fr)]"
           >
-            <div className="combat-view__context ornate-panel text-stone-900">
+            <div className="combat-view__context ornate-panel">
               <div className="chapter-kicker">战斗章节</div>
               <div className="combat-view__title-row mt-2 flex flex-wrap items-center gap-2">
-                <h2 className="combat-view__title text-3xl font-bold text-stone-900">战斗</h2>
+                <h2 className="combat-view__title text-3xl font-bold text-amber-50">战斗</h2>
                 <Badge variant={combatTurn === 0 ? 'amber' : 'crimson'}>{turnLabel}</Badge>
-                <Badge variant="slate">Act {currentAct}</Badge>
+                <Badge variant="slate">第 {currentAct} 幕</Badge>
               </div>
-              <p className="combat-view__hint mt-1 text-sm text-stone-600">{turnHint}</p>
+              <p className="combat-view__hint mt-1 text-sm text-stone-300">{turnHint}</p>
             </div>
 
             <motion.div animate={playerShake} transition={{ duration: playerShakeDuration, ease: 'easeOut' }} className="relative">
@@ -151,11 +151,11 @@ export const CombatView: React.FC = () => {
             {player.statusEffects.length > 0 ? (
               <PassiveEffects className="h-full" compact />
             ) : (
-              <div className="combat-parchment-panel flex min-h-0 flex-col px-3 py-3 text-stone-900">
-                <div className="mb-2 border-b border-amber-900/10 pb-2 text-[12px] uppercase tracking-[0.24em] text-stone-600">
+              <div className="combat-parchment-panel flex min-h-0 flex-col px-3 py-3 text-stone-100">
+                <div className="mb-2 border-b border-white/10 pb-2 text-[12px] uppercase tracking-[0.24em] text-stone-300">
                   被动属性
                 </div>
-                <div className="combat-parchment-inset flex flex-1 items-center justify-center px-4 py-4 text-center text-sm leading-6 text-stone-600">
+                <div className="combat-parchment-inset flex flex-1 items-center justify-center px-4 py-4 text-center text-sm leading-6 text-stone-300">
                   当前没有持续生效的被动属性。
                 </div>
               </div>

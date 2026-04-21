@@ -22,7 +22,7 @@ import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageSh
 import { detailRevealVariants, panelSettleVariants } from './ui/motionPresets';
 import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
-type CodexSectionKey = 'cards' | 'enemies' | 'glossary';
+type CodexSectionKey = 'cards' | 'enemies' | 'enemyCards' | 'glossary';
 type ActiveEntry =
   | { kind: 'card'; id: string }
   | { kind: 'enemy'; id: string }
@@ -49,14 +49,16 @@ const CARD_TARGET_LABELS: Record<CardTarget, string> = {
 };
 
 const SECTION_LABELS: Record<CodexSectionKey, string> = {
-  cards: '卡牌图鉴',
+  cards: '玩家卡图鉴',
   enemies: '敌人图鉴',
+  enemyCards: '敌方牌库',
   glossary: '状态词典',
 };
 
 const SECTION_HINTS: Record<CodexSectionKey, string> = {
-  cards: '按幕次与牌型回看药牌结构、效果走向与构筑线索。',
+  cards: '只收录玩家可获得的卡牌，按幕次与牌型回看构筑路线。',
   enemies: '按幕次与定位查看巡诊途中会遇到的证候与敌势。',
+  enemyCards: '集中浏览敌人使用的能力牌，不再混入玩家卡牌目录。',
   glossary: '汇总核心状态、资源与规则，方便对照理解关键概念。',
 };
 
@@ -85,6 +87,7 @@ const typeRank = (type: CardType) => TYPE_ORDER.indexOf(type);
 const getCardAct = (card: CardData): 1 | 2 | 3 => (card.act === 2 || card.act === 3 ? card.act : 1);
 const getEnemyAct = (enemy: Enemy): 1 | 2 | 3 => ENEMY_CODEX_DETAILS[enemy.id]?.act ?? 1;
 const getEnemyTier = (enemy: Enemy): EnemyTier => ENEMY_CODEX_DETAILS[enemy.id]?.tier ?? 'common';
+const isEnemyAbilityCard = (card: CardData) => card.effectId === 'status_enemy';
 
 const formatIntent = (enemy: Enemy): string => {
   const { intent } = enemy;
@@ -163,6 +166,45 @@ const CodexCardTile: React.FC<{
   </motion.button>
 );
 
+const CodexEnemyTile: React.FC<{
+  enemy: Enemy;
+  onClick: () => void;
+}> = ({ enemy, onClick }) => {
+  const act = getEnemyAct(enemy);
+  const tier = getEnemyTier(enemy);
+  const meta = ENEMY_CODEX_DETAILS[enemy.id];
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      className="codex-enemy-card"
+      aria-label={`${enemy.name} 图鉴详情`}
+    >
+      <div className="codex-enemy-card__portrait">
+        {enemy.image ? (
+          <img src={resolveAssetUrl(enemy.image)} alt={enemy.name} className="codex-enemy-card__image" loading="lazy" />
+        ) : (
+          <div className="codex-enemy-card__fallback">敌人</div>
+        )}
+        <div className="codex-enemy-card__portrait-scrim" />
+      </div>
+      <div className="codex-enemy-card__body">
+        <div className="codex-enemy-card__eyebrow">{ENEMY_ACT_LABELS[act]}</div>
+        <div className="codex-enemy-card__title">{enemy.name}</div>
+        <div className="codex-enemy-card__badges">
+          <Badge variant={badgeVariantByTier[tier]}>{ENEMY_TIER_LABELS[tier]}</Badge>
+          <Badge variant="amber">生命 {enemy.maxHp}</Badge>
+          {enemy.block > 0 ? <Badge variant="slate">格挡 {enemy.block}</Badge> : null}
+        </div>
+        <div className="codex-enemy-card__summary line-clamp-2">{meta?.summary ?? formatIntent(enemy)}</div>
+      </div>
+    </motion.button>
+  );
+};
+
 const CodexModalShell: React.FC<{
   title: string;
   subtitle: string;
@@ -225,6 +267,9 @@ export const CardCodexView: React.FC = () => {
     [],
   );
 
+  const playerCards = useMemo(() => allCards.filter((card) => !isEnemyAbilityCard(card)), [allCards]);
+  const enemyAbilityCards = useMemo(() => allCards.filter((card) => isEnemyAbilityCard(card)), [allCards]);
+
   const allEnemies = useMemo(
     () =>
       Object.values(ENEMIES).sort((left, right) => {
@@ -276,8 +321,9 @@ export const CardCodexView: React.FC = () => {
       phase: 'card_codex',
       layout: 'single-page-grid',
       sectionCounts: {
-        cards: allCards.length,
+        cards: playerCards.length,
         enemies: allEnemies.length,
+        enemyCards: enemyAbilityCards.length,
         glossary: allGlossaryEntries.length,
       },
       modalOpen,
@@ -289,7 +335,7 @@ export const CardCodexView: React.FC = () => {
     return () => {
       delete (window as Window & { __cardCodexState?: unknown }).__cardCodexState;
     };
-  }, [activeEntry, allCards.length, allEnemies.length, allGlossaryEntries.length, modalOpen]);
+  }, [activeEntry, playerCards.length, allEnemies.length, enemyAbilityCards.length, allGlossaryEntries.length, modalOpen]);
 
   const openEntry = (kind: NonNullable<ActiveEntry>['kind'], id: string) => {
     setActiveEntry({ kind, id });
@@ -340,6 +386,7 @@ export const CardCodexView: React.FC = () => {
             ) : (
               <div className="flex h-full items-center justify-center bg-black/25 text-stone-300">暂无敌人图像</div>
             )}
+            <div className="codex-modal__enemy-preview-scrim" />
           </div>
           <div className="min-w-0 flex-1 space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -417,11 +464,12 @@ export const CardCodexView: React.FC = () => {
 
   const renderModal = () => {
     if (activeCard) {
+      const enemyAbilityCard = isEnemyAbilityCard(activeCard);
       return (
         <CodexModalShell
           title={activeCard.name}
-          subtitle="卡牌详情"
-          badge={<Badge variant="amber">卡牌图鉴</Badge>}
+          subtitle={enemyAbilityCard ? '敌方牌详情' : '卡牌详情'}
+          badge={<Badge variant={enemyAbilityCard ? 'crimson' : 'amber'}>{enemyAbilityCard ? '敌方牌库' : '玩家卡图鉴'}</Badge>}
           onClose={closeEntry}
         >
           {renderCardDetail(activeCard)}
@@ -474,8 +522,9 @@ export const CardCodexView: React.FC = () => {
       }}
       actions={
         <>
-          <Badge variant="blue">{allCards.length} 张卡</Badge>
+          <Badge variant="blue">{playerCards.length} 张玩家卡</Badge>
           <Badge variant="crimson">{allEnemies.length} 个敌人</Badge>
+          <Badge variant="slate">{enemyAbilityCards.length} 张敌方牌</Badge>
           <Badge variant="emerald">{allGlossaryEntries.length} 条术语</Badge>
           <ActionButton variant="secondary" onClick={() => setPhase('start_menu')}>
             返回开始菜单
@@ -491,7 +540,7 @@ export const CardCodexView: React.FC = () => {
             <JumpButton
               title={SECTION_LABELS.cards}
               hint={SECTION_HINTS.cards}
-              count={`${allCards.length} 张`}
+              count={`${playerCards.length} 张`}
               onClick={() => scrollToSection('cards')}
             />
             <JumpButton
@@ -499,6 +548,12 @@ export const CardCodexView: React.FC = () => {
               hint={SECTION_HINTS.enemies}
               count={`${allEnemies.length} 个`}
               onClick={() => scrollToSection('enemies')}
+            />
+            <JumpButton
+              title={SECTION_LABELS.enemyCards}
+              hint={SECTION_HINTS.enemyCards}
+              count={`${enemyAbilityCards.length} 张`}
+              onClick={() => scrollToSection('enemyCards')}
             />
             <JumpButton
               title={SECTION_LABELS.glossary}
@@ -520,23 +575,23 @@ export const CardCodexView: React.FC = () => {
             className="scroll-mt-6"
           >
             <Panel className="codex-section px-4 py-4 md:px-5">
-              <div className="codex-section__header">
-                <div className="codex-section__title-wrap">
-                  <div className="codex-section__icon">
-                    <BookOpen size={20} />
-                  </div>
+                <div className="codex-section__header">
+                  <div className="codex-section__title-wrap">
+                    <div className="codex-section__icon">
+                      <BookOpen size={20} />
+                    </div>
                   <div>
                     <div className="codex-section__kicker">目录一</div>
                     <h2 className="codex-section__title">{SECTION_LABELS.cards}</h2>
                     <p className="codex-section__subtitle">{SECTION_HINTS.cards}</p>
                   </div>
                 </div>
-                <Badge variant="amber">{allCards.length} 张</Badge>
+                <Badge variant="amber">{playerCards.length} 张</Badge>
               </div>
 
               <div className="mt-6 space-y-6">
                 {ACT_ORDER.map((act) => {
-                  const actCards = allCards.filter((card) => getCardAct(card) === act);
+                  const actCards = playerCards.filter((card) => getCardAct(card) === act);
                   if (actCards.length === 0) return null;
 
                   return (
@@ -613,30 +668,10 @@ export const CardCodexView: React.FC = () => {
                               </div>
                               <div className="codex-grid codex-grid--enemies">
                                 {tierEnemies.map((enemy) => (
-                                  <CodexTile
+                                  <CodexEnemyTile
                                     key={enemy.id}
-                                    eyebrow={ENEMY_TIER_LABELS[getEnemyTier(enemy)]}
-                                    title={enemy.name}
-                                    summary={formatIntent(enemy)}
+                                    enemy={enemy}
                                     onClick={() => openEntry('enemy', enemy.id)}
-                                    media={
-                                      <div className="codex-tile__media-frame codex-tile__media-frame--enemy">
-                                        {enemy.image ? (
-                                          <img src={resolveAssetUrl(enemy.image)} alt={enemy.name} className="h-full w-full object-cover" />
-                                        ) : (
-                                          <div className="codex-tile__fallback">敌人</div>
-                                        )}
-                                      </div>
-                                    }
-                                    badges={
-                                      <>
-                                        <Badge variant={badgeVariantByTier[getEnemyTier(enemy)]}>
-                                          {ENEMY_TIER_LABELS[getEnemyTier(enemy)]}
-                                        </Badge>
-                                        <Badge variant="amber">生命 {enemy.maxHp}</Badge>
-                                        <Badge variant="slate">格挡 {enemy.block}</Badge>
-                                      </>
-                                    }
                                   />
                                 ))}
                               </div>
@@ -652,11 +687,54 @@ export const CardCodexView: React.FC = () => {
           </motion.section>
 
         <motion.section
+            id="enemyCards"
+            variants={panelSettleVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1 }}
+            className="scroll-mt-6"
+          >
+            <Panel className="codex-section px-4 py-4 md:px-5">
+              <div className="codex-section__header">
+                <div className="codex-section__title-wrap">
+                  <div className="codex-section__icon">
+                    <BookOpen size={20} />
+                  </div>
+                  <div>
+                    <div className="codex-section__kicker">目录三</div>
+                    <h2 className="codex-section__title">{SECTION_LABELS.enemyCards}</h2>
+                    <p className="codex-section__subtitle">{SECTION_HINTS.enemyCards}</p>
+                  </div>
+                </div>
+                <Badge variant="crimson">{enemyAbilityCards.length} 张</Badge>
+              </div>
+
+              <div className="mt-6 space-y-6">
+                {ACT_ORDER.map((act) => {
+                  const actCards = enemyAbilityCards.filter((card) => getCardAct(card) === act);
+                  if (actCards.length === 0) return null;
+
+                  return (
+                    <section key={act} className="space-y-4">
+                      <SectionTitle title={CARD_ACT_LABELS[act]} hint="浏览敌人专属能力牌" />
+                      <div className="codex-grid codex-grid--cards codex-grid--enemy-cards">
+                        {actCards.map((card) => (
+                          <CodexCardTile key={card.id} card={card} onClick={() => openEntry('card', card.id)} />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </Panel>
+          </motion.section>
+
+        <motion.section
             id="glossary"
             variants={panelSettleVariants}
             initial="hidden"
             animate="visible"
-            transition={{ delay: 0.12 }}
+            transition={{ delay: 0.14 }}
             className="scroll-mt-6"
           >
             <Panel className="codex-section px-4 py-4 md:px-5">
@@ -666,7 +744,7 @@ export const CardCodexView: React.FC = () => {
                     <ScrollText size={20} />
                   </div>
                   <div>
-                    <div className="codex-section__kicker">目录三</div>
+                    <div className="codex-section__kicker">目录四</div>
                     <h2 className="codex-section__title">{SECTION_LABELS.glossary}</h2>
                     <p className="codex-section__subtitle">{SECTION_HINTS.glossary}</p>
                   </div>
@@ -690,6 +768,7 @@ export const CardCodexView: React.FC = () => {
                             title={entry.name}
                             summary={entry.summary}
                             onClick={() => openEntry('glossary', entry.id)}
+                            className="codex-tile--glossary"
                             media={
                               <div className="codex-tile__media-frame codex-tile__media-frame--glossary">
                                 <div className="codex-tile__glossary-sigil">{entry.name.slice(0, 2)}</div>

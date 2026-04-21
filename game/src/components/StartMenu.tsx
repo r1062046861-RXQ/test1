@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, Play, Settings, Shield, Users, X } from 'lucide-react';
+import { ENEMY_ACT_LABELS, ENEMY_CODEX_DETAILS, ENEMY_TIER_LABELS, type EnemyTier } from '../data/codex';
+import { ENEMIES } from '../data/enemies';
 import { useGameStore } from '../store/gameStore';
 import type { Constitution } from '../types';
+import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 import {
   CONSTITUTION_CINEMATIC_MS,
   CONSTITUTION_REDUCED_MOTION_MS,
@@ -10,15 +13,14 @@ import {
   type ConstitutionIntroStage,
   type ConstitutionOption,
 } from './ConstitutionIntroOverlay';
-import { ActionButton, PageShell, Panel } from './ui/PageShell';
-import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
+import { ActionButton, Badge, PageShell, Panel } from './ui/PageShell';
 
 const CONSTITUTIONS: ConstitutionOption[] = [
   {
     id: 'balanced',
     title: '平和体质',
-    subtitle: '均衡起手，进攻、防守与过牌都更稳定。',
-    passive: '均衡开局',
+    subtitle: '起手均衡，攻防与过牌都更稳妥。',
+    passive: '平和开局',
     detail: '适合第一次巡诊时使用，容易衔接多种流派与章节节奏。',
     accent: 'from-stone-100 to-amber-50 border-stone-700/30',
     image: '/assets/cards_special/86.png',
@@ -28,7 +30,7 @@ const CONSTITUTIONS: ConstitutionOption[] = [
     title: '阴虚体质',
     subtitle: '偏技巧与资源经营，擅长围绕滋阴展开联动。',
     passive: '滋阴 +1，滋阴上限 +2',
-    detail: '更强调回合规划与状态积累，适合打出高爆发的中后期节奏。',
+    detail: '更强调回合规划与状态积累，适合打出后期爆发节奏。',
     accent: 'from-sky-100 to-indigo-50 border-sky-700/30',
     image: '/assets/cards_special/87.png',
   },
@@ -62,7 +64,21 @@ const AUTHOR_CONTACTS = [
   },
 ] as const;
 
+const ADMIN_ENEMY_ACT_ORDER: Array<1 | 2 | 3> = [1, 2, 3];
+const ADMIN_ENEMY_TIER_ORDER: EnemyTier[] = ['common', 'elite', 'boss'];
+const ADMIN_ENEMY_BADGE_VARIANT: Record<EnemyTier, 'slate' | 'amber' | 'crimson'> = {
+  common: 'slate',
+  elite: 'amber',
+  boss: 'crimson',
+};
+
 type NewRunStage = 'closed' | ConstitutionIntroStage;
+type EnemyEntry = {
+  enemy: (typeof ENEMIES)[string];
+  act: 1 | 2 | 3;
+  tier: EnemyTier;
+  summary: string;
+};
 
 const MenuActionCard: React.FC<{
   title: string;
@@ -71,8 +87,10 @@ const MenuActionCard: React.FC<{
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'quiet';
   wide?: boolean;
-}> = ({ title, description, icon, onClick, variant = 'secondary', wide = false }) => (
+  id?: string;
+}> = ({ title, description, icon, onClick, variant = 'secondary', wide = false, id }) => (
   <motion.button
+    id={id}
     type="button"
     onClick={onClick}
     whileHover={{ y: -4, scale: 1.01 }}
@@ -94,10 +112,19 @@ const MenuActionCard: React.FC<{
 );
 
 export const StartMenu: React.FC = () => {
-  const { map, startGame, startCombat, setPhase, setFontSize, fontSize } = useGameStore();
+  const {
+    map,
+    startGame,
+    startCombat,
+    startAdminEnemyChallenge,
+    setPhase,
+    setFontSize,
+    fontSize,
+  } = useGameStore();
   const shouldReduceMotion = useReducedMotion();
   const [showSettings, setShowSettings] = useState(false);
   const [showContactPanel, setShowContactPanel] = useState(false);
+  const [showEnemyChallengePicker, setShowEnemyChallengePicker] = useState(false);
   const [newRunStage, setNewRunStage] = useState<NewRunStage>('closed');
   const adminEnabled = (() => {
     if (typeof window === 'undefined') return false;
@@ -108,6 +135,26 @@ export const StartMenu: React.FC = () => {
     }
   })();
   const [showAdminPanel, setShowAdminPanel] = useState(adminEnabled);
+
+  const adminEnemyGroups = useMemo(() => {
+    const enemyEntries: EnemyEntry[] = Object.values(ENEMIES).map((enemy) => {
+      const meta = ENEMY_CODEX_DETAILS[enemy.id];
+      return {
+        enemy,
+        act: meta?.act ?? 1,
+        tier: meta?.tier ?? 'common',
+        summary: meta?.summary ?? enemy.intent.description,
+      };
+    });
+
+    return ADMIN_ENEMY_ACT_ORDER.map((act) => ({
+      act,
+      tiers: ADMIN_ENEMY_TIER_ORDER.map((tier) => ({
+        tier,
+        entries: enemyEntries.filter((entry) => entry.act === act && entry.tier === tier),
+      })).filter((group) => group.entries.length > 0),
+    })).filter((group) => group.tiers.length > 0);
+  }, []);
 
   useEffect(() => {
     if (newRunStage !== 'cinematic') {
@@ -130,6 +177,27 @@ export const StartMenu: React.FC = () => {
     startGame(constitution);
     setNewRunStage('closed');
   };
+
+  const resetAdminPickerState = () => {
+    setShowEnemyChallengePicker(false);
+  };
+
+  const closeAdminPanel = () => {
+    setShowAdminPanel(false);
+    resetAdminPickerState();
+  };
+
+  const openAdminPanel = () => {
+    resetAdminPickerState();
+    setShowAdminPanel(true);
+  };
+
+  const handleRandomAdminCombat = () => {
+    closeAdminPanel();
+    startGame('balanced');
+    window.setTimeout(() => startCombat('admin_test'), 0);
+  };
+
   const hasSavedRun = Boolean(map && map.length > 0);
 
   return (
@@ -139,7 +207,7 @@ export const StartMenu: React.FC = () => {
         headerSurface="plain"
         title="五行医道"
         kicker="五行辨证巡诊"
-        subtitle="辨体质，定路线，开巡诊。"
+        subtitle="辨体质，定路径，开巡诊。"
         className="start-menu-page"
         headerClassName="start-menu__hero"
         style={{
@@ -152,11 +220,11 @@ export const StartMenu: React.FC = () => {
       >
         <Panel className="start-menu__stage start-menu__stage--focused px-5 py-5 md:px-7 md:py-7">
           <div className="start-menu__stage-kicker">巡诊起局</div>
-          <div className="start-menu__stage-title">{hasSavedRun ? '继续当前巡诊，或重新起一局' : '开始一局新的巡诊'}</div>
+          <div className="start-menu__stage-title">
+            {hasSavedRun ? '继续当前巡诊，或重新起一局' : '开始一局新的巡诊'}
+          </div>
           <p className="start-menu__stage-copy">
-            {hasSavedRun
-              ? '继续会直接回到地图，重新巡诊会先进入体质选择。'
-              : '先选体质，再开始本局巡诊。'}
+            {hasSavedRun ? '继续会直接回到地图；重新巡诊会先进入体质选择。' : '先选体质，再开始本局巡诊。'}
           </p>
 
           <div className="start-menu__actions-grid">
@@ -172,7 +240,7 @@ export const StartMenu: React.FC = () => {
 
             <MenuActionCard
               title={hasSavedRun ? '重新巡诊' : '开始巡诊'}
-              description={hasSavedRun ? '重选体质。' : '进入体质选择。'}
+              description={hasSavedRun ? '重新选择体质。' : '进入体质选择。'}
               icon={<Play size={20} />}
               variant="primary"
               wide={!hasSavedRun}
@@ -203,7 +271,8 @@ export const StartMenu: React.FC = () => {
               description="调试入口。"
               icon={<Shield size={20} />}
               variant="quiet"
-              onClick={() => setShowAdminPanel(true)}
+              id="open-admin-panel-btn"
+              onClick={openAdminPanel}
             />
           </div>
         </Panel>
@@ -250,7 +319,9 @@ export const StartMenu: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <div className="immersive-modal__kicker text-[12px] font-semibold uppercase tracking-[0.24em]">{author.role}</div>
+                      <div className="immersive-modal__kicker text-[12px] font-semibold uppercase tracking-[0.24em]">
+                        {author.role}
+                      </div>
                       <div className="immersive-modal__title mt-2 text-2xl font-bold">{author.name}</div>
                       <p className="immersive-modal__copy mt-2 text-sm leading-7">{author.note}</p>
                     </div>
@@ -264,20 +335,41 @@ export const StartMenu: React.FC = () => {
 
       <AnimatePresence>
         {showSettings && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="immersive-modal-backdrop fixed inset-0 z-40 flex items-center justify-center px-4">
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 8 }} className="immersive-modal w-full max-w-md px-6 py-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="immersive-modal-backdrop fixed inset-0 z-40 flex items-center justify-center px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 8 }}
+              className="immersive-modal w-full max-w-md px-6 py-6"
+            >
               <div className="immersive-modal__header mb-4 flex items-start justify-between gap-4">
                 <div>
                   <div className="immersive-modal__kicker text-[12px] font-semibold tracking-[0.18em]">界面设置</div>
                   <h2 className="immersive-modal__title mt-2 text-3xl font-bold">设置</h2>
                 </div>
-                <button onClick={() => setShowSettings(false)} className="immersive-modal__close rounded-full p-2 transition">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="immersive-modal__close rounded-full p-2 transition"
+                >
                   <X size={24} />
                 </button>
               </div>
               <div className="immersive-modal__panel px-4 py-4">
                 <label className="block text-base font-semibold text-amber-50">字体大小：{fontSize}px</label>
-                <input type="range" min="12" max="24" step="2" value={fontSize} onChange={(event) => setFontSize(Number(event.target.value))} className="mt-4 w-full accent-amber-700" />
+                <input
+                  type="range"
+                  min="12"
+                  max="24"
+                  step="2"
+                  value={fontSize}
+                  onChange={(event) => setFontSize(Number(event.target.value))}
+                  className="mt-4 w-full accent-amber-700"
+                />
                 <div className="mt-3 text-sm text-stone-300">仅影响网页端界面的基础字号。</div>
               </div>
             </motion.div>
@@ -287,64 +379,172 @@ export const StartMenu: React.FC = () => {
 
       <AnimatePresence>
         {showAdminPanel && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="immersive-modal-backdrop fixed inset-0 z-40 flex items-center justify-center px-4">
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 8 }} className="immersive-modal w-full max-w-2xl px-6 py-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="immersive-modal-backdrop fixed inset-0 z-40 flex items-center justify-center px-4"
+            onClick={closeAdminPanel}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 8 }}
+              className="immersive-modal flex max-h-[88vh] w-full max-w-5xl flex-col px-6 py-6"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="immersive-modal__header mb-5 flex items-start justify-between gap-4">
                 <div>
                   <div className="immersive-modal__kicker text-[12px] font-semibold tracking-[0.18em]">管理员入口</div>
                   <h2 className="immersive-modal__title mt-2 text-3xl font-bold">管理员测试</h2>
+                  <p className="immersive-modal__copy mt-2 text-sm leading-7">
+                    保留现有快捷入口，并可直接指定一名敌人进入调试战斗。
+                  </p>
                 </div>
-                <button onClick={() => setShowAdminPanel(false)} className="immersive-modal__close rounded-full p-2 transition">
+                <button onClick={closeAdminPanel} className="immersive-modal__close rounded-full p-2 transition">
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <ActionButton
-                  id="admin-combat-btn"
-                  variant="primary"
-                  className="justify-start px-5 py-4"
-                  onClick={() => {
-                    startGame('balanced');
-                    setShowAdminPanel(false);
-                    setTimeout(() => startCombat('admin_test'), 0);
-                  }}
-                >
-                  直接进入战斗
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  className="justify-start px-5 py-4"
-                  onClick={() => {
-                    startGame('balanced');
-                    useGameStore.setState({ phase: 'shop' });
-                    setShowAdminPanel(false);
-                  }}
-                >
-                  直接进入药铺
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  className="justify-start px-5 py-4"
-                  onClick={() => {
-                    startGame('balanced');
-                    useGameStore.setState({ phase: 'rest' });
-                    setShowAdminPanel(false);
-                  }}
-                >
-                  直接进入休憩
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  className="justify-start px-5 py-4"
-                  onClick={() => {
-                    startGame('balanced');
-                    useGameStore.setState({ phase: 'event' });
-                    setShowAdminPanel(false);
-                  }}
-                >
-                  直接进入事件
-                </ActionButton>
+              <div className="ornate-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <ActionButton
+                    id="admin-combat-btn"
+                    variant="primary"
+                    className="justify-start px-5 py-4"
+                    onClick={handleRandomAdminCombat}
+                  >
+                    随机战斗
+                  </ActionButton>
+                  <ActionButton
+                    variant="secondary"
+                    className="justify-start px-5 py-4"
+                    onClick={() => {
+                      startGame('balanced');
+                      useGameStore.setState({ phase: 'shop' });
+                      closeAdminPanel();
+                    }}
+                  >
+                    直接进入药铺
+                  </ActionButton>
+                  <ActionButton
+                    variant="secondary"
+                    className="justify-start px-5 py-4"
+                    onClick={() => {
+                      startGame('balanced');
+                      useGameStore.setState({ phase: 'rest' });
+                      closeAdminPanel();
+                    }}
+                  >
+                    直接进入休憩
+                  </ActionButton>
+                  <ActionButton
+                    variant="secondary"
+                    className="justify-start px-5 py-4"
+                    onClick={() => {
+                      startGame('balanced');
+                      useGameStore.setState({ phase: 'event' });
+                      closeAdminPanel();
+                    }}
+                  >
+                    直接进入事件
+                  </ActionButton>
+                </div>
+
+                <div className="immersive-modal__panel px-4 py-4">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="immersive-modal__title text-2xl font-bold">自选敌人挑战</div>
+                      <p className="immersive-modal__copy mt-2 text-sm leading-7">
+                        按幕次和定位浏览现有敌人，点击卡片就会直接开战。
+                      </p>
+                    </div>
+                    <ActionButton
+                      id="admin-picker-toggle-btn"
+                      variant={showEnemyChallengePicker ? 'primary' : 'secondary'}
+                      className="justify-center px-5 py-3"
+                      onClick={() => setShowEnemyChallengePicker((current) => !current)}
+                    >
+                      {showEnemyChallengePicker ? '收起敌人列表' : '展开自选敌人'}
+                    </ActionButton>
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {showEnemyChallengePicker ? (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, y: 10 }}
+                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: 6 }}
+                        className="admin-enemy-picker mt-5"
+                      >
+                        {adminEnemyGroups.map((actGroup) => (
+                          <section key={actGroup.act} className="admin-enemy-picker__act-section">
+                            <div className="admin-enemy-picker__act-head">
+                              <div className="admin-enemy-picker__act-title">{ENEMY_ACT_LABELS[actGroup.act]}</div>
+                              <Badge variant="emerald">
+                                {actGroup.tiers.reduce((total, group) => total + group.entries.length, 0)} 名敌人
+                              </Badge>
+                            </div>
+
+                            {actGroup.tiers.map((tierGroup) => (
+                              <div key={`${actGroup.act}-${tierGroup.tier}`} className="admin-enemy-picker__tier-section">
+                                <div className="admin-enemy-picker__tier-head">
+                                  <div className="admin-enemy-picker__tier-title">
+                                    {ENEMY_TIER_LABELS[tierGroup.tier]}
+                                  </div>
+                                  <Badge variant={ADMIN_ENEMY_BADGE_VARIANT[tierGroup.tier]}>
+                                    {tierGroup.entries.length}
+                                  </Badge>
+                                </div>
+
+                                <div className="admin-enemy-picker__grid">
+                                  {tierGroup.entries.map(({ enemy, act, tier, summary }) => (
+                                    <button
+                                      key={enemy.id}
+                                      data-enemy-id={enemy.id}
+                                      type="button"
+                                      onClick={() => {
+                                        closeAdminPanel();
+                                        startAdminEnemyChallenge(enemy.id);
+                                      }}
+                                      className="admin-enemy-picker__card"
+                                    >
+                                      <div className="admin-enemy-picker__art-frame">
+                                        <img
+                                          src={resolveAssetUrl(enemy.image)}
+                                          alt={enemy.name}
+                                          className="admin-enemy-picker__art"
+                                          loading="lazy"
+                                        />
+                                      </div>
+
+                                      <div className="admin-enemy-picker__body">
+                                        <div className="admin-enemy-picker__title-row">
+                                          <div className="admin-enemy-picker__title">{enemy.name}</div>
+                                          <div className="admin-enemy-picker__hp">生命 {enemy.maxHp}</div>
+                                        </div>
+
+                                        <div className="admin-enemy-picker__badges">
+                                          <Badge variant="emerald">{ENEMY_ACT_LABELS[act]}</Badge>
+                                          <Badge variant={ADMIN_ENEMY_BADGE_VARIANT[tier]}>
+                                            {ENEMY_TIER_LABELS[tier]}
+                                          </Badge>
+                                          {enemy.block > 0 ? <Badge variant="blue">格挡 {enemy.block}</Badge> : null}
+                                        </div>
+
+                                        <p className="admin-enemy-picker__summary">{summary}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </section>
+                        ))}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
               </div>
             </motion.div>
           </motion.div>

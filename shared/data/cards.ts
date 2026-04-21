@@ -449,6 +449,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'qinggusan': {
     id: 'qinggusan',
     name: '清骨散',
+    image: '/assets/cards_player/20.png',
     type: 'attack',
     rarity: 'rare',
     cost: 2,
@@ -1122,6 +1123,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'ganhuowang': {
     id: 'ganhuowang',
     name: '肝火旺',
+    image: '/assets/cards_player/76.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1135,6 +1137,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'pixushikun': {
     id: 'pixushikun',
     name: '脾虚湿困',
+    image: '/assets/cards_player/77.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1148,6 +1151,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'fenghanshubiao': {
     id: 'fenghanshubiao',
     name: '风寒束表',
+    image: '/assets/cards_player/78.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1161,6 +1165,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'reruyingxue': {
     id: 'reruyingxue',
     name: '热入营血',
+    image: '/assets/cards_player/79.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1174,6 +1179,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'shenbunaqi': {
     id: 'shenbunaqi',
     name: '肾不纳气',
+    image: '/assets/cards_player/80.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1187,6 +1193,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'qizhixueyu': {
     id: 'qizhixueyu',
     name: '气滞血瘀',
+    image: '/assets/cards_player/81.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1200,6 +1207,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'xinshenbujiao': {
     id: 'xinshenbujiao',
     name: '心肾不交',
+    image: '/assets/cards_player/82.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1213,6 +1221,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'tanmengxinqiao': {
     id: 'tanmengxinqiao',
     name: '痰蒙心窍',
+    image: '/assets/cards_player/83.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1226,6 +1235,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'yangmingfushi': {
     id: 'yangmingfushi',
     name: '阳明腑实',
+    image: '/assets/cards_player/84.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,
@@ -1239,6 +1249,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'chongrenbugu': {
     id: 'chongrenbugu',
     name: '冲任不固',
+    image: '/assets/cards_player/85.png',
     type: 'power',
     rarity: 'rare',
     cost: 0,

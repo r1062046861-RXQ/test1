@@ -12,6 +12,7 @@ import type {
   StatusEffect,
 } from '../types';
 import { CARD_LIBRARY, STARTING_DECK } from '../data/cards';
+import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import { createRuntimeId } from '../utils/id';
 import {
@@ -36,6 +37,7 @@ interface GameStore extends GameState {
   playerImpactCue: PlayerImpactCue | null;
   setFontSize: (size: number) => void;
   startCombat: (nodeId: string) => void;
+  startAdminEnemyChallenge: (enemyId: string) => void;
   completeCombat: () => void;
   completeNonCombat: () => void;
   drawCards: (count: number) => void;
@@ -238,6 +240,59 @@ const findMapNodeById = (map: GameStore['map'], nodeId: string) => {
   return null;
 };
 
+const isAdminEnemyChallengeNode = (nodeId: string | null) =>
+  typeof nodeId === 'string' && nodeId.startsWith('admin_enemy_');
+
+const buildStartingPlayer = (constitution: Constitution) => {
+  const deck = STARTING_DECK.map(createCardInstance);
+  const statusEffects: StatusEffect[] = [];
+
+  if (constitution === 'yin_deficiency') {
+    statusEffects.push({
+      id: 'yin_deficiency_passive',
+      name: '阴虚火旺',
+      type: 'buff',
+      stacks: 1,
+      description: '回合开始时获得1点能量，但受到伤害+2',
+      canStack: false,
+    });
+  } else if (constitution === 'qi_deficiency') {
+    statusEffects.push({
+      id: 'qi_deficiency_passive',
+      name: '气虚血瘀',
+      type: 'buff',
+      stacks: 1,
+      description: '每次打出攻击牌，恢复1点生命',
+      canStack: false,
+    });
+  }
+
+  return {
+    ...INITIAL_PLAYER,
+    deck,
+    constitution,
+    statusEffects,
+  };
+};
+
+const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 1) => ({
+  phase: 'map' as const,
+  player: buildStartingPlayer(constitution),
+  currentAct,
+  currentFloor: 0,
+  map: generateMap(8),
+  currentNodeId: null,
+  enemies: [],
+  combatTurn: 0,
+  combatLog: [],
+  selectedCardId: null,
+  selectedEnemyId: null,
+  shopRemovalCost: INITIAL_SHOP_REMOVAL_COST,
+  turnFlags: { ...INITIAL_TURN_FLAGS },
+  enemyActionCue: null,
+  playerImpactCue: null,
+});
+
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
@@ -261,49 +316,7 @@ export const useGameStore = create<GameStore>()(
 
       startGame: (constitution: Constitution = 'balanced') => {
         cancelAllScheduledTasks();
-        const deck = STARTING_DECK.map(createCardInstance);
-        const statusEffects: StatusEffect[] = [];
-        if (constitution === 'yin_deficiency') {
-          statusEffects.push({
-            id: 'yin_deficiency_passive',
-            name: '阴虚火旺',
-            type: 'buff',
-            stacks: 1,
-            description: '回合开始时获得1点能量，但受到伤害+2',
-            canStack: false,
-          });
-        } else if (constitution === 'qi_deficiency') {
-          statusEffects.push({
-            id: 'qi_deficiency_passive',
-            name: '气虚血瘀',
-            type: 'buff',
-            stacks: 1,
-            description: '每次打出攻击牌，恢复1点生命',
-            canStack: false,
-          });
-        }
-
-        set({
-          phase: 'map',
-          player: {
-            ...INITIAL_PLAYER,
-            deck,
-            constitution,
-            statusEffects,
-          },
-          currentAct: 1,
-          currentFloor: 0,
-          map: generateMap(8),
-          currentNodeId: null,
-          enemies: [],
-          combatTurn: 0,
-          combatLog: [],
-          selectedEnemyId: null,
-          shopRemovalCost: INITIAL_SHOP_REMOVAL_COST,
-          turnFlags: { ...INITIAL_TURN_FLAGS },
-          enemyActionCue: null,
-          playerImpactCue: null,
-        });
+        set(buildNewRunState(constitution));
       },
 
       setFontSize: (size) => set({ fontSize: size }),
@@ -340,6 +353,22 @@ export const useGameStore = create<GameStore>()(
         get().drawCards(5);
       },
 
+      startAdminEnemyChallenge: (enemyId) => {
+        cancelAllScheduledTasks();
+        const enemyTemplate = ENEMIES[enemyId];
+        if (!enemyTemplate) return;
+
+        const challengeAct = ENEMY_CODEX_DETAILS[enemyId]?.act ?? 1;
+        const runState = buildNewRunState('balanced', challengeAct);
+        const previewState = { ...get(), ...runState } as GameStore;
+
+        set({
+          ...runState,
+          ...createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`),
+        });
+        get().drawCards(5);
+      },
+
       drawCards: (count) => {
         set(state => {
           let { drawPile, discardPile, hand } = state.player;
@@ -370,6 +399,19 @@ export const useGameStore = create<GameStore>()(
       completeCombat: () => {
         cancelAllScheduledTasks();
         const state = get();
+
+        if (isAdminEnemyChallengeNode(state.currentNodeId)) {
+          set({
+            phase: 'reward',
+            currentFloor: 0,
+            currentNodeId: null,
+            selectedEnemyId: null,
+            enemyActionCue: null,
+            playerImpactCue: null,
+          });
+          return;
+        }
+
         const { map, currentLayerIndex, currentNode } = completeNode(state);
 
         if (currentNode?.type === 'boss') {

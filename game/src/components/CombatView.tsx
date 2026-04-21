@@ -38,12 +38,16 @@ export const CombatView: React.FC = () => {
   const [viewportTier, setViewportTier] = useState<CombatViewportTier>(() =>
     typeof window === 'undefined' ? 'regular' : getCombatViewportTier(window.innerHeight),
   );
+  const [preferSideRail, setPreferSideRail] = useState<boolean>(() =>
+    typeof window === 'undefined' ? true : window.innerWidth >= 1280,
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
     const syncViewportTier = () => {
       setViewportTier(getCombatViewportTier(window.innerHeight));
+      setPreferSideRail(window.innerWidth >= 1280);
     };
 
     syncViewportTier();
@@ -207,6 +211,7 @@ export const CombatView: React.FC = () => {
                         key={enemy.id}
                         enemy={enemy}
                         viewportTier={viewportTier}
+                        preferSideRail={preferSideRail}
                         selected={enemy.id === selectedEnemyId}
                         actionPhase={enemyActionCue?.enemyId === enemy.id ? enemyActionCue.phase : 'idle'}
                         onClick={() => selectEnemy(enemy.id)}

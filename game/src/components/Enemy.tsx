@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { Enemy as EnemyType, EnemyActionPhase } from '../types';
+import type { Enemy as EnemyType, EnemyActionPhase, StatusEffect } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
 
@@ -12,19 +12,27 @@ interface EnemyProps {
   selected?: boolean;
   actionPhase?: EnemyActionPhase;
   viewportTier?: CombatViewportTier;
+  preferSideRail?: boolean;
 }
 
 type FloatingPopupKind = 'hp-loss' | 'hp-gain' | 'block-loss' | 'block-gain';
+type FrameBurstKind = FloatingPopupKind | 'status-buff' | 'status-debuff';
+
+interface StatusNotice {
+  id: number;
+  label: string;
+  type: StatusEffect['type'];
+}
 
 const spriteVariants: Record<
   EnemyActionPhase | 'idle',
   { x: number; y: number; scaleX: number; scaleY: number; filter: string }
 > = {
   idle: { x: 0, y: 0, scaleX: 1, scaleY: 1, filter: 'brightness(1) saturate(1)' },
-  windup: { x: 28, y: 12, scaleX: 0.95, scaleY: 1.06, filter: 'brightness(0.68) saturate(1.03)' },
-  lunge: { x: -74, y: -4, scaleX: 1.04, scaleY: 0.985, filter: 'brightness(1.08) saturate(1.14)' },
-  impact: { x: -78, y: -4, scaleX: 1.06, scaleY: 0.98, filter: 'brightness(1.14) saturate(1.18)' },
-  recover: { x: -10, y: 0, scaleX: 1, scaleY: 1, filter: 'brightness(1.02) saturate(1.05)' },
+  windup: { x: 24, y: 10, scaleX: 0.98, scaleY: 1.03, filter: 'brightness(0.7) saturate(1.04)' },
+  lunge: { x: -56, y: -4, scaleX: 1.02, scaleY: 0.99, filter: 'brightness(1.06) saturate(1.14)' },
+  impact: { x: -60, y: -4, scaleX: 1.03, scaleY: 0.98, filter: 'brightness(1.12) saturate(1.18)' },
+  recover: { x: -8, y: 0, scaleX: 1, scaleY: 1, filter: 'brightness(1.02) saturate(1.05)' },
 };
 
 const phaseTransition: Record<EnemyActionPhase | 'idle', { duration: number; ease: number[] }> = {
@@ -53,24 +61,37 @@ const FALLBACK_IMAGES: Record<string, string> = {
   boss_five_elements: '/assets/cards_enemy/103.png',
 };
 
+const NOTICE_LIFETIME_MS = 950;
+const STATUS_NOTICE_LIFETIME_MS = 1180;
+
+const createStatusStackMap = (statusEffects: StatusEffect[]) =>
+  new Map<string, number>(statusEffects.map((status) => [status.id, status.stacks]));
+
 export const Enemy: React.FC<EnemyProps> = ({
   enemy,
   onClick,
   selected,
   actionPhase = 'idle',
   viewportTier = 'regular',
+  preferSideRail = false,
 }) => {
   const [floatingValues, setFloatingValues] = useState<Array<{ value: number; id: number; kind: FloatingPopupKind }>>(
     [],
   );
+  const [statusNotices, setStatusNotices] = useState<StatusNotice[]>([]);
+  const [highlightedStatusIds, setHighlightedStatusIds] = useState<string[]>([]);
   const [statPulse, setStatPulse] = useState<FloatingPopupKind | null>(null);
+  const [frameBurst, setFrameBurst] = useState<{ id: number; kind: FrameBurstKind } | null>(null);
+  const [imageErrored, setImageErrored] = useState(false);
   const prevHpRef = useRef(enemy.currentHp);
   const prevBlockRef = useRef(enemy.block);
+  const prevStatusMapRef = useRef<Map<string, number>>(createStatusStackMap(enemy.statusEffects));
 
   useEffect(() => {
     const hpDelta = enemy.currentHp - prevHpRef.current;
     const blockDelta = enemy.block - prevBlockRef.current;
     const nextPopups: Array<{ value: number; id: number; kind: FloatingPopupKind }> = [];
+    let nextBurstKind: FloatingPopupKind | null = null;
 
     if (hpDelta !== 0) {
       nextPopups.push({
@@ -78,8 +99,10 @@ export const Enemy: React.FC<EnemyProps> = ({
         id: Date.now() + Math.random(),
         kind: hpDelta < 0 ? 'hp-loss' : 'hp-gain',
       });
+      nextBurstKind = hpDelta < 0 ? 'hp-loss' : 'hp-gain';
       setStatPulse(hpDelta < 0 ? 'hp-loss' : 'hp-gain');
     } else if (blockDelta !== 0) {
+      nextBurstKind = blockDelta < 0 ? 'block-loss' : 'block-gain';
       setStatPulse(blockDelta < 0 ? 'block-loss' : 'block-gain');
     }
 
@@ -91,12 +114,19 @@ export const Enemy: React.FC<EnemyProps> = ({
       });
     }
 
+    if (nextBurstKind) {
+      setFrameBurst({
+        id: Date.now() + Math.random(),
+        kind: nextBurstKind,
+      });
+    }
+
     if (nextPopups.length > 0) {
       setFloatingValues((prev) => [...prev, ...nextPopups]);
       const timeout = window.setTimeout(() => {
         setFloatingValues((prev) => prev.filter((entry) => !nextPopups.some((popup) => popup.id === entry.id)));
         setStatPulse(null);
-      }, 900);
+      }, NOTICE_LIFETIME_MS);
       prevHpRef.current = enemy.currentHp;
       prevBlockRef.current = enemy.block;
       return () => window.clearTimeout(timeout);
@@ -107,7 +137,47 @@ export const Enemy: React.FC<EnemyProps> = ({
     return undefined;
   }, [enemy.block, enemy.currentHp]);
 
+  useEffect(() => {
+    const previousStacks = prevStatusMapRef.current;
+    const nextStacks = createStatusStackMap(enemy.statusEffects);
+    const addedOrRaised = enemy.statusEffects.filter((status) => {
+      const previous = previousStacks.get(status.id);
+      return previous === undefined || status.stacks > previous;
+    });
+
+    prevStatusMapRef.current = nextStacks;
+    if (addedOrRaised.length === 0) {
+      return undefined;
+    }
+
+    const noticeSeed = Date.now();
+    const nextNotices = addedOrRaised.slice(0, 3).map((status, index) => ({
+      id: noticeSeed + index + Math.random(),
+      label: status.name,
+      type: status.type,
+    }));
+    const highlightIds = addedOrRaised.map((status) => status.id);
+
+    setHighlightedStatusIds(highlightIds);
+    setStatusNotices((prev) => [...prev, ...nextNotices]);
+    setFrameBurst({
+      id: noticeSeed + Math.random(),
+      kind: addedOrRaised.some((status) => status.type === 'debuff') ? 'status-debuff' : 'status-buff',
+    });
+
+    const timeout = window.setTimeout(() => {
+      setHighlightedStatusIds((current) => current.filter((id) => !highlightIds.includes(id)));
+      setStatusNotices((prev) => prev.filter((notice) => !nextNotices.some((entry) => entry.id === notice.id)));
+    }, STATUS_NOTICE_LIFETIME_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [enemy.statusEffects]);
+
   const imageSrc = resolveAssetUrl(enemy.image || FALLBACK_IMAGES[enemy.id] || FALLBACK_IMAGES[enemy.behavior ?? '']);
+
+  useEffect(() => {
+    setImageErrored(false);
+  }, [imageSrc]);
 
   const frameTone = useMemo(() => {
     if (enemy.id.includes('boss')) return 'from-red-950/90 to-stone-950 border-red-500/35';
@@ -135,27 +205,17 @@ export const Enemy: React.FC<EnemyProps> = ({
     return '病邪';
   }, [enemy.id]);
 
-  const portraitSigil = useMemo(() => {
-    switch (enemy.intent.type) {
-      case 'attack':
-        return '杀';
-      case 'buff':
-        return '护';
-      case 'debuff':
-        return '乱';
-      case 'special':
-      default:
-        return '术';
-    }
-  }, [enemy.intent.type]);
-
   const activeSpritePose = spriteVariants[actionPhase] ?? spriteVariants.idle;
   const activeTransition = phaseTransition[actionPhase] ?? phaseTransition.idle;
   const intentHighlight = actionPhase === 'windup';
   const impactBurst = actionPhase === 'impact';
   const tookHpHit = floatingValues.some((popup) => popup.kind === 'hp-loss');
-  const sideRail = viewportTier !== 'tight';
+  const sideRail = viewportTier !== 'tight' || preferSideRail;
   const hpRatio = Math.max(0, Math.min(100, (enemy.currentHp / enemy.maxHp) * 100));
+  const showPortraitArt = Boolean(imageSrc) && !imageErrored;
+  const highlightedStatusSet = useMemo(() => new Set(highlightedStatusIds), [highlightedStatusIds]);
+  const hpNotices = floatingValues.filter((popup) => popup.kind === 'hp-loss' || popup.kind === 'hp-gain');
+  const blockNotices = floatingValues.filter((popup) => popup.kind === 'block-loss' || popup.kind === 'block-gain');
 
   return (
     <div
@@ -166,41 +226,88 @@ export const Enemy: React.FC<EnemyProps> = ({
         selected && 'scale-[1.02]',
       )}
     >
-      <AnimatePresence>
-        {floatingValues.map((popup) => (
-          <motion.div
-            key={popup.id}
-            initial={{ opacity: 1, y: popup.kind.startsWith('block') ? 18 : 0, scale: 0.66 }}
-            animate={{
-              opacity: 0,
-              y: popup.kind.startsWith('block') ? -12 : -40,
-              scale: popup.kind.startsWith('block') ? 1.08 : 1.18,
-            }}
-            exit={{ opacity: 0 }}
-            className={cn(
-              'pointer-events-none absolute z-50 font-bold drop-shadow-[0_6px_12px_rgba(0,0,0,0.45)]',
-              popup.kind === 'hp-loss'
-                ? '-top-8 text-4xl text-red-400'
-                : popup.kind === 'hp-gain'
-                  ? '-top-8 text-3xl text-emerald-300'
-                  : 'bottom-20 right-3 text-2xl text-cyan-200',
-            )}
-          >
-            {popup.kind === 'hp-loss' || popup.kind === 'block-loss' ? '-' : '+'}
-            {popup.kind.startsWith('block') ? '盾' : ''}
-            {popup.value}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-
       <div className="combat-enemy__layout">
+        <div className="combat-enemy__info">
+          <AnimatePresence>
+            {statusNotices.map((notice, index) => (
+              <motion.div
+                key={notice.id}
+                initial={{ opacity: 0, x: -12, y: 8 }}
+                animate={{
+                  opacity: [0, 1, 1, 0],
+                  x: [0, 8, 10, 14],
+                  y: [0, -6 - index * 18, -18 - index * 18, -30 - index * 18],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className={cn(
+                  'pointer-events-none absolute left-3 top-3 z-20 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.18em] shadow-[0_10px_22px_rgba(0,0,0,0.22)]',
+                  notice.type === 'debuff'
+                    ? 'border-red-300/35 bg-red-500/18 text-red-100'
+                    : 'border-emerald-200/30 bg-emerald-400/16 text-emerald-100',
+                )}
+              >
+                +{notice.label}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <div className="combat-enemy__info-copy">
+            <div className="combat-enemy__tag">{enemyTag}</div>
+            <div className="combat-enemy__name">{enemy.name}</div>
+          </div>
+
+          <motion.div
+            animate={
+              intentHighlight
+                ? {
+                    y: [-2, -6, -3],
+                    scale: [1, 1.02, 1.01],
+                    boxShadow: [
+                      '0 0 0 rgba(250, 204, 21, 0)',
+                      '0 0 18px rgba(250, 204, 21, 0.34)',
+                      '0 0 6px rgba(250, 204, 21, 0.12)',
+                    ],
+                  }
+                : { y: 0, scale: 1, boxShadow: '0 0 0 rgba(250, 204, 21, 0)' }
+            }
+            transition={{ duration: intentHighlight ? 0.28 : 0.16 }}
+            className="combat-enemy__intent"
+          >
+            {enemy.intent.description}
+          </motion.div>
+
+          {enemy.statusEffects.length > 0 ? (
+            <div className="combat-enemy__status-wrap">
+              {enemy.statusEffects.map((status) => (
+                <div key={status.id} className="group relative">
+                  <div
+                    className={cn(
+                      'combat-enemy__status-chip',
+                      status.type === 'debuff' ? 'combat-enemy__status-chip--debuff' : 'combat-enemy__status-chip--buff',
+                      highlightedStatusSet.has(status.id) && 'combat-enemy__status-chip--highlight',
+                    )}
+                  >
+                    <span className="combat-enemy__status-chip-letter">{status.name[0]}</span>
+                    {status.stacks > 0 ? <span className="combat-enemy__status-chip-stack">{status.stacks}</span> : null}
+                  </div>
+                  <div className="pointer-events-none absolute left-[calc(100%+0.55rem)] top-1/2 z-50 w-44 -translate-y-1/2 rounded-xl border border-white/10 bg-black/88 p-2 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="font-bold text-yellow-300">{status.name}</div>
+                    <div className="mt-1 leading-5 text-stone-200">{status.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         <motion.button
           type="button"
           onClick={onClick}
           animate={activeSpritePose}
           transition={activeTransition}
           className={cn(
-            `combat-enemy__frame relative border bg-gradient-to-b ${frameTone} shadow-[0_18px_32px_rgba(0,0,0,0.35)]`,
+            `combat-enemy__frame relative isolate overflow-hidden border bg-gradient-to-b ${frameTone} shadow-[0_18px_32px_rgba(0,0,0,0.35)]`,
             selected && 'ring-4 ring-amber-300/80',
           )}
         >
@@ -208,115 +315,133 @@ export const Enemy: React.FC<EnemyProps> = ({
             {impactBurst && (
               <motion.div
                 key={`impact-${enemy.id}`}
-                initial={{ opacity: 0.7, scale: 0.72 }}
-                animate={{ opacity: 0, scale: 1.22 }}
+                initial={{ opacity: 0.72, scale: 0.74 }}
+                animate={{ opacity: 0, scale: 1.2 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="pointer-events-none absolute inset-2 rounded-xl bg-white/35 blur-md"
+                className="pointer-events-none absolute inset-0 rounded-[inherit] bg-white/28 blur-md"
               />
             )}
           </AnimatePresence>
 
-          <div className="combat-enemy__intent-slot">
-            <motion.div
-              animate={
-                intentHighlight
-                  ? {
-                      y: [-2, -8, -6],
-                      scale: [1, 1.03, 1.015],
-                      boxShadow: [
-                        '0 0 0 rgba(248, 250, 252, 0)',
-                        '0 0 18px rgba(250, 204, 21, 0.48)',
-                        '0 0 6px rgba(250, 204, 21, 0.22)',
-                      ],
-                    }
-                  : { y: 0, scale: 1, boxShadow: '0 0 0 rgba(248, 250, 252, 0)' }
-              }
-              transition={{ duration: intentHighlight ? 0.28 : 0.16 }}
-              className={cn(
-                'combat-enemy__intent rounded-full border px-4 py-2 text-sm font-semibold tracking-[0.14em] text-stone-100',
-                intentHighlight ? 'border-amber-300 bg-amber-400/16' : 'border-white/10 bg-black/30',
-              )}
-            >
-              {enemy.intent.description}
-              {typeof enemy.intent.value === 'number'
-                ? ` · ${enemy.intent.value}${enemy.intent.hits ? `×${enemy.intent.hits}` : ''}`
-                : ''}
-            </motion.div>
-          </div>
-
-          <div className="combat-enemy__header">
-            <div className="combat-enemy__nameplate">
-              <div className="combat-enemy__tag">{enemyTag}</div>
-              <div className="combat-enemy__name">{enemy.name}</div>
-            </div>
-
-            {enemy.statusEffects.length > 0 ? (
-              <div className="combat-enemy__status-row">
-                {enemy.statusEffects.map((status) => (
-                  <div key={status.id} className="group relative">
-                    <div
-                      className={cn(
-                        'combat-enemy__status-icon flex items-center justify-center rounded-full border-2 border-white/60 text-sm font-bold text-white shadow-md',
-                        status.type === 'debuff' ? 'bg-purple-700' : 'bg-emerald-700',
-                      )}
-                    >
-                      {status.name[0]}
-                    </div>
-                    {status.stacks > 0 ? (
-                      <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-red-500 text-[12px]">
-                        {status.stacks}
-                      </div>
-                    ) : null}
-                    <div className="pointer-events-none absolute right-[calc(100%+0.5rem)] top-0 z-50 w-40 rounded-xl border border-white/10 bg-black/90 p-2 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
-                      <div className="font-bold text-yellow-300">{status.name}</div>
-                      <div className="mt-1 leading-5 text-stone-200">{status.description}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          <motion.div
-            animate={tookHpHit ? { x: [0, -5, 5, -4, 4, 0], rotate: [0, -0.8, 0.8, -0.4, 0.4, 0] } : { x: 0, rotate: 0 }}
-            transition={{ duration: 0.24, ease: 'easeOut' }}
-            className="combat-enemy__portrait relative overflow-hidden rounded-[18px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,241,208,0.06),rgba(10,7,5,0.56)_72%)]"
-          >
-            {imageSrc ? (
-              <img
-                src={imageSrc}
-                alt=""
-                aria-hidden="true"
-                className="combat-enemy__watermark absolute inset-0 h-full w-full object-cover"
-                onError={(event) => {
-                  const target = event.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
+          <AnimatePresence>
+            {frameBurst ? (
+              <motion.div
+                key={`${frameBurst.kind}-${frameBurst.id}`}
+                initial={{ opacity: 0.68, scale: 0.92 }}
+                animate={{ opacity: 0, scale: 1.08 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.38, ease: 'easeOut' }}
+                className={cn(
+                  'combat-enemy__frame-burst',
+                  frameBurst.kind === 'hp-loss' && 'combat-enemy__frame-burst--hp-loss',
+                  frameBurst.kind === 'hp-gain' && 'combat-enemy__frame-burst--hp-gain',
+                  frameBurst.kind === 'block-loss' && 'combat-enemy__frame-burst--block-loss',
+                  frameBurst.kind === 'block-gain' && 'combat-enemy__frame-burst--block-gain',
+                  frameBurst.kind === 'status-buff' && 'combat-enemy__frame-burst--status-buff',
+                  frameBurst.kind === 'status-debuff' && 'combat-enemy__frame-burst--status-debuff',
+                )}
               />
             ) : null}
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent_28%,rgba(10,8,7,0.72)_100%)]" />
-            <div className="absolute inset-[8%] rounded-[18px] border border-amber-100/10 bg-[radial-gradient(circle_at_50%_26%,rgba(255,229,176,0.16),rgba(17,13,9,0.08)_42%,rgba(11,8,6,0.26)_100%)]" />
-            <div className="combat-enemy__sigil absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-200/18 bg-black/25 text-amber-100/68 shadow-[inset_0_1px_0_rgba(255,245,220,0.08)]">
-              <span>{portraitSigil}</span>
-            </div>
+          </AnimatePresence>
+
+          <motion.div
+            animate={
+              tookHpHit
+                ? { x: [0, -6, 6, -4, 4, 0], rotate: [0, -0.8, 0.8, -0.4, 0.4, 0] }
+                : { x: 0, rotate: 0 }
+            }
+            transition={{ duration: 0.24, ease: 'easeOut' }}
+            className="combat-enemy__portrait absolute inset-0"
+          >
+            {showPortraitArt ? (
+              <>
+                <img
+                  src={imageSrc}
+                  alt=""
+                  aria-hidden="true"
+                  className="combat-enemy__art-backdrop absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="combat-enemy__art-stage">
+                  <img
+                    src={imageSrc}
+                    alt={enemy.name}
+                    className="combat-enemy__art"
+                    loading="eager"
+                    onError={() => setImageErrored(true)}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="combat-enemy__portrait-fallback absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-[0.18em] text-stone-200">
+                暂无立绘
+              </div>
+            )}
           </motion.div>
+
+          <div className="combat-enemy__portrait-scrim absolute inset-0" />
+          <div className="combat-enemy__portrait-glow absolute inset-0" />
+
+          <AnimatePresence>
+            {hpNotices.map((popup) => (
+              <motion.div
+                key={popup.id}
+                initial={{ opacity: 0, y: 14, scale: 0.72 }}
+                animate={{ opacity: [0, 1, 1, 0], y: [14, -6, -24, -40], scale: [0.72, 1.14, 1.08, 0.96] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+                className={cn(
+                  'pointer-events-none absolute left-1/2 top-4 z-20 flex -translate-x-1/2 items-center rounded-full border px-3 py-1 font-bold shadow-[0_14px_26px_rgba(0,0,0,0.34)]',
+                  popup.kind === 'hp-loss'
+                    ? 'border-red-200/55 bg-red-950/78 text-[2.25rem] text-red-100'
+                    : 'border-emerald-200/50 bg-emerald-950/72 text-[2rem] text-emerald-100',
+                )}
+              >
+                {popup.kind === 'hp-loss' ? '-' : '+'}
+                {popup.value}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.button>
 
         <div
           className={cn(
-            'combat-enemy__stats rounded-[20px] border px-3 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-all duration-200',
+            'combat-enemy__stats relative rounded-[20px] border px-3 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-all duration-200',
             statPulse === 'hp-loss'
-              ? 'border-red-400/55 bg-red-950/35 shadow-[0_0_0_1px_rgba(248,113,113,0.2),0_12px_24px_rgba(0,0,0,0.25)]'
+              ? 'border-red-400/60 bg-red-950/36 shadow-[0_0_0_1px_rgba(248,113,113,0.24),0_16px_28px_rgba(0,0,0,0.28)]'
               : statPulse === 'hp-gain'
-                ? 'border-emerald-300/55 bg-emerald-950/25 shadow-[0_0_0_1px_rgba(74,222,128,0.16),0_12px_24px_rgba(0,0,0,0.25)]'
+                ? 'border-emerald-300/58 bg-emerald-950/28 shadow-[0_0_0_1px_rgba(74,222,128,0.18),0_16px_28px_rgba(0,0,0,0.26)]'
                 : statPulse === 'block-gain'
-                  ? 'border-cyan-200/50 bg-cyan-950/22 shadow-[0_0_0_1px_rgba(103,232,249,0.16),0_12px_24px_rgba(0,0,0,0.25)]'
+                  ? 'border-cyan-200/58 bg-cyan-950/24 shadow-[0_0_0_1px_rgba(103,232,249,0.18),0_16px_28px_rgba(0,0,0,0.24)]'
                   : statPulse === 'block-loss'
-                    ? 'border-stone-200/40 bg-slate-950/26 shadow-[0_0_0_1px_rgba(226,232,240,0.12),0_12px_24px_rgba(0,0,0,0.25)]'
+                    ? 'border-stone-200/42 bg-slate-950/28 shadow-[0_0_0_1px_rgba(226,232,240,0.14),0_16px_28px_rgba(0,0,0,0.24)]'
                     : 'border-amber-500/20 bg-black/35',
           )}
         >
+          <AnimatePresence>
+            {blockNotices.map((popup) => (
+              <motion.div
+                key={popup.id}
+                initial={{ opacity: 0, y: 12, scale: 0.72 }}
+                animate={{ opacity: [0, 1, 1, 0], y: [12, -4, -20, -28], scale: [0.72, 1.06, 1.02, 0.96] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.66, ease: 'easeOut' }}
+                className={cn(
+                  'pointer-events-none absolute -top-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border px-2.5 py-1 font-bold shadow-[0_10px_20px_rgba(0,0,0,0.3)]',
+                  popup.kind === 'block-loss'
+                    ? 'border-stone-100/45 bg-slate-950/80 text-xl text-stone-100'
+                    : 'border-cyan-100/45 bg-cyan-950/72 text-xl text-cyan-100',
+                )}
+              >
+                <span>盾</span>
+                <span>
+                  {popup.kind === 'block-loss' ? '-' : '+'}
+                  {popup.value}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
           <div className="combat-enemy__stats-body">
             <div className="combat-enemy__hp-track">
               <div

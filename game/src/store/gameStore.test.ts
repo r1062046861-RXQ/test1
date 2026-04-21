@@ -74,4 +74,33 @@ describe('Game Store', () => {
     expect(newState.enemyActionCue).toBeNull();
     expect(newState.playerImpactCue).toBeNull();
   });
+
+  it('starts an admin-selected enemy challenge with the correct act and battle state', () => {
+    const store = useGameStore.getState();
+
+    store.startAdminEnemyChallenge('boss_spleen_damp');
+
+    const newState = useGameStore.getState();
+    expect(newState.phase).toBe('combat');
+    expect(newState.currentAct).toBe(2);
+    expect(newState.currentNodeId).toBe('admin_enemy_boss_spleen_damp');
+    expect(newState.map.length).toBe(8);
+    expect(newState.enemies).toHaveLength(1);
+    expect(newState.enemies[0]?.name).toBe('脾虚湿困');
+    expect(newState.player.constitution).toBe('balanced');
+    expect(newState.player.hand.length).toBe(5);
+  });
+
+  it('routes admin-selected enemy victories to reward without boss progression side effects', () => {
+    const store = useGameStore.getState();
+
+    store.startAdminEnemyChallenge('boss_five_elements');
+    store.completeCombat();
+
+    const newState = useGameStore.getState();
+    expect(newState.phase).toBe('reward');
+    expect(newState.currentAct).toBe(3);
+    expect(newState.currentFloor).toBe(0);
+    expect(newState.currentNodeId).toBeNull();
+  });
 });

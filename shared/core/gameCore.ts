@@ -1302,6 +1302,12 @@ export const resolvePlayerEndTurn = (
     newPlayer.hp = Math.max(0, newPlayer.hp - heatStacks);
     log(`五行失调（火）引发灼伤 ${heatStacks} 点`);
   }
+  const reruyingxueCount = newEnemies.filter(enemy => enemy.behavior === 'reruyingxue' && enemy.currentHp > 0).length;
+  if (reruyingxueCount > 0 && heatStacks > 0) {
+    const scorchDamage = heatStacks * reruyingxueCount;
+    newPlayer.hp = Math.max(0, newPlayer.hp - scorchDamage);
+    log(`热入营血追袭：额外灼伤 ${scorchDamage} 点`);
+  }
   const endTurnHeal = getStacks(newPlayer, 'end_turn_heal');
   if (endTurnHeal > 0) {
     newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + endTurnHeal);
@@ -1532,6 +1538,17 @@ export const resolveEnemyTurn = (
         return roll < 0.72
           ? { type: 'debuff', value: 0, description: '心悸不安' }
           : { type: 'attack', value: 8, description: '神乱冲心' };
+      case 'tanmengxinqiao': {
+        const turn = enemy.meta?.turn || 0;
+        const playerAlreadyControlled =
+          getStacks(newPlayer, 'stun') > 0 || getStacks(newPlayer, 'draw_down') > 0 || getStacks(newPlayer, 'no_block') > 0;
+        if (playerAlreadyControlled && turn % 2 === 1) {
+          return { type: 'attack', value: 10, description: '窍闭冲击' };
+        }
+        return turn % 2 === 0
+          ? { type: 'debuff', value: 0, description: '痰蒙心窍' }
+          : { type: 'attack', value: 9, description: '窍闭失神' };
+      }
       case 'phlegm_stasis':
         return roll < 0.5
           ? { type: 'attack', value: 12, description: '痰瘀互结' }
@@ -1559,6 +1576,27 @@ export const resolveEnemyTurn = (
         return roll < 0.7
           ? { type: 'debuff', value: 0, description: '冲任不固' }
           : { type: 'attack', value: 9, description: '逆乱冲袭' };
+      case 'reruyingxue': {
+        const turn = enemy.meta?.turn || 0;
+        const playerHeat = getStacks(newPlayer, 'heat_evil');
+        if (turn % 2 === 0 || playerHeat < 2) {
+          return { type: 'debuff', value: 0, description: '热入营血' };
+        }
+        return { type: 'attack', value: 10 + Math.min(4, playerHeat), description: '营热灼袭' };
+      }
+      case 'shenbunaqi': {
+        const turn = enemy.meta?.turn || 0;
+        return turn % 2 === 0
+          ? { type: 'debuff', value: 0, description: '肾不纳气' }
+          : { type: 'attack', value: 11, description: '纳气失司' };
+      }
+      case 'yangmingfushi': {
+        const turn = enemy.meta?.turn || 0;
+        if (newPlayer.block > 0 && turn % 2 === 0) {
+          return { type: 'special', value: 0, description: '阳明腑实' };
+        }
+        return { type: 'attack', value: 13, description: '腑实压顶' };
+      }
       case 'jueyin_complex': {
         const turn = enemy.meta?.turn || 0;
         return turn % 2 === 0
@@ -1630,6 +1668,10 @@ export const resolveEnemyTurn = (
         return primary.type === 'debuff'
           ? { type: 'attack', value: 8, description: '心肾失衡' }
           : { type: 'debuff', value: 0, description: '心悸不安' };
+      case 'tanmengxinqiao':
+        return primary.type === 'debuff'
+          ? { type: 'attack', value: 9, description: '迷窍冲心' }
+          : { type: 'debuff', value: 0, description: '迷窍封格' };
       case 'phlegm_stasis':
         return primary.type === 'defend'
           ? { type: 'attack', value: 11, description: '痰瘀镇压' }
@@ -1648,6 +1690,20 @@ export const resolveEnemyTurn = (
         return primary.type === 'debuff'
           ? { type: 'attack', value: 9, description: '逆乱冲袭' }
           : { type: 'debuff', value: 0, description: '冲任不固' };
+      case 'reruyingxue':
+        return primary.type === 'debuff'
+          ? { type: 'attack', value: 8 + Math.min(3, getStacks(newPlayer, 'heat_evil')), description: '营热追袭' }
+          : { type: 'debuff', value: 0, description: '热入营血' };
+      case 'shenbunaqi':
+        return primary.type === 'debuff'
+          ? { type: 'attack', value: 10, description: '逆气冲胸' }
+          : { type: 'debuff', value: 0, description: '肾不纳气' };
+      case 'yangmingfushi':
+        return primary.type === 'special'
+          ? { type: 'attack', value: 12, description: '腑实追压' }
+          : newPlayer.block > 0
+            ? { type: 'special', value: 0, description: '阳明腑实' }
+            : { type: 'attack', value: 11, description: '燥结逼压' };
       case 'jueyin_complex':
         return { type: 'attack', value: 12, description: '厥阴交错' };
       case 'boss_five_elements': {
@@ -1772,6 +1828,25 @@ export const resolveEnemyTurn = (
           }
           break;
         }
+        case 'yangmingfushi': {
+          const clearedBlock = newPlayer.block;
+          if (clearedBlock > 0) {
+            newPlayer.block = 0;
+            log(`阳明腑实：清空了 ${clearedBlock} 点格挡`);
+          } else {
+            log('阳明腑实：逼压防线，回合末格挡仍会被清空');
+          }
+          applyDebuffToPlayer({
+            id: 'remove_block_end',
+            name: '阳明腑实',
+            type: 'debuff',
+            stacks: 1,
+            canStack: false,
+            description: '回合结束时清空格挡',
+            duration: 1,
+          });
+          break;
+        }
         default:
           break;
       }
@@ -1818,6 +1893,16 @@ export const resolveEnemyTurn = (
             log('痰蒙心窍：你被眩晕');
           }
           break;
+        case 'tanmengxinqiao':
+          if (getStacks(newPlayer, 'draw_down') > 0 || getStacks(newPlayer, 'no_block') > 0) {
+            applyDebuffToPlayer({ id: 'stun', name: '痰蒙心窍', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
+            log('痰蒙心窍：你被迷窍眩晕');
+          } else {
+            applyDebuffToPlayer({ id: 'draw_down', name: '神志昏蒙', type: 'debuff', stacks: 1, canStack: true, description: '下回合少抽牌', duration: 1 });
+            applyDebuffToPlayer({ id: 'no_block', name: '窍闭失固', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
+            log('痰蒙心窍：下回合少抽且无法获得格挡');
+          }
+          break;
         case 'qi_blood_stasis':
           applyDebuffToPlayer({ id: 'cost_up_next', name: '气滞', type: 'debuff', stacks: 1, canStack: false, description: '下一张卡牌消耗 +1' });
           applyDebuffToPlayer({ id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加' });
@@ -1840,6 +1925,17 @@ export const resolveEnemyTurn = (
         case 'chong_ren_instability':
           removeBuffs(newPlayer);
           log('冲任不固：失去所有正面状态');
+          break;
+        case 'reruyingxue':
+          applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
+          log('热入营血：热邪进一步深入营血');
+          break;
+        case 'shenbunaqi':
+          applyDebuffToPlayer({ id: 'energy_drain', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '真气上限降低', duration: 2 });
+          applyDebuffToPlayer({ id: 'max_energy_down', name: '纳气失司', type: 'debuff', stacks: 1, canStack: true, description: '下回合真气上限 -1', duration: 1 });
+          applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
+          applyDebuffToPlayer({ id: 'weak', name: '气虚失摄', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 1 });
+          log('肾不纳气：真气受抑，寒邪与虚弱同时侵袭');
           break;
         case 'jueyin_complex': {
           const turn = enemy.meta?.turn || 0;
@@ -1916,7 +2012,15 @@ export const resolveEnemyTurn = (
       }
     }
 
-    if (enemy.behavior === 'boss_wind_cold' || enemy.behavior === 'boss_liver_fire' || enemy.behavior === 'qi_blood_stasis') {
+    if (
+      enemy.behavior === 'boss_wind_cold' ||
+      enemy.behavior === 'boss_liver_fire' ||
+      enemy.behavior === 'qi_blood_stasis' ||
+      enemy.behavior === 'tanmengxinqiao' ||
+      enemy.behavior === 'reruyingxue' ||
+      enemy.behavior === 'shenbunaqi' ||
+      enemy.behavior === 'yangmingfushi'
+    ) {
       enemy.meta = { ...(enemy.meta || {}), turn: (enemy.meta?.turn || 0) + 1 };
     }
 

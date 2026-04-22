@@ -106,6 +106,18 @@ export const ENEMIES: Record<string, Enemy> = {
     image: '/assets/cards_enemy/97.png',
     behavior: 'heart_kidney_gap'
   },
+  'tanmengxinqiao': {
+    id: 'tanmengxinqiao',
+    name: '痰蒙心窍者',
+    maxHp: 52,
+    currentHp: 52,
+    block: 0,
+    statusEffects: [],
+    intent: { type: 'debuff', value: 0, description: '痰蒙心窍' },
+    image: '/assets/cards_enemy/83.png',
+    behavior: 'tanmengxinqiao',
+    meta: { turn: 0 }
+  },
   // Elite Act 2
   'phlegm_stasis': {
     id: 'phlegm_stasis',
@@ -156,6 +168,42 @@ export const ENEMIES: Record<string, Enemy> = {
     image: '/assets/cards_enemy/101.png',
     behavior: 'chong_ren_instability'
   },
+  'reruyingxue': {
+    id: 'reruyingxue',
+    name: '热入营血者',
+    maxHp: 72,
+    currentHp: 72,
+    block: 0,
+    statusEffects: [],
+    intent: { type: 'debuff', value: 0, description: '热入营血' },
+    image: '/assets/cards_enemy/79.png',
+    behavior: 'reruyingxue',
+    meta: { turn: 0 }
+  },
+  'shenbunaqi': {
+    id: 'shenbunaqi',
+    name: '肾不纳气者',
+    maxHp: 68,
+    currentHp: 68,
+    block: 6,
+    statusEffects: [],
+    intent: { type: 'debuff', value: 0, description: '肾不纳气' },
+    image: '/assets/cards_enemy/80.png',
+    behavior: 'shenbunaqi',
+    meta: { turn: 0 }
+  },
+  'yangmingfushi': {
+    id: 'yangmingfushi',
+    name: '阳明腑实者',
+    maxHp: 78,
+    currentHp: 78,
+    block: 8,
+    statusEffects: [],
+    intent: { type: 'special', value: 0, description: '阳明腑实' },
+    image: '/assets/cards_enemy/84.png',
+    behavior: 'yangmingfushi',
+    meta: { turn: 0 }
+  },
   // Elite Act 3
   'jueyin_complex': {
     id: 'jueyin_complex',
@@ -191,12 +239,12 @@ export const ENEMY_POOLS = {
     boss: ['boss_wind_cold', 'boss_liver_fire']
   },
   act2: {
-    common: ['qi_blood_stasis', 'spleen_dampness', 'heart_kidney_gap'],
+    common: ['qi_blood_stasis', 'spleen_dampness', 'heart_kidney_gap', 'tanmengxinqiao'],
     elite: ['phlegm_stasis'],
     boss: ['boss_spleen_damp']
   },
   act3: {
-    common: ['yin_yang_split', 'chong_ren_instability'],
+    common: ['yin_yang_split', 'chong_ren_instability', 'reruyingxue', 'shenbunaqi', 'yangmingfushi'],
     elite: ['jueyin_complex'],
     boss: ['boss_five_elements']
   }

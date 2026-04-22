@@ -22,7 +22,7 @@ import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageSh
 import { detailRevealVariants, panelSettleVariants } from './ui/motionPresets';
 import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
-type CodexSectionKey = 'cards' | 'enemies' | 'enemyCards' | 'glossary';
+type CodexSectionKey = 'cards' | 'enemies' | 'glossary';
 type ActiveEntry =
   | { kind: 'card'; id: string }
   | { kind: 'enemy'; id: string }
@@ -51,14 +51,12 @@ const CARD_TARGET_LABELS: Record<CardTarget, string> = {
 const SECTION_LABELS: Record<CodexSectionKey, string> = {
   cards: '玩家卡图鉴',
   enemies: '敌人图鉴',
-  enemyCards: '敌方牌库',
   glossary: '状态词典',
 };
 
 const SECTION_HINTS: Record<CodexSectionKey, string> = {
   cards: '只收录玩家可获得的卡牌，按幕次与牌型回看构筑路线。',
-  enemies: '按幕次与定位查看巡诊途中会遇到的证候与敌势。',
-  enemyCards: '集中浏览敌人使用的能力牌，不再混入玩家卡牌目录。',
+  enemies: '连续浏览巡诊途中会遇到的证候与敌势。',
   glossary: '汇总核心状态、资源与规则，方便对照理解关键概念。',
 };
 
@@ -89,12 +87,7 @@ const getEnemyAct = (enemy: Enemy): 1 | 2 | 3 => ENEMY_CODEX_DETAILS[enemy.id]?.
 const getEnemyTier = (enemy: Enemy): EnemyTier => ENEMY_CODEX_DETAILS[enemy.id]?.tier ?? 'common';
 const isEnemyAbilityCard = (card: CardData) => card.effectId === 'status_enemy';
 
-const formatIntent = (enemy: Enemy): string => {
-  const { intent } = enemy;
-  if (!intent.value) return intent.description;
-  if (intent.hits && intent.hits > 1) return `${intent.description} · ${intent.value}×${intent.hits}`;
-  return `${intent.description} · ${intent.value}`;
-};
+const formatIntent = (enemy: Enemy): string => enemy.intent.description;
 
 const joinCardNames = (cardIds: string[]) =>
   cardIds.map((id) => CARD_LIBRARY[id]?.name).filter((name): name is string => Boolean(name)).join('、');
@@ -268,8 +261,6 @@ export const CardCodexView: React.FC = () => {
   );
 
   const playerCards = useMemo(() => allCards.filter((card) => !isEnemyAbilityCard(card)), [allCards]);
-  const enemyAbilityCards = useMemo(() => allCards.filter((card) => isEnemyAbilityCard(card)), [allCards]);
-
   const allEnemies = useMemo(
     () =>
       Object.values(ENEMIES).sort((left, right) => {
@@ -323,7 +314,7 @@ export const CardCodexView: React.FC = () => {
       sectionCounts: {
         cards: playerCards.length,
         enemies: allEnemies.length,
-        enemyCards: enemyAbilityCards.length,
+        enemyCards: 0,
         glossary: allGlossaryEntries.length,
       },
       modalOpen,
@@ -335,7 +326,7 @@ export const CardCodexView: React.FC = () => {
     return () => {
       delete (window as Window & { __cardCodexState?: unknown }).__cardCodexState;
     };
-  }, [activeEntry, playerCards.length, allEnemies.length, enemyAbilityCards.length, allGlossaryEntries.length, modalOpen]);
+  }, [activeEntry, playerCards.length, allEnemies.length, allGlossaryEntries.length, modalOpen]);
 
   const openEntry = (kind: NonNullable<ActiveEntry>['kind'], id: string) => {
     setActiveEntry({ kind, id });
@@ -377,6 +368,11 @@ export const CardCodexView: React.FC = () => {
 
   const renderEnemyDetail = (enemy: Enemy) => {
     const meta = ENEMY_CODEX_DETAILS[enemy.id];
+    const abilityCards =
+      meta?.abilityCardIds
+        ?.map((cardId) => CARD_LIBRARY[cardId])
+        .filter((card): card is CardData => Boolean(card)) ?? [];
+
     return (
       <div className="codex-modal__content">
         <div className="codex-modal__hero">
@@ -408,6 +404,20 @@ export const CardCodexView: React.FC = () => {
                   ))}
                 </ul>
               ) : null}
+            </DetailBlock>
+            <DetailBlock title="会用能力 / 机制">
+              {abilityCards.length > 0 ? (
+                <div className="space-y-3 text-sm leading-7 text-stone-200">
+                  {abilityCards.map((card) => (
+                    <div key={card.id}>
+                      <div className="font-semibold text-amber-50">{card.name}</div>
+                      <div className="mt-1 text-stone-300">{card.description}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div>该敌人的主要机制已收纳在上方说明中。</div>
+              )}
             </DetailBlock>
             {meta?.tags?.length ? (
               <DetailBlock title="行为标签">
@@ -464,12 +474,11 @@ export const CardCodexView: React.FC = () => {
 
   const renderModal = () => {
     if (activeCard) {
-      const enemyAbilityCard = isEnemyAbilityCard(activeCard);
       return (
         <CodexModalShell
           title={activeCard.name}
-          subtitle={enemyAbilityCard ? '敌方牌详情' : '卡牌详情'}
-          badge={<Badge variant={enemyAbilityCard ? 'crimson' : 'amber'}>{enemyAbilityCard ? '敌方牌库' : '玩家卡图鉴'}</Badge>}
+          subtitle="卡牌详情"
+          badge={<Badge variant="amber">玩家卡图鉴</Badge>}
           onClose={closeEntry}
         >
           {renderCardDetail(activeCard)}
@@ -524,7 +533,6 @@ export const CardCodexView: React.FC = () => {
         <>
           <Badge variant="blue">{playerCards.length} 张玩家卡</Badge>
           <Badge variant="crimson">{allEnemies.length} 个敌人</Badge>
-          <Badge variant="slate">{enemyAbilityCards.length} 张敌方牌</Badge>
           <Badge variant="emerald">{allGlossaryEntries.length} 条术语</Badge>
           <ActionButton variant="secondary" onClick={() => setPhase('start_menu')}>
             返回开始菜单
@@ -548,12 +556,6 @@ export const CardCodexView: React.FC = () => {
               hint={SECTION_HINTS.enemies}
               count={`${allEnemies.length} 个`}
               onClick={() => scrollToSection('enemies')}
-            />
-            <JumpButton
-              title={SECTION_LABELS.enemyCards}
-              hint={SECTION_HINTS.enemyCards}
-              count={`${enemyAbilityCards.length} 张`}
-              onClick={() => scrollToSection('enemyCards')}
             />
             <JumpButton
               title={SECTION_LABELS.glossary}
@@ -647,84 +649,12 @@ export const CardCodexView: React.FC = () => {
                 <Badge variant="crimson">{allEnemies.length} 个</Badge>
               </div>
 
-              <div className="mt-6 space-y-6">
-                {ACT_ORDER.map((act) => {
-                  const actEnemies = allEnemies.filter((enemy) => getEnemyAct(enemy) === act);
-                  if (actEnemies.length === 0) return null;
-
-                  return (
-                    <section key={act} className="space-y-4">
-                      <SectionTitle title={ENEMY_ACT_LABELS[act]} hint="按普通 / 精英 / 首领分组浏览" />
-                      <div className="space-y-4">
-                        {ENEMY_TIER_ORDER.map((tier) => {
-                          const tierEnemies = actEnemies.filter((enemy) => getEnemyTier(enemy) === tier);
-                          if (tierEnemies.length === 0) return null;
-
-                          return (
-                            <div key={tier} className="space-y-3">
-                              <div className="codex-section__subgroup">
-                                <div className="text-sm font-semibold text-amber-100">{ENEMY_TIER_LABELS[tier]}</div>
-                                <Badge variant={badgeVariantByTier[tier]}>{tierEnemies.length}</Badge>
-                              </div>
-                              <div className="codex-grid codex-grid--enemies">
-                                {tierEnemies.map((enemy) => (
-                                  <CodexEnemyTile
-                                    key={enemy.id}
-                                    enemy={enemy}
-                                    onClick={() => openEntry('enemy', enemy.id)}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </Panel>
-          </motion.section>
-
-        <motion.section
-            id="enemyCards"
-            variants={panelSettleVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.1 }}
-            className="scroll-mt-6"
-          >
-            <Panel className="codex-section px-4 py-4 md:px-5">
-              <div className="codex-section__header">
-                <div className="codex-section__title-wrap">
-                  <div className="codex-section__icon">
-                    <BookOpen size={20} />
-                  </div>
-                  <div>
-                    <div className="codex-section__kicker">目录三</div>
-                    <h2 className="codex-section__title">{SECTION_LABELS.enemyCards}</h2>
-                    <p className="codex-section__subtitle">{SECTION_HINTS.enemyCards}</p>
-                  </div>
+              <div className="mt-6">
+                <div className="codex-grid codex-grid--enemies">
+                  {allEnemies.map((enemy) => (
+                    <CodexEnemyTile key={enemy.id} enemy={enemy} onClick={() => openEntry('enemy', enemy.id)} />
+                  ))}
                 </div>
-                <Badge variant="crimson">{enemyAbilityCards.length} 张</Badge>
-              </div>
-
-              <div className="mt-6 space-y-6">
-                {ACT_ORDER.map((act) => {
-                  const actCards = enemyAbilityCards.filter((card) => getCardAct(card) === act);
-                  if (actCards.length === 0) return null;
-
-                  return (
-                    <section key={act} className="space-y-4">
-                      <SectionTitle title={CARD_ACT_LABELS[act]} hint="浏览敌人专属能力牌" />
-                      <div className="codex-grid codex-grid--cards codex-grid--enemy-cards">
-                        {actCards.map((card) => (
-                          <CodexCardTile key={card.id} card={card} onClick={() => openEntry('card', card.id)} />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
               </div>
             </Panel>
           </motion.section>
@@ -734,7 +664,7 @@ export const CardCodexView: React.FC = () => {
             variants={panelSettleVariants}
             initial="hidden"
             animate="visible"
-            transition={{ delay: 0.14 }}
+            transition={{ delay: 0.12 }}
             className="scroll-mt-6"
           >
             <Panel className="codex-section px-4 py-4 md:px-5">
@@ -744,7 +674,7 @@ export const CardCodexView: React.FC = () => {
                     <ScrollText size={20} />
                   </div>
                   <div>
-                    <div className="codex-section__kicker">目录四</div>
+                    <div className="codex-section__kicker">目录三</div>
                     <h2 className="codex-section__title">{SECTION_LABELS.glossary}</h2>
                     <p className="codex-section__subtitle">{SECTION_HINTS.glossary}</p>
                   </div>

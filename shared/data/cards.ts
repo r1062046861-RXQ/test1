@@ -573,6 +573,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'buzhongyiqi': {
     id: 'buzhongyiqi',
     name: '补中益气汤',
+    image: '/assets/cards_player/30.png',
     type: 'power',
     rarity: 'rare',
     cost: 3,
@@ -617,6 +618,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'guizhitang': {
     id: 'guizhitang',
     name: '桂枝汤',
+    image: '/assets/cards_player/37.png',
     type: 'skill',
     rarity: 'uncommon',
     cost: 2,
@@ -719,6 +721,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'mahuangtang': {
     id: 'mahuangtang',
     name: '麻黄汤',
+    image: '/assets/cards_player/46.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -733,6 +736,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'sijunzi': {
     id: 'sijunzi',
     name: '四君子汤',
+    image: '/assets/cards_player/47.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -749,6 +753,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'xiaoyao': {
     id: 'xiaoyao',
     name: '逍遥散',
+    image: '/assets/cards_player/48.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -764,6 +769,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'liuwei': {
     id: 'liuwei',
     name: '六味地黄丸',
+    image: '/assets/cards_player/50.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -780,6 +786,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'yinqiao': {
     id: 'yinqiao',
     name: '银翘散',
+    image: '/assets/cards_player/51.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -796,6 +803,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'xuefu': {
     id: 'xuefu',
     name: '血府逐瘀汤',
+    image: '/assets/cards_player/52.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -810,6 +818,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'huoxiang': {
     id: 'huoxiang',
     name: '藿香正气散',
+    image: '/assets/cards_player/53.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -825,6 +834,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'longdan': {
     id: 'longdan',
     name: '龙胆泻肝汤',
+    image: '/assets/cards_player/54.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -840,6 +850,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'yupingfeng': {
     id: 'yupingfeng',
     name: '玉屏风散',
+    image: '/assets/cards_player/55.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -855,6 +866,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'guipi': {
     id: 'guipi',
     name: '归脾汤',
+    image: '/assets/cards_player/56.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -871,6 +883,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'wumei': {
     id: 'wumei',
     name: '乌梅丸',
+    image: '/assets/cards_player/57.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -885,6 +898,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'dachengqi': {
     id: 'dachengqi',
     name: '大承气汤',
+    image: '/assets/cards_player/59.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -900,6 +914,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'huanglianjiedu': {
     id: 'huanglianjiedu',
     name: '黄连解毒汤',
+    image: '/assets/cards_player/60.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -915,6 +930,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'banxia': {
     id: 'banxia',
     name: '半夏白术天麻汤',
+    image: '/assets/cards_player/61.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -930,6 +946,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'jinkui': {
     id: 'jinkui',
     name: '金匮肾气丸',
+    image: '/assets/cards_player/62.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -946,6 +963,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'qingying': {
     id: 'qingying',
     name: '清营汤',
+    image: '/assets/cards_player/63.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -960,6 +978,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'baohe': {
     id: 'baohe',
     name: '保和丸',
+    image: '/assets/cards_player/64.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,
@@ -974,6 +993,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   'chuanxiongcha': {
     id: 'chuanxiongcha',
     name: '川芎茶调散',
+    image: '/assets/cards_player/65.png',
     type: 'skill',
     rarity: 'rare',
     cost: 0,

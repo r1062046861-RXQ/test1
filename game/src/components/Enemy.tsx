@@ -24,12 +24,17 @@ interface StatusNotice {
   type: StatusEffect['type'];
 }
 
+const STATUS_TYPE_LABELS: Record<StatusEffect['type'], string> = {
+  buff: '增益',
+  debuff: '减益',
+};
+
 const spriteVariants: Record<
   EnemyActionPhase | 'idle',
   { x: number; y: number; scaleX: number; scaleY: number; filter: string }
 > = {
   idle: { x: 0, y: 0, scaleX: 1, scaleY: 1, filter: 'brightness(1) saturate(1)' },
-  windup: { x: 24, y: 10, scaleX: 0.98, scaleY: 1.03, filter: 'brightness(0.7) saturate(1.04)' },
+  windup: { x: 24, y: 10, scaleX: 0.98, scaleY: 1.03, filter: 'brightness(0.72) saturate(1.04)' },
   lunge: { x: -56, y: -4, scaleX: 1.02, scaleY: 0.99, filter: 'brightness(1.06) saturate(1.14)' },
   impact: { x: -60, y: -4, scaleX: 1.03, scaleY: 0.98, filter: 'brightness(1.12) saturate(1.18)' },
   recover: { x: -8, y: 0, scaleX: 1, scaleY: 1, filter: 'brightness(1.02) saturate(1.05)' },
@@ -59,6 +64,10 @@ const FALLBACK_IMAGES: Record<string, string> = {
   chong_ren_instability: '/assets/cards_enemy/101.png',
   jueyin_complex: '/assets/cards_enemy/102.png',
   boss_five_elements: '/assets/cards_enemy/103.png',
+  reruyingxue: '/assets/cards_enemy/79.png',
+  shenbunaqi: '/assets/cards_enemy/80.png',
+  tanmengxinqiao: '/assets/cards_enemy/83.png',
+  yangmingfushi: '/assets/cards_enemy/84.png',
 };
 
 const NOTICE_LIFETIME_MS = 950;
@@ -83,6 +92,8 @@ export const Enemy: React.FC<EnemyProps> = ({
   const [statPulse, setStatPulse] = useState<FloatingPopupKind | null>(null);
   const [frameBurst, setFrameBurst] = useState<{ id: number; kind: FrameBurstKind } | null>(null);
   const [imageErrored, setImageErrored] = useState(false);
+  const [activeStatusId, setActiveStatusId] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const prevHpRef = useRef(enemy.currentHp);
   const prevBlockRef = useRef(enemy.block);
   const prevStatusMapRef = useRef<Map<string, number>>(createStatusStackMap(enemy.statusEffects));
@@ -179,6 +190,38 @@ export const Enemy: React.FC<EnemyProps> = ({
     setImageErrored(false);
   }, [imageSrc]);
 
+  useEffect(() => {
+    if (activeStatusId && !enemy.statusEffects.some((status) => status.id === activeStatusId)) {
+      setActiveStatusId(null);
+    }
+  }, [activeStatusId, enemy.statusEffects]);
+
+  useEffect(() => {
+    if (!activeStatusId) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setActiveStatusId(null);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActiveStatusId(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeStatusId]);
+
   const frameTone = useMemo(() => {
     if (enemy.id.includes('boss')) return 'from-red-950/90 to-stone-950 border-red-500/35';
     if (
@@ -216,9 +259,19 @@ export const Enemy: React.FC<EnemyProps> = ({
   const highlightedStatusSet = useMemo(() => new Set(highlightedStatusIds), [highlightedStatusIds]);
   const hpNotices = floatingValues.filter((popup) => popup.kind === 'hp-loss' || popup.kind === 'hp-gain');
   const blockNotices = floatingValues.filter((popup) => popup.kind === 'block-loss' || popup.kind === 'block-gain');
+  const activeStatus = useMemo(
+    () => enemy.statusEffects.find((status) => status.id === activeStatusId) ?? null,
+    [activeStatusId, enemy.statusEffects],
+  );
+
+  const handleFrameClick = () => {
+    setActiveStatusId(null);
+    onClick?.();
+  };
 
   return (
     <div
+      ref={rootRef}
       className={cn(
         'combat-enemy relative transition-transform',
         `combat-enemy--${viewportTier}`,
@@ -227,83 +280,9 @@ export const Enemy: React.FC<EnemyProps> = ({
       )}
     >
       <div className="combat-enemy__layout">
-        <div className="combat-enemy__info">
-          <AnimatePresence>
-            {statusNotices.map((notice, index) => (
-              <motion.div
-                key={notice.id}
-                initial={{ opacity: 0, x: -12, y: 8 }}
-                animate={{
-                  opacity: [0, 1, 1, 0],
-                  x: [0, 8, 10, 14],
-                  y: [0, -6 - index * 18, -18 - index * 18, -30 - index * 18],
-                }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className={cn(
-                  'pointer-events-none absolute left-3 top-3 z-20 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.18em] shadow-[0_10px_22px_rgba(0,0,0,0.22)]',
-                  notice.type === 'debuff'
-                    ? 'border-red-300/35 bg-red-500/18 text-red-100'
-                    : 'border-emerald-200/30 bg-emerald-400/16 text-emerald-100',
-                )}
-              >
-                +{notice.label}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          <div className="combat-enemy__info-copy">
-            <div className="combat-enemy__tag">{enemyTag}</div>
-            <div className="combat-enemy__name">{enemy.name}</div>
-          </div>
-
-          <motion.div
-            animate={
-              intentHighlight
-                ? {
-                    y: [-2, -6, -3],
-                    scale: [1, 1.02, 1.01],
-                    boxShadow: [
-                      '0 0 0 rgba(250, 204, 21, 0)',
-                      '0 0 18px rgba(250, 204, 21, 0.34)',
-                      '0 0 6px rgba(250, 204, 21, 0.12)',
-                    ],
-                  }
-                : { y: 0, scale: 1, boxShadow: '0 0 0 rgba(250, 204, 21, 0)' }
-            }
-            transition={{ duration: intentHighlight ? 0.28 : 0.16 }}
-            className="combat-enemy__intent"
-          >
-            {enemy.intent.description}
-          </motion.div>
-
-          {enemy.statusEffects.length > 0 ? (
-            <div className="combat-enemy__status-wrap">
-              {enemy.statusEffects.map((status) => (
-                <div key={status.id} className="group relative">
-                  <div
-                    className={cn(
-                      'combat-enemy__status-chip',
-                      status.type === 'debuff' ? 'combat-enemy__status-chip--debuff' : 'combat-enemy__status-chip--buff',
-                      highlightedStatusSet.has(status.id) && 'combat-enemy__status-chip--highlight',
-                    )}
-                  >
-                    <span className="combat-enemy__status-chip-letter">{status.name[0]}</span>
-                    {status.stacks > 0 ? <span className="combat-enemy__status-chip-stack">{status.stacks}</span> : null}
-                  </div>
-                  <div className="pointer-events-none absolute left-[calc(100%+0.55rem)] top-1/2 z-50 w-44 -translate-y-1/2 rounded-xl border border-white/10 bg-black/88 p-2 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    <div className="font-bold text-yellow-300">{status.name}</div>
-                    <div className="mt-1 leading-5 text-stone-200">{status.description}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
         <motion.button
           type="button"
-          onClick={onClick}
+          onClick={handleFrameClick}
           animate={activeSpritePose}
           transition={activeTransition}
           className={cn(
@@ -404,18 +383,118 @@ export const Enemy: React.FC<EnemyProps> = ({
           </AnimatePresence>
         </motion.button>
 
+        <div className="combat-enemy__info">
+          <AnimatePresence>
+            {statusNotices.map((notice, index) => (
+              <motion.div
+                key={notice.id}
+                initial={{ opacity: 0, x: -12, y: 8 }}
+                animate={{
+                  opacity: [0, 1, 1, 0],
+                  x: [0, 8, 10, 14],
+                  y: [0, -6 - index * 18, -18 - index * 18, -30 - index * 18],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className={cn(
+                  'pointer-events-none absolute left-0 top-0 z-20 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.18em] shadow-[0_10px_22px_rgba(0,0,0,0.22)]',
+                  notice.type === 'debuff'
+                    ? 'border-red-300/35 bg-red-500/18 text-red-100'
+                    : 'border-emerald-200/30 bg-emerald-400/16 text-emerald-100',
+                )}
+              >
+                +{notice.label}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <div className="combat-enemy__line combat-enemy__line--header">
+            <span className="combat-enemy__tag">{enemyTag}</span>
+            <span className="combat-enemy__name" title={enemy.name}>
+              {enemy.name}
+            </span>
+          </div>
+
+          <motion.div
+            animate={
+              intentHighlight
+                ? {
+                    x: [0, 6, 0],
+                    scale: [1, 1.02, 1],
+                    opacity: [0.86, 1, 0.94],
+                  }
+                : { x: 0, scale: 1, opacity: 1 }
+            }
+            transition={{ duration: intentHighlight ? 0.28 : 0.16 }}
+            className="combat-enemy__line combat-enemy__line--intent"
+            title={enemy.intent.description}
+          >
+            <span className="combat-enemy__line-label">意图</span>
+            <span className="combat-enemy__line-copy">{enemy.intent.description}</span>
+          </motion.div>
+
+          <div className="combat-enemy__status-zone">
+            <div className="combat-enemy__line combat-enemy__line--status">
+            <span className="combat-enemy__line-label">状态</span>
+            {enemy.statusEffects.length > 0 ? (
+              <div className="combat-enemy__status-wrap">
+                {enemy.statusEffects.map((status) => {
+                  const isActive = activeStatus?.id === status.id;
+                  return (
+                    <button
+                      key={status.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      aria-label={`${status.name} 详情`}
+                      onClick={() => setActiveStatusId((current) => (current === status.id ? null : status.id))}
+                      className={cn(
+                        'combat-enemy__status-chip',
+                        status.type === 'debuff' ? 'combat-enemy__status-chip--debuff' : 'combat-enemy__status-chip--buff',
+                        highlightedStatusSet.has(status.id) && 'combat-enemy__status-chip--highlight',
+                        isActive && 'combat-enemy__status-chip--active',
+                      )}
+                    >
+                      <span className="combat-enemy__status-chip-letter">{status.name[0]}</span>
+                      {status.stacks > 0 ? <span className="combat-enemy__status-chip-stack">{status.stacks}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="combat-enemy__status-empty">暂无</span>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {activeStatus ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="combat-enemy__status-detail"
+              >
+                <div className="combat-enemy__status-detail-header">
+                  <div className="combat-enemy__status-detail-title">{activeStatus.name}</div>
+                  <div className="combat-enemy__status-detail-meta">
+                    <span>{STATUS_TYPE_LABELS[activeStatus.type]}</span>
+                    {activeStatus.stacks > 0 ? <span>层数 {activeStatus.stacks}</span> : null}
+                  </div>
+                </div>
+                <div className="combat-enemy__status-detail-copy">{activeStatus.description}</div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+          </div>
+        </div>
+
         <div
           className={cn(
-            'combat-enemy__stats relative rounded-[20px] border px-3 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-all duration-200',
-            statPulse === 'hp-loss'
-              ? 'border-red-400/60 bg-red-950/36 shadow-[0_0_0_1px_rgba(248,113,113,0.24),0_16px_28px_rgba(0,0,0,0.28)]'
-              : statPulse === 'hp-gain'
-                ? 'border-emerald-300/58 bg-emerald-950/28 shadow-[0_0_0_1px_rgba(74,222,128,0.18),0_16px_28px_rgba(0,0,0,0.26)]'
-                : statPulse === 'block-gain'
-                  ? 'border-cyan-200/58 bg-cyan-950/24 shadow-[0_0_0_1px_rgba(103,232,249,0.18),0_16px_28px_rgba(0,0,0,0.24)]'
-                  : statPulse === 'block-loss'
-                    ? 'border-stone-200/42 bg-slate-950/28 shadow-[0_0_0_1px_rgba(226,232,240,0.14),0_16px_28px_rgba(0,0,0,0.24)]'
-                    : 'border-amber-500/20 bg-black/35',
+            'combat-enemy__stats relative transition-all duration-200',
+            statPulse === 'hp-loss' && 'combat-enemy__stats--hp-loss',
+            statPulse === 'hp-gain' && 'combat-enemy__stats--hp-gain',
+            statPulse === 'block-gain' && 'combat-enemy__stats--block-gain',
+            statPulse === 'block-loss' && 'combat-enemy__stats--block-loss',
           )}
         >
           <AnimatePresence>
@@ -455,12 +534,15 @@ export const Enemy: React.FC<EnemyProps> = ({
             </div>
 
             <div className="combat-enemy__stats-copy">
-              <div className="combat-enemy__stats-labels">
-                <span>生命</span>
-                <span>格挡 {enemy.block}</span>
+              <div className="combat-enemy__stats-row">
+                <span className="combat-enemy__stats-key">生命</span>
+                <span className="combat-enemy__stats-value">
+                  {enemy.currentHp} / {enemy.maxHp}
+                </span>
               </div>
-              <div className="combat-enemy__stats-value">
-                {enemy.currentHp} / {enemy.maxHp}
+              <div className="combat-enemy__stats-row">
+                <span className="combat-enemy__stats-key">格挡</span>
+                <span className="combat-enemy__stats-value">{enemy.block}</span>
               </div>
             </div>
           </div>

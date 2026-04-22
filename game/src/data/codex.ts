@@ -8,6 +8,7 @@ export interface EnemyCodexMeta {
   summary: string;
   mechanics: string[];
   tags: string[];
+  abilityCardIds?: string[];
 }
 
 export interface GlossaryEntry {
@@ -87,6 +88,7 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '第一幕首领，以寒邪、虚弱和寒转血瘀为核心。',
     mechanics: ['会频繁叠加寒邪与虚弱。', '二阶段会把 3 层寒邪转化为 1 层血瘀。', '持续拖垮玩家输出效率。'],
     tags: ['首领', '寒邪', '血瘀', '二阶段'],
+    abilityCardIds: ['fenghanshubiao'],
   },
   boss_liver_fire: {
     act: 1,
@@ -94,6 +96,7 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '第一幕首领，以热邪成长和伤阴机制为核心。',
     mechanics: ['热邪会转化成更强攻击压力。', '二阶段可偷取滋阴；若无法偷取，则禁止玩家下回合获得滋阴。'],
     tags: ['首领', '热邪', '伤阴', '禁滋阴'],
+    abilityCardIds: ['ganhuowang'],
   },
   qi_blood_stasis: {
     act: 2,
@@ -101,6 +104,7 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '以气滞与血瘀联动压制玩家手牌节奏。',
     mechanics: ['会施加气滞，使下张卡牌费用上升。', '血瘀使玩家更容易吃到爆发伤害。'],
     tags: ['气滞', '血瘀', '费用干扰'],
+    abilityCardIds: ['qizhixueyu'],
   },
   spleen_dampness: {
     act: 2,
@@ -115,6 +119,15 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '擅长干扰防御与抽牌结构的控制型敌人。',
     mechanics: ['会造成少抽、无法获得格挡等控制效果。', '部分行为会制造眩晕或强制空过。'],
     tags: ['少抽', '无法获得格挡', '控制'],
+    abilityCardIds: ['xinshenbujiao', 'tanmengxinqiao'],
+  },
+  tanmengxinqiao: {
+    act: 2,
+    tier: 'common',
+    summary: '以眩晕、少抽与封格挡为核心的强控制敌人。',
+    mechanics: ['会在“痰蒙心窍”与“窍闭失神”间切换。', '控制链更直接，适合在第二幕中段打断玩家运转。'],
+    tags: ['眩晕', '少抽', '禁格挡'],
+    abilityCardIds: ['tanmengxinqiao'],
   },
   phlegm_stasis: {
     act: 2,
@@ -129,6 +142,7 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '第二幕首领，以湿邪转热与阶段变化为核心。',
     mechanics: ['会积累湿邪并在合适时机“化热”。', '有召唤或阶段推进节奏。', '湿邪转热后会显著提升战斗压迫感。'],
     tags: ['首领', '湿邪', '化热', '阶段变化'],
+    abilityCardIds: ['pixushikun'],
   },
   yin_yang_split: {
     act: 3,
@@ -143,6 +157,31 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
     summary: '以冲任失调、真气干扰为核心的高阶敌人。',
     mechanics: ['擅长干扰真气或上限。', '偏向持续性减益和节奏破坏。'],
     tags: ['真气干扰', '冲任', '减益'],
+    abilityCardIds: ['chongrenbugu'],
+  },
+  reruyingxue: {
+    act: 3,
+    tier: 'common',
+    summary: '围绕热邪累计与回合末灼伤翻倍展开的灼烧型敌人。',
+    mechanics: ['会优先叠加热邪，再用灼袭追打。', '当你身上已有热邪时，回合末伤害会被进一步放大。'],
+    tags: ['热邪', '灼烧', '回合末压制'],
+    abilityCardIds: ['reruyingxue'],
+  },
+  shenbunaqi: {
+    act: 3,
+    tier: 'common',
+    summary: '以真气上限压制、寒邪和虚弱联动为核心的削能敌人。',
+    mechanics: ['会直接施加“肾不纳气”，压低下回合真气上限。', '同时伴随寒邪与虚弱，使后续回合更难展开。'],
+    tags: ['真气压制', '寒邪', '虚弱'],
+    abilityCardIds: ['shenbunaqi'],
+  },
+  yangmingfushi: {
+    act: 3,
+    tier: 'common',
+    summary: '擅长拆掉格挡节奏，再用正面攻击追压的破防敌人。',
+    mechanics: ['会优先清空当前格挡，并留下回合末失盾效果。', '在玩家失去防线后再跟进高额直伤。'],
+    tags: ['清盾', '破防', '压制'],
+    abilityCardIds: ['yangmingfushi'],
   },
   jueyin_complex: {
     act: 3,

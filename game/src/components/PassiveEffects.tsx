@@ -93,7 +93,12 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
         <div className="text-[12px] uppercase tracking-[0.24em] text-stone-300">被动效果</div>
       </div>
 
-      <div className={cn('ornate-scroll min-h-0 flex-1 overflow-y-auto pr-1', compact ? 'space-y-1.5' : 'space-y-2')}>
+      <div
+        className={cn(
+          'ornate-scroll combat-passives-grid min-h-0 flex-1 overflow-y-auto pr-1',
+          compact && 'combat-passives-grid--compact',
+        )}
+      >
         {player.statusEffects.map((effect) => {
           const highlighted = highlightedStatusSet.has(effect.id);
           return (
@@ -103,7 +108,7 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
               animate={highlighted ? { scale: [1, 1.02, 1], y: [0, -2, 0] } : { scale: 1, y: 0 }}
               transition={{ duration: highlighted ? 0.52 : 0.18, ease: 'easeOut' }}
               className={cn(
-                'combat-parchment-inset px-2.5 py-2 text-stone-100 transition-all duration-200',
+                'combat-parchment-inset combat-passives-grid__item px-2.5 py-2 text-stone-100 transition-all duration-200',
                 highlighted &&
                   (effect.type === 'debuff'
                     ? 'border-red-300/30 bg-red-950/26 shadow-[0_0_0_1px_rgba(248,113,113,0.16),0_10px_22px_rgba(0,0,0,0.18)]'
@@ -123,11 +128,19 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
                   {effect.name[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-stone-50">
-                    {effect.name}
-                    {effect.stacks > 0 ? ` ×${effect.stacks}` : ''}
+                  <div className="combat-passives-grid__title-row">
+                    <div className="font-bold text-stone-50">
+                      {effect.name}
+                      {effect.stacks > 0 ? ` ×${effect.stacks}` : ''}
+                    </div>
+                    <div className="combat-passives-grid__type">{effect.type === 'buff' ? '增益' : '减益'}</div>
                   </div>
-                  <div className={cn('mt-1 text-stone-300/90', compact ? 'text-[12px] leading-5' : 'text-sm leading-5')}>
+                  <div
+                    className={cn(
+                      'combat-passives-grid__description mt-1 text-stone-300/90',
+                      compact ? 'text-[11px] leading-5' : 'text-sm leading-5',
+                    )}
+                  >
                     {effect.description}
                   </div>
                 </div>

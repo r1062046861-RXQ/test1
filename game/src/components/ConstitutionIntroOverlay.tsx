@@ -369,7 +369,7 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
                   </div>
                   <h2 className="constitution-select-stage__title">选择体质</h2>
                   <p className="constitution-select-stage__subtitle">
-                    体质决定初始被动与牌组倾向。选定后将带着对应的辨证节奏进入第一幕。
+                    体质决定起手被动与牌组方向，选定后直接进入第一幕。
                   </p>
                 </motion.div>
               </div>
@@ -401,7 +401,7 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
                         delay: 0.12 + index * 0.09,
                         ease: EASE_OUT,
                       }}
-                      whileHover={reducedMotion ? undefined : { y: -8, scale: 1.012 }}
+                      whileHover={reducedMotion ? undefined : { y: -4, scale: 1.008 }}
                       whileTap={reducedMotion ? undefined : { scale: 0.988 }}
                     >
                       <div className="constitution-choice-card__frame" />

@@ -57,7 +57,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'attack', value: 12, description: '寒凝血瘀' },
-    image: '/assets/cards_enemy/93.png',
+    image: '/assets/cards_enemy/93.gif',
+    posterImage: '/assets/cards_enemy/93-poster.png',
     behavior: 'boss_wind_cold'
   },
   'boss_liver_fire': {

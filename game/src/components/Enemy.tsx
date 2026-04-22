@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Enemy as EnemyType, EnemyActionPhase, StatusEffect } from '../types';
 import { cn } from '../utils/cn';
-import { resolveAssetUrl } from '../utils/assets';
+import { useProgressiveAssetSource } from '../hooks/useProgressiveAssetSource';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
 
@@ -184,7 +184,8 @@ export const Enemy: React.FC<EnemyProps> = ({
     return () => window.clearTimeout(timeout);
   }, [enemy.statusEffects]);
 
-  const imageSrc = resolveAssetUrl(enemy.image || FALLBACK_IMAGES[enemy.id] || FALLBACK_IMAGES[enemy.behavior ?? '']);
+  const fallbackImagePath = FALLBACK_IMAGES[enemy.id] || FALLBACK_IMAGES[enemy.behavior ?? ''];
+  const { displaySrc: imageSrc } = useProgressiveAssetSource(enemy.image, enemy.posterImage, fallbackImagePath);
 
   useEffect(() => {
     setImageErrored(false);

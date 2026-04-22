@@ -20,7 +20,8 @@ import {
 } from '../data/codex';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
 import { detailRevealVariants, panelSettleVariants } from './ui/motionPresets';
-import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
+import { resolveAssetBackground } from '../utils/assets';
+import { useProgressiveAssetSource } from '../hooks/useProgressiveAssetSource';
 
 type CodexSectionKey = 'cards' | 'enemies' | 'glossary';
 type ActiveEntry =
@@ -177,8 +178,8 @@ const CodexEnemyTile: React.FC<{
       aria-label={`${enemy.name} 图鉴详情`}
     >
       <div className="codex-enemy-card__portrait">
-        {enemy.image ? (
-          <img src={resolveAssetUrl(enemy.image)} alt={enemy.name} className="codex-enemy-card__image" loading="lazy" />
+        {enemy.image || enemy.posterImage ? (
+          <CodexEnemyMedia enemy={enemy} className="codex-enemy-card__image" />
         ) : (
           <div className="codex-enemy-card__fallback">敌人</div>
         )}
@@ -196,6 +197,20 @@ const CodexEnemyTile: React.FC<{
       </div>
     </motion.button>
   );
+};
+
+const CodexEnemyMedia: React.FC<{
+  enemy: Enemy;
+  className: string;
+  loading?: 'eager' | 'lazy';
+}> = ({ enemy, className, loading = 'lazy' }) => {
+  const { displaySrc } = useProgressiveAssetSource(enemy.image, enemy.posterImage);
+
+  if (!displaySrc) {
+    return <div className="codex-enemy-card__fallback">敌人</div>;
+  }
+
+  return <img src={displaySrc} alt={enemy.name} className={className} loading={loading} />;
 };
 
 const CodexModalShell: React.FC<{
@@ -377,8 +392,8 @@ export const CardCodexView: React.FC = () => {
       <div className="codex-modal__content">
         <div className="codex-modal__hero">
           <div className="codex-modal__enemy-preview">
-            {enemy.image ? (
-              <img src={resolveAssetUrl(enemy.image)} alt={enemy.name} className="h-full w-full object-cover" />
+            {enemy.image || enemy.posterImage ? (
+              <CodexEnemyMedia enemy={enemy} className="h-full w-full object-cover" loading="eager" />
             ) : (
               <div className="flex h-full items-center justify-center bg-black/25 text-stone-300">暂无敌人图像</div>
             )}

@@ -52,6 +52,7 @@ export interface Enemy {
   statusEffects: StatusEffect[];
   intent: EnemyIntent;
   image?: string;
+  posterImage?: string;
   behavior?: string;
   meta?: Record<string, any>;
 }

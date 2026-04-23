@@ -95,6 +95,73 @@ describe('shared game core', () => {
     expect(result).toBeNull();
   });
 
+  it('山楂消食不需要击杀也会造成伤害并获得格挡', () => {
+    const shanzha = makeCard('shanzha', 'block');
+    const enemy = makeEnemy('wind_cold_guest');
+    const player = makePlayer({
+      energy: 3,
+      hand: [shanzha],
+    });
+
+    const result = resolveCardPlay(makeState(player, [enemy]), shanzha.id, enemy.id, () => undefined);
+    expect(result).not.toBeNull();
+    expect(result!.enemies[0].currentHp).toBe(enemy.maxHp - 3);
+    expect(result!.player.block).toBe(5);
+  });
+
+  it('足三里重复使用后会按层数叠加攻击回血', () => {
+    const firstZusanli = makeCard('zusanli', 'a');
+    const secondZusanli = makeCard('zusanli', 'b');
+    const danshen = makeCard('danshen', 'attack');
+    const enemy = makeEnemy('wind_cold_guest');
+    const player = makePlayer({
+      hp: 70,
+      energy: 6,
+      hand: [firstZusanli, secondZusanli, danshen],
+    });
+
+    const first = applyPlay(makeState(player, [enemy]), firstZusanli.id, enemy.id);
+    const second = applyPlay(first.state, secondZusanli.id, enemy.id);
+    expect(getStacks(second.state.player, 'zusanli')).toBe(2);
+
+    const third = applyPlay(second.state, danshen.id, enemy.id);
+    expect(third.state.player.hp).toBe(72);
+  });
+
+  it('阴虚体质受到敌人攻击时只额外受到1点伤害', () => {
+    const enemy = makeEnemy('yangmingfushi');
+    enemy.block = 0;
+    const player = makePlayer({
+      statusEffects: [
+        {
+          id: 'yin_deficiency_passive',
+          name: '阴虚火旺',
+          type: 'buff',
+          stacks: 1,
+          canStack: false,
+          description: '回合开始时获得1点能量，但受到伤害+1',
+        },
+      ],
+    });
+
+    const result = resolveEnemyTurn(makeState(player, [enemy]), () => undefined);
+    expect(result).not.toBeNull();
+    expect(result!.player.hp).toBe(66);
+  });
+
+  it('肝火炽盛战斗中首回合攻击会立即扣除敌方生命', () => {
+    const danshen = makeCard('danshen', 'liver-fire');
+    const enemy = makeEnemy('boss_liver_fire');
+    const player = makePlayer({
+      energy: 3,
+      hand: [danshen],
+    });
+
+    const result = resolveCardPlay(makeState(player, [enemy]), danshen.id, enemy.id, () => undefined);
+    expect(result).not.toBeNull();
+    expect(result!.enemies[0].currentHp).toBe(enemy.maxHp - 7);
+  });
+
   it('风寒束表二阶段会把 3 层寒邪转成 1 层血瘀', () => {
     const enemy = makeEnemy('boss_wind_cold');
     enemy.currentHp = 60;

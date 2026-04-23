@@ -525,7 +525,7 @@ export const resolveCardPlay = (
   const applyDamageToPlayer = (baseDamage: number) => {
     let dmg = baseDamage;
     if (getStacks(newPlayer, 'yin_deficiency_passive') > 0) {
-      dmg += 2;
+      dmg += 1;
     }
     const bloodStasis = getStacks(newPlayer, 'blood_stasis');
     if (bloodStasis > 0) {
@@ -670,6 +670,13 @@ export const resolveCardPlay = (
           applyBlock(card.secondaryValue || 0);
           log(`击杀获得 ${card.secondaryValue} 点格挡`);
         }
+      }
+      break;
+    case 'damage_block':
+      if (targetEnemy) {
+        applyAttackDamage(card.effectValue || 0);
+        applyBlock(card.secondaryValue || 0);
+        log(`获得 ${card.secondaryValue || 0} 点格挡`);
       }
       break;
     case 'block_cleanse_self':
@@ -1135,7 +1142,7 @@ export const resolveCardPlay = (
       break;
     case 'zusanli_effect':
     case 'zusanli_power':
-      applyBuffToPlayer({ id: 'zusanli', name: '足三里', type: 'buff', stacks: 1, canStack: false, description: '攻击回血+1' });
+      applyBuffToPlayer({ id: 'zusanli', name: '足三里', type: 'buff', stacks: 1, canStack: true, description: '每层使攻击回血+1' });
       log(`获得足三里效果`);
       break;
     case 'attack_stun_chance':
@@ -1235,9 +1242,10 @@ export const resolveCardPlay = (
     newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + 1);
     log(`[气虚血瘀] 触发：恢复1点生命`);
   }
-  if (card.type === 'attack' && getStacks(newPlayer, 'zusanli') > 0) {
-    newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + 1);
-    log(`[足三里] 触发：恢复1点生命`);
+  const zusanliStacks = getStacks(newPlayer, 'zusanli');
+  if (card.type === 'attack' && zusanliStacks > 0) {
+    const healed = applyHealToPlayer(newPlayer, zusanliStacks);
+    log(`[足三里] 触发：恢复${healed}点生命`);
   }
 
   const playedIdx = newPlayer.hand.findIndex(c => c.id === cardId);
@@ -1447,7 +1455,7 @@ export const resolveEnemyTurn = (
   const applyDamageToPlayer = (baseDamage: number) => {
     let dmg = baseDamage;
     if (getStacks(newPlayer, 'yin_deficiency_passive') > 0) {
-      dmg += 2;
+      dmg += 1;
     }
     const bloodStasis = getStacks(newPlayer, 'blood_stasis');
     if (bloodStasis > 0) {

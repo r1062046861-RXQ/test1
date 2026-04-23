@@ -207,7 +207,7 @@ def migrate_and_update_excel():
     # Act 3
     add_entry(current_id, "阴阳离决者", "阴阳格拒：双态切换，需特定时机攻击。", "EnemyDeck", "Special", "Common", 0, "敌人-Act3"); current_id += 1
     add_entry(current_id, "冲任不固者", "崩漏不止：清除玩家所有正面状态。", "EnemyDeck", "Special", "Common", 0, "敌人-Act3"); current_id += 1
-    add_entry(current_id, "厥阴复杂证", "精英：寒热错杂，循环施加相反状态。", "EnemyDeck", "Special", "Elite", 0, "敌人-Act3-精英"); current_id += 1
+    add_entry(current_id, "厥阴复杂症", "精英：寒热错杂，循环施加相反状态。", "EnemyDeck", "Special", "Elite", 0, "敌人-Act3-精英"); current_id += 1
     add_entry(current_id, "五行失调(Boss)", "最终Boss：五行流转，五阶段形态切换。", "EnemyDeck", "Special", "Boss", 0, "敌人-Act3-Boss"); current_id += 1
 
     # Create Workbook

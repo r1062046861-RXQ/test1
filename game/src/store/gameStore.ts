@@ -253,7 +253,7 @@ const buildStartingPlayer = (constitution: Constitution) => {
       name: '阴虚火旺',
       type: 'buff',
       stacks: 1,
-      description: '回合开始时获得1点能量，但受到伤害+2',
+      description: '回合开始时获得1点能量，但受到伤害+1',
       canStack: false,
     });
   } else if (constitution === 'qi_deficiency') {

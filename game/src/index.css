@@ -1949,7 +1949,7 @@ textarea {
   --combat-hand-card-width: 10.5rem;
   --combat-hand-card-height: 15rem;
   --combat-enemy-width: 17.4rem;
-  --combat-enemy-info-width: 10.2rem;
+  --combat-enemy-info-width: 13.8rem;
   --combat-enemy-rail-width: 5.35rem;
   --combat-enemy-portrait-height: 16rem;
   --combat-enemy-intent-width: 16rem;
@@ -1967,7 +1967,7 @@ textarea {
   --combat-hand-card-width: 9.5rem;
   --combat-hand-card-height: 13.5rem;
   --combat-enemy-width: 15.6rem;
-  --combat-enemy-info-width: 9.35rem;
+  --combat-enemy-info-width: 12.8rem;
   --combat-enemy-rail-width: 5rem;
   --combat-enemy-portrait-height: 13.5rem;
   --combat-enemy-intent-width: 14.25rem;
@@ -1988,7 +1988,7 @@ textarea {
   --combat-hand-card-width: 8.75rem;
   --combat-hand-card-height: 12rem;
   --combat-enemy-width: 13.4rem;
-  --combat-enemy-info-width: 8.25rem;
+  --combat-enemy-info-width: 12rem;
   --combat-enemy-rail-width: 4.7rem;
   --combat-enemy-portrait-height: 12rem;
   --combat-enemy-intent-width: 13rem;
@@ -2664,11 +2664,35 @@ textarea {
 }
 
 .combat-enemy__line--intent {
+  width: 100%;
+  max-width: none;
   min-height: 0;
+  overflow: visible;
+  white-space: nowrap;
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.25;
   color: rgba(244, 234, 216, 0.92);
+}
+
+.combat-enemy__intent-explanation {
+  min-width: max-content;
+  flex: 0 0 auto;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(237, 203, 146, 0.78);
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+}
+
+.combat-enemy__intent-explanation::before {
+  content: "·";
+  margin: 0 0.42rem 0 0.1rem;
+  color: rgba(237, 203, 146, 0.46);
 }
 
 .combat-enemy__line--status {
@@ -2685,9 +2709,11 @@ textarea {
 }
 
 .combat-enemy__line-copy {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 0 0 auto;
+  min-width: max-content;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -3146,6 +3172,11 @@ textarea {
   justify-content: center;
 }
 
+.combat-enemy--stack .combat-enemy__line--intent {
+  justify-content: flex-start;
+  text-align: left;
+}
+
 .combat-enemy--stack .combat-enemy__status-wrap {
   justify-content: center;
 }
@@ -3197,7 +3228,7 @@ textarea {
     --combat-layout-gap: 8px;
     --combat-arena-pad-bottom: 5rem;
     --combat-enemy-width: 11.4rem;
-    --combat-enemy-info-width: 8.3rem;
+    --combat-enemy-info-width: 12.6rem;
     --combat-enemy-rail-width: 4.55rem;
     --combat-enemy-portrait-height: 10.75rem;
     --combat-enemy-intent-width: 11.75rem;
@@ -3238,6 +3269,11 @@ textarea {
   .combat-enemy__line--intent {
     min-height: 0;
     font-size: 12px;
+  }
+
+  .combat-enemy__intent-explanation {
+    max-width: 6.8rem;
+    font-size: 10px;
   }
 
   .combat-enemy__hp-track {
@@ -3952,7 +3988,7 @@ textarea {
 
 .constitution-select-stage__grid {
   display: grid;
-  width: min(1100px, 100%);
+  width: min(1020px, 100%);
   margin: 0 auto;
   gap: 14px;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -4336,14 +4372,19 @@ textarea {
 
 .constitution-choice-card {
   position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
   overflow: hidden;
+  aspect-ratio: 3 / 4;
   border-radius: 28px;
   border: 1px solid rgba(231, 191, 116, 0.24);
   background:
     linear-gradient(180deg, rgba(24, 19, 15, 0.92), rgba(12, 10, 8, 0.98)),
     radial-gradient(circle at top, rgba(255, 235, 188, 0.08), transparent 30%);
-  padding: 10px;
+  padding: 0;
   text-align: left;
+  isolation: isolate;
   box-shadow:
     inset 0 1px 0 rgba(255, 244, 218, 0.08),
     0 24px 44px rgba(0, 0, 0, 0.28);
@@ -4361,19 +4402,21 @@ textarea {
 
 .constitution-choice-card__frame {
   position: absolute;
-  inset: 8px;
-  border-radius: 18px;
+  inset: 10px;
+  border-radius: 20px;
   border: 1px solid rgba(241, 204, 126, 0.22);
   pointer-events: none;
+  z-index: 2;
 }
 
 .constitution-choice-card__art {
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid rgba(245, 218, 158, 0.18);
-  background: linear-gradient(180deg, rgba(53, 42, 30, 0.64), rgba(19, 14, 11, 0.82));
-  box-shadow: inset 0 1px 0 rgba(255, 245, 214, 0.08);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 14%, rgba(255, 239, 198, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(31, 24, 18, 0.92), rgba(10, 8, 6, 0.98));
 }
 
 .constitution-choice-card__art::after {
@@ -4381,32 +4424,41 @@ textarea {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(8, 7, 5, 0.08), rgba(8, 7, 5, 0.28)),
-    radial-gradient(circle at 50% 18%, rgba(255, 244, 218, 0.12), transparent 24%);
+    linear-gradient(180deg, rgba(8, 7, 5, 0.08) 0%, rgba(8, 7, 5, 0.2) 38%, rgba(8, 7, 5, 0.78) 100%),
+    radial-gradient(circle at 50% 16%, rgba(255, 244, 218, 0.14), transparent 24%);
 }
 
 .constitution-choice-card__image {
   display: block;
   width: 100%;
-  aspect-ratio: 1.5;
+  height: 100%;
   object-fit: cover;
-  opacity: 0.92;
+  object-position: center 34%;
+  opacity: 0.96;
+  filter: saturate(0.92) contrast(1.02) brightness(0.95);
   transition: transform 0.3s ease;
-  transform: scale(1.03);
+  transform: scale(1.015);
 }
 
 .constitution-choice-card:hover .constitution-choice-card__image {
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .constitution-choice-card__body {
-  position: relative;
+  position: absolute;
+  inset: auto 0 0 0;
   z-index: 1;
-  padding: 12px 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 88px 18px 18px;
+  background: linear-gradient(180deg, rgba(8, 7, 5, 0) 0%, rgba(8, 7, 5, 0.18) 16%, rgba(8, 7, 5, 0.72) 50%, rgba(8, 7, 5, 0.94) 100%);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .constitution-choice-card__name {
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 700;
   color: #fff0d3;
   line-height: 1.1;
@@ -4415,16 +4467,14 @@ textarea {
 .constitution-choice-card__subtitle,
 .constitution-choice-card__detail {
   color: rgba(226, 211, 183, 0.82);
-  line-height: 1.58;
+  line-height: 1.46;
 }
 
 .constitution-choice-card__subtitle {
-  margin-top: 8px;
   font-size: 13px;
 }
 
 .constitution-choice-card__detail {
-  margin-top: 10px;
   font-size: 12px;
 }
 
@@ -4432,7 +4482,6 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 10px;
   border-radius: 999px;
   border: 1px solid rgba(231, 191, 116, 0.3);
   background: linear-gradient(180deg, rgba(102, 70, 33, 0.52), rgba(53, 37, 18, 0.68));
@@ -4517,12 +4566,12 @@ textarea {
   }
 
   .constitution-select-stage__grid {
-    width: min(1100px, 100%);
-    gap: 14px;
+    width: min(960px, 100%);
+    gap: 16px;
   }
 
   .constitution-choice-card__name {
-    font-size: 24px;
+    font-size: 23px;
   }
 
   .constitution-choice-card__subtitle {
@@ -4532,6 +4581,10 @@ textarea {
   .constitution-choice-card__detail {
     font-size: 11px;
     line-height: 1.45;
+  }
+
+  .constitution-choice-card__body {
+    padding: 84px 16px 16px;
   }
 }
 
@@ -4618,7 +4671,7 @@ textarea {
   }
 
   .constitution-choice-card__body {
-    padding: 16px 6px 6px;
+    padding: 88px 18px 18px;
   }
 }
 

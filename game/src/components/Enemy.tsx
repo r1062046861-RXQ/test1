@@ -29,6 +29,26 @@ const STATUS_TYPE_LABELS: Record<StatusEffect['type'], string> = {
   debuff: '减益',
 };
 
+const getIntentExplanation = (intent: EnemyType['intent']) => {
+  const value = intent.value || 0;
+  const hits = intent.hits || 1;
+
+  if (intent.type === 'attack') {
+    if (hits > 1) return value > 0 ? `将造成 ${value}×${hits} 连击` : `将进行 ${hits} 段攻击`;
+    return value > 0 ? `将造成 ${value} 点伤害` : '将发动攻击';
+  }
+  if (intent.type === 'defend') {
+    return value > 0 ? `将获得 ${value} 点格挡` : '将进行防御';
+  }
+  if (intent.type === 'buff') {
+    return '将强化自身';
+  }
+  if (intent.type === 'debuff') {
+    return '将施加负面状态';
+  }
+  return '将发动特殊机制';
+};
+
 const spriteVariants: Record<
   EnemyActionPhase | 'idle',
   { x: number; y: number; scaleX: number; scaleY: number; filter: string }
@@ -264,6 +284,7 @@ export const Enemy: React.FC<EnemyProps> = ({
     () => enemy.statusEffects.find((status) => status.id === activeStatusId) ?? null,
     [activeStatusId, enemy.statusEffects],
   );
+  const intentExplanation = getIntentExplanation(enemy.intent);
 
   const handleFrameClick = () => {
     setActiveStatusId(null);
@@ -428,10 +449,11 @@ export const Enemy: React.FC<EnemyProps> = ({
             }
             transition={{ duration: intentHighlight ? 0.28 : 0.16 }}
             className="combat-enemy__line combat-enemy__line--intent"
-            title={enemy.intent.description}
+            title={`${enemy.intent.description}：${intentExplanation}`}
           >
             <span className="combat-enemy__line-label">意图</span>
             <span className="combat-enemy__line-copy">{enemy.intent.description}</span>
+            <span className="combat-enemy__intent-explanation">{intentExplanation}</span>
           </motion.div>
 
           <div className="combat-enemy__status-zone">

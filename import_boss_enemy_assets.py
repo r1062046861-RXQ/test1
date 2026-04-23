@@ -29,7 +29,7 @@ TARGETS = {
     "脾虚湿盛者": ("spleen_dampness", "96.png"),
     "痰瘀互结": ("phlegm_stasis", "98.png"),
     "阴阳离决者": ("yin_yang_split", "100.png"),
-    "厥阴复杂证": ("jueyin_complex", "102.png"),
+    "厥阴复杂症": ("jueyin_complex", "102.png"),
     "五行失调": ("boss_five_elements", "103.png"),
 }
 

@@ -10,7 +10,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'attack', value: 5, description: '寒邪侵袭' },
-    image: '/assets/cards_enemy/89.png',
+    image: '/assets/cards_enemy/89.gif',
+    posterImage: '/assets/cards_enemy/89-poster.png',
     behavior: 'wind_cold_guest'
   },
   'wind_heat_attack': {
@@ -21,7 +22,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'attack', value: 3, description: '热邪灼烧' }, // Multi-hit logic handled in store
-    image: '/assets/cards_enemy/90.png',
+    image: '/assets/cards_enemy/90.gif',
+    posterImage: '/assets/cards_enemy/90-poster.png',
     behavior: 'wind_heat_attack'
   },
   'damp_turbidity': {
@@ -32,7 +34,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '湿邪困脾' },
-    image: '/assets/cards_enemy/91.png',
+    image: '/assets/cards_enemy/91.gif',
+    posterImage: '/assets/cards_enemy/91-poster.png',
     behavior: 'damp_turbidity'
   },
   // Elite Act 1
@@ -44,7 +47,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 10,
     statusEffects: [],
     intent: { type: 'special', value: 0, description: '形态切换' },
-    image: '/assets/cards_enemy/92.png',
+    image: '/assets/cards_enemy/92.gif',
+    posterImage: '/assets/cards_enemy/92-poster.png',
     behavior: 'external_combination',
     meta: { form: 'cold', formTurns: 3 }
   },
@@ -69,7 +73,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'attack', value: 8, description: '火旺伤阴' },
-    image: '/assets/cards_enemy/94.png',
+    image: '/assets/cards_enemy/94.gif',
+    posterImage: '/assets/cards_enemy/94-poster.png',
     behavior: 'boss_liver_fire'
   },
 
@@ -82,7 +87,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 5,
     statusEffects: [],
     intent: { type: 'attack', value: 8, description: '郁而作痛' },
-    image: '/assets/cards_enemy/95.png',
+    image: '/assets/cards_enemy/95.gif',
+    posterImage: '/assets/cards_enemy/95-poster.png',
     behavior: 'qi_blood_stasis'
   },
   'spleen_dampness': {
@@ -93,7 +99,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 8,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '湿困中焦' },
-    image: '/assets/cards_enemy/96.png',
+    image: '/assets/cards_enemy/96.gif',
+    posterImage: '/assets/cards_enemy/96-poster.png',
     behavior: 'spleen_dampness'
   },
   'heart_kidney_gap': {
@@ -104,7 +111,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '心悸不安' },
-    image: '/assets/cards_enemy/97.png',
+    image: '/assets/cards_enemy/97.gif',
+    posterImage: '/assets/cards_enemy/97-poster.png',
     behavior: 'heart_kidney_gap'
   },
   'tanmengxinqiao': {
@@ -115,7 +123,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '痰蒙心窍' },
-    image: '/assets/cards_enemy/83.png',
+    image: '/assets/cards_enemy/83.gif',
+    posterImage: '/assets/cards_enemy/83-poster.png',
     behavior: 'tanmengxinqiao',
     meta: { turn: 0 }
   },
@@ -128,7 +137,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 15,
     statusEffects: [],
     intent: { type: 'buff', value: 0, description: '痰凝血瘀' },
-    image: '/assets/cards_enemy/98.png',
+    image: '/assets/cards_enemy/98.gif',
+    posterImage: '/assets/cards_enemy/98-poster.png',
     behavior: 'phlegm_stasis'
   },
   // Boss Act 2
@@ -140,7 +150,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 20,
     statusEffects: [],
     intent: { type: 'special', value: 0, description: '水湿不运' },
-    image: '/assets/cards_enemy/99.png',
+    image: '/assets/cards_enemy/99.gif',
+    posterImage: '/assets/cards_enemy/99-poster.png',
     behavior: 'boss_spleen_damp',
     meta: { turn: 0 }
   },
@@ -166,7 +177,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '崩漏不止' },
-    image: '/assets/cards_enemy/101.png',
+    image: '/assets/cards_enemy/101.gif',
+    posterImage: '/assets/cards_enemy/101-poster.png',
     behavior: 'chong_ren_instability'
   },
   'reruyingxue': {
@@ -177,7 +189,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '热入营血' },
-    image: '/assets/cards_enemy/79.png',
+    image: '/assets/cards_enemy/79.gif',
+    posterImage: '/assets/cards_enemy/79-poster.png',
     behavior: 'reruyingxue',
     meta: { turn: 0 }
   },
@@ -189,7 +202,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 6,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '肾不纳气' },
-    image: '/assets/cards_enemy/80.png',
+    image: '/assets/cards_enemy/80.gif',
+    posterImage: '/assets/cards_enemy/80-poster.png',
     behavior: 'shenbunaqi',
     meta: { turn: 0 }
   },
@@ -201,20 +215,22 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 8,
     statusEffects: [],
     intent: { type: 'special', value: 0, description: '阳明腑实' },
-    image: '/assets/cards_enemy/84.png',
+    image: '/assets/cards_enemy/84.gif',
+    posterImage: '/assets/cards_enemy/84-poster.png',
     behavior: 'yangmingfushi',
     meta: { turn: 0 }
   },
   // Elite Act 3
   'jueyin_complex': {
     id: 'jueyin_complex',
-    name: '厥阴复杂证',
+    name: '厥阴复杂症',
     maxHp: 180,
     currentHp: 180,
     block: 20,
     statusEffects: [],
     intent: { type: 'debuff', value: 0, description: '寒热错杂' },
-    image: '/assets/cards_enemy/102.png',
+    image: '/assets/cards_enemy/102.gif',
+    posterImage: '/assets/cards_enemy/102-poster.png',
     behavior: 'jueyin_complex',
     meta: { turn: 0 }
   },
@@ -227,7 +243,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 50,
     statusEffects: [],
     intent: { type: 'special', value: 0, description: '五行流转' },
-    image: '/assets/cards_enemy/103.png',
+    image: '/assets/cards_enemy/103.gif',
+    posterImage: '/assets/cards_enemy/103-poster.png',
     behavior: 'boss_five_elements',
     meta: { phase: 'wood' }
   }

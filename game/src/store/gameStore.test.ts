@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { CARD_LIBRARY } from '../data/cards';
 import { useGameStore } from './gameStore';
 
 describe('Game Store', () => {
@@ -102,5 +103,28 @@ describe('Game Store', () => {
     expect(newState.currentAct).toBe(3);
     expect(newState.currentFloor).toBe(0);
     expect(newState.currentNodeId).toBeNull();
+  });
+
+  it('keeps first-turn damage against boss_liver_fire in the store immediately after playing an attack', () => {
+    const store = useGameStore.getState();
+
+    store.startAdminEnemyChallenge('boss_liver_fire');
+    const started = useGameStore.getState();
+    const enemy = started.enemies[0];
+    expect(enemy).toBeTruthy();
+
+    const card = { ...CARD_LIBRARY.danshen, id: 'test_danshen_liver_fire' };
+    useGameStore.setState({
+      player: {
+        ...started.player,
+        energy: 3,
+        hand: [card],
+      },
+    });
+
+    useGameStore.getState().playCard(card.id, enemy!.id);
+
+    const afterPlay = useGameStore.getState();
+    expect(afterPlay.enemies[0]?.currentHp).toBe(enemy!.maxHp - 7);
   });
 });

@@ -6,6 +6,7 @@ import { ENEMIES } from '../data/enemies';
 import { useGameStore } from '../store/gameStore';
 import type { Constitution } from '../types';
 import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
+import { useRuntimeAssetLoadingProgress } from '../hooks/useRuntimeAssetLoadingProgress';
 import {
   CONSTITUTION_CINEMATIC_MS,
   CONSTITUTION_REDUCED_MOTION_MS,
@@ -111,6 +112,8 @@ const MenuActionCard: React.FC<{
   </motion.button>
 );
 
+const formatMegabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
 export const StartMenu: React.FC = () => {
   const {
     map,
@@ -126,6 +129,7 @@ export const StartMenu: React.FC = () => {
   const [showContactPanel, setShowContactPanel] = useState(false);
   const [showEnemyChallengePicker, setShowEnemyChallengePicker] = useState(false);
   const [newRunStage, setNewRunStage] = useState<NewRunStage>('closed');
+  const assetLoadingProgress = useRuntimeAssetLoadingProgress();
   const adminEnabled = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -199,6 +203,9 @@ export const StartMenu: React.FC = () => {
   };
 
   const hasSavedRun = Boolean(map && map.length > 0);
+  const loadingProgressPercent = assetLoadingProgress.totalBytes
+    ? Math.min(100, (assetLoadingProgress.loadedBytes / assetLoadingProgress.totalBytes) * 100)
+    : 100;
 
   return (
     <>
@@ -275,6 +282,41 @@ export const StartMenu: React.FC = () => {
               onClick={openAdminPanel}
             />
           </div>
+
+          <AnimatePresence>
+            {assetLoadingProgress.visible && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="start-menu__asset-loader"
+              >
+                <div className="start-menu__asset-loader-head">
+                  <div>
+                    <div className="start-menu__asset-loader-kicker">资源加载</div>
+                    <div className="start-menu__asset-loader-copy">
+                      {formatMegabytes(assetLoadingProgress.loadedBytes)} / {formatMegabytes(assetLoadingProgress.totalBytes)}
+                    </div>
+                  </div>
+                  <div className="start-menu__asset-loader-meta">
+                    <span>{assetLoadingProgress.loadedCount}/{assetLoadingProgress.totalCount}</span>
+                    <span>{loadingProgressPercent.toFixed(0)}%</span>
+                  </div>
+                </div>
+                <div className="start-menu__asset-loader-track" aria-hidden="true">
+                  <motion.div
+                    className="start-menu__asset-loader-fill"
+                    animate={{ width: `${loadingProgressPercent}%` }}
+                    transition={{ duration: 0.24, ease: 'easeOut' }}
+                  />
+                </div>
+                <div className="start-menu__asset-loader-note">
+                  {assetLoadingProgress.finished ? '素材已加载完成。' : '静态图与动态图正在后台缓存，加载完成后会自动隐藏。'}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Panel>
       </PageShell>
 

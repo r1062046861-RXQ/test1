@@ -65,6 +65,14 @@ describe('progressiveAssets', () => {
     expect(isAssetPreloaded('/assets/cards_enemy/91.gif')).toBe(true);
   });
 
+  it('accepts a lower fetch priority for background batch preloads', async () => {
+    vi.stubGlobal('Image', FakeImage);
+
+    await preloadImageAsset('/assets/cards_enemy/90.gif', { fetchPriority: 'low' });
+
+    expect(FakeImage.created).toBe(1);
+  });
+
   it('primes poster and animated GIF together while reusing the same animated request', async () => {
     vi.stubGlobal('Image', FakeImage);
 

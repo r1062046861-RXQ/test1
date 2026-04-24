@@ -45,7 +45,12 @@ export const isAssetPreloaded = (path?: string | null) => {
   return assetUrl ? assetLoadState.get(assetUrl) === 'loaded' : false;
 };
 
-export const preloadImageAsset = (path?: string | null) => {
+export const preloadImageAsset = (
+  path?: string | null,
+  options?: {
+    fetchPriority?: 'high' | 'low' | 'auto';
+  },
+) => {
   const assetUrl = resolveAssetUrl(path);
   if (!assetUrl) {
     return Promise.resolve(false);
@@ -69,7 +74,7 @@ export const preloadImageAsset = (path?: string | null) => {
 
   const image = new ImageCtor();
   image.decoding = 'async';
-  image.fetchPriority = 'high';
+  image.fetchPriority = options?.fetchPriority ?? 'high';
 
   const loadPromise = new Promise<boolean>((resolve) => {
     image.onload = () => {
@@ -110,6 +115,20 @@ export const primeProgressiveAsset = (
   }
 
   return preloadImageAsset(animatedSrc);
+};
+
+export const preloadRuntimeAssetBatch = async (
+  assetPaths: Array<{ path: string }>,
+  onProgress?: (loadedCount: number, totalCount: number, assetPath: string, loaded: boolean) => void,
+) => {
+  const totalCount = assetPaths.length;
+  let loadedCount = 0;
+
+  for (const asset of assetPaths) {
+    const loaded = await preloadImageAsset(asset.path, { fetchPriority: 'low' });
+    loadedCount += 1;
+    onProgress?.(loadedCount, totalCount, asset.path, loaded);
+  }
 };
 
 export const resetProgressiveAssetCache = () => {

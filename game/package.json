@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "assets:manifest": "node ./scripts/generateAssetManifest.mjs",
     "edgeone:login": "edgeone login",
     "edgeone:whoami": "edgeone whoami",
     "edgeone:deploy": "npm run build && edgeone pages deploy ./dist -n yaoling-wushuang-web -e production -a global",

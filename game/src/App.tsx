@@ -10,12 +10,17 @@ import { ShopView } from './components/ShopView';
 import { EventView } from './components/EventView';
 import { ChestView } from './components/ChestView';
 import { CardCodexView } from './components/CardCodexView';
+import { ensureRuntimeAssetLoadingStarted } from './hooks/useRuntimeAssetLoadingProgress';
 
 function App() {
   const { phase, setPhase, fontSize } = useGameStore();
 
   useEffect(() => {
      useGameStore.setState({ phase: 'intro' });
+  }, []);
+
+  useEffect(() => {
+    ensureRuntimeAssetLoadingStarted();
   }, []);
 
   useEffect(() => {

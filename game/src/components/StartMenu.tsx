@@ -113,6 +113,24 @@ const MenuActionCard: React.FC<{
 );
 
 const formatMegabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+const LOADING_STAGE_LABELS = {
+  critical: '首批资源',
+  static: '静态图片',
+  gif: '动态图',
+  done: '已完成',
+} as const;
+
+const formatLoadingSpeed = (bytesPerSecond: number) => {
+  if (bytesPerSecond <= 0) {
+    return '0 KB/s';
+  }
+
+  if (bytesPerSecond < 1024 * 1024) {
+    return `${(bytesPerSecond / 1024).toFixed(bytesPerSecond < 100 * 1024 ? 0 : 1)} KB/s`;
+  }
+
+  return `${(bytesPerSecond / (1024 * 1024)).toFixed(2)} MB/s`;
+};
 
 export const StartMenu: React.FC = () => {
   const {
@@ -206,6 +224,7 @@ export const StartMenu: React.FC = () => {
   const loadingProgressPercent = assetLoadingProgress.totalBytes
     ? Math.min(100, (assetLoadingProgress.loadedBytes / assetLoadingProgress.totalBytes) * 100)
     : 100;
+  const currentStageLabel = LOADING_STAGE_LABELS[assetLoadingProgress.currentStage];
 
   return (
     <>
@@ -298,6 +317,10 @@ export const StartMenu: React.FC = () => {
                     <div className="start-menu__asset-loader-copy">
                       {formatMegabytes(assetLoadingProgress.loadedBytes)} / {formatMegabytes(assetLoadingProgress.totalBytes)}
                     </div>
+                    <div className="start-menu__asset-loader-status">
+                      <span>当前阶段：{currentStageLabel}</span>
+                      <span>当前速度：{formatLoadingSpeed(assetLoadingProgress.speedBytesPerSecond)}</span>
+                    </div>
                   </div>
                   <div className="start-menu__asset-loader-meta">
                     <span>{assetLoadingProgress.loadedCount}/{assetLoadingProgress.totalCount}</span>
@@ -312,7 +335,9 @@ export const StartMenu: React.FC = () => {
                   />
                 </div>
                 <div className="start-menu__asset-loader-note">
-                  {assetLoadingProgress.finished ? '素材已加载完成。' : '静态图与动态图正在后台缓存，加载完成后会自动隐藏。'}
+                  {assetLoadingProgress.finished
+                    ? '素材已加载完成。'
+                    : '资源会在后台继续加载，不用等全部完成也能开始游玩。'}
                 </div>
               </motion.div>
             )}

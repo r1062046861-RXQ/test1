@@ -678,6 +678,16 @@ textarea {
     color: #fff1d7;
   }
 
+  .start-menu__asset-loader-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.9rem;
+    margin-top: 0.42rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(221, 210, 189, 0.8);
+  }
+
   .start-menu__asset-loader-meta {
     display: flex;
     align-items: center;

@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CARD_LIBRARY } from '../data/cards';
 import { useGameStore } from './gameStore';
+import * as progressiveAssets from '../utils/progressiveAssets';
 
 describe('Game Store', () => {
   beforeEach(() => {
@@ -126,5 +127,14 @@ describe('Game Store', () => {
 
     const afterPlay = useGameStore.getState();
     expect(afterPlay.enemies[0]?.currentHp).toBe(enemy!.maxHp - 7);
+  });
+
+  it('primes enemy media before starting an admin-selected battle', () => {
+    const primeSpy = vi.spyOn(progressiveAssets, 'primeProgressiveAsset').mockResolvedValue(true);
+    const store = useGameStore.getState();
+
+    store.startAdminEnemyChallenge('damp_turbidity');
+
+    expect(primeSpy).toHaveBeenCalledWith('/assets/cards_enemy/91.gif', '/assets/cards_enemy/91-poster.png');
   });
 });

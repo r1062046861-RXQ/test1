@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it } from 'vitest';
 import { CARD_LIBRARY } from '../data/cards';
-import { ENEMIES } from '../data/enemies';
+import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import type { Card, Enemy, Player } from '../types';
 import { INITIAL_PLAYER, INITIAL_TURN_FLAGS, resolveCardPlay, resolveEnemyTurn, type CoreState } from '../../../shared/core/gameCore';
 
@@ -160,6 +160,69 @@ describe('shared game core', () => {
     const result = resolveCardPlay(makeState(player, [enemy]), danshen.id, enemy.id, () => undefined);
     expect(result).not.toBeNull();
     expect(result!.enemies[0].currentHp).toBe(enemy.maxHp - 7);
+  });
+
+  it('脾虚湿困会召唤正式的水湿小怪实例', () => {
+    const enemy = makeEnemy('boss_spleen_damp');
+    enemy.meta = { ...(enemy.meta ?? {}), turn: 1 };
+    const player = makePlayer();
+
+    const result = resolveEnemyTurn(makeState(player, [enemy]), () => undefined);
+    expect(result).not.toBeNull();
+
+    const summoned = result!.enemies.find((entry) => entry.behavior === 'damp_minion');
+    expect(summoned).toBeDefined();
+    expect(summoned).toMatchObject({
+      name: ENEMIES.damp_minion.name,
+      maxHp: ENEMIES.damp_minion.maxHp,
+      currentHp: ENEMIES.damp_minion.maxHp,
+      behavior: ENEMIES.damp_minion.behavior,
+      image: ENEMIES.damp_minion.image,
+      posterImage: ENEMIES.damp_minion.posterImage,
+    });
+    expect(summoned?.id).not.toBe(ENEMIES.damp_minion.id);
+    expect(result!.enemies.filter((entry) => entry.currentHp > 0)).toHaveLength(2);
+  });
+
+  it('脾虚湿困在场上已有两名存活敌人时不会再召唤第三个敌人', () => {
+    const boss = makeEnemy('boss_spleen_damp');
+    boss.meta = { ...(boss.meta ?? {}), turn: 3 };
+    const minion = makeEnemy('damp_minion');
+    const player = makePlayer();
+
+    const result = resolveEnemyTurn(makeState(player, [boss, minion]), () => undefined);
+    expect(result).not.toBeNull();
+
+    const aliveEnemies = result!.enemies.filter((entry) => entry.currentHp > 0);
+    const aliveMinions = aliveEnemies.filter((entry) => entry.behavior === 'damp_minion');
+    expect(aliveEnemies).toHaveLength(2);
+    expect(aliveMinions).toHaveLength(1);
+  });
+
+  it('脾虚湿困会在水湿小怪阵亡后补召回双敌上限', () => {
+    const boss = makeEnemy('boss_spleen_damp');
+    boss.meta = { ...(boss.meta ?? {}), turn: 3 };
+    const fallenMinion = makeEnemy('damp_minion');
+    fallenMinion.currentHp = 0;
+    const player = makePlayer();
+
+    const result = resolveEnemyTurn(makeState(player, [boss, fallenMinion]), () => undefined);
+    expect(result).not.toBeNull();
+
+    const aliveEnemies = result!.enemies.filter((entry) => entry.currentHp > 0);
+    const replacement = aliveEnemies.find((entry) => entry.behavior === 'damp_minion');
+    expect(aliveEnemies).toHaveLength(2);
+    expect(replacement).toBeDefined();
+    expect(replacement?.id).not.toBe(fallenMinion.id);
+  });
+
+  it('水湿小怪只作为召唤单位存在于正式敌人数据中', () => {
+    expect(ENEMIES.damp_minion).toBeDefined();
+    expect(ENEMY_POOLS.act1.common).not.toContain('damp_minion');
+    expect(ENEMY_POOLS.act2.common).not.toContain('damp_minion');
+    expect(ENEMY_POOLS.act2.elite).not.toContain('damp_minion');
+    expect(ENEMY_POOLS.act2.boss).not.toContain('damp_minion');
+    expect(ENEMY_POOLS.act3.common).not.toContain('damp_minion');
   });
 
   it('风寒束表二阶段会把 3 层寒邪转成 1 层血瘀', () => {

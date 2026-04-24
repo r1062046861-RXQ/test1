@@ -708,7 +708,8 @@ textarea {
   .immersive-modal__qr-frame {
     border: 1px solid rgba(236, 201, 139, 0.12);
     background:
-      linear-gradient(180deg, rgba(8, 12, 20, 0.82), rgba(5, 8, 14, 0.9));
+      radial-gradient(circle at top, rgba(244, 204, 126, 0.08), transparent 56%),
+      linear-gradient(180deg, rgba(10, 15, 24, 0.9), rgba(5, 8, 14, 0.94));
     box-shadow:
       inset 0 1px 0 rgba(255, 241, 206, 0.04),
       0 16px 28px rgba(0, 0, 0, 0.18);
@@ -717,9 +718,13 @@ textarea {
   .immersive-modal__qr-image {
     display: block;
     border: 1px solid rgba(236, 201, 139, 0.14);
-    background: transparent;
+    background: linear-gradient(180deg, rgba(244, 231, 206, 0.05), rgba(244, 231, 206, 0.02));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 241, 206, 0.08),
+      0 10px 24px rgba(0, 0, 0, 0.16);
     padding: 0.65rem;
-    filter: grayscale(1) invert(1) contrast(1.18) brightness(1.08);
+    image-rendering: crisp-edges;
+    filter: grayscale(1) invert(1) sepia(0.18) saturate(0.84) contrast(1.14) brightness(1.04);
   }
 
   .immersive-modal .ornate-button--primary {
@@ -1954,6 +1959,14 @@ textarea {
   --combat-enemy-portrait-height: 16rem;
   --combat-enemy-intent-width: 16rem;
   --combat-enemy-status-size: 2rem;
+  --combat-enemy-crowded-unit-width: 18.6rem;
+  --combat-enemy-crowded-frame-width: 12.2rem;
+  --combat-enemy-crowded-info-width: 12rem;
+  --combat-enemy-crowded-row-gap: 0.75rem;
+  --combat-enemy-packed-unit-width: 15rem;
+  --combat-enemy-packed-frame-width: 10.4rem;
+  --combat-enemy-packed-info-width: 9.8rem;
+  --combat-enemy-packed-row-gap: 0.55rem;
 }
 
 .combat-view--compact {
@@ -1972,6 +1985,14 @@ textarea {
   --combat-enemy-portrait-height: 13.5rem;
   --combat-enemy-intent-width: 14.25rem;
   --combat-enemy-status-size: 1.85rem;
+  --combat-enemy-crowded-unit-width: 16.8rem;
+  --combat-enemy-crowded-frame-width: 11.4rem;
+  --combat-enemy-crowded-info-width: 10.8rem;
+  --combat-enemy-crowded-row-gap: 0.65rem;
+  --combat-enemy-packed-unit-width: 13.9rem;
+  --combat-enemy-packed-frame-width: 9.8rem;
+  --combat-enemy-packed-info-width: 9.1rem;
+  --combat-enemy-packed-row-gap: 0.5rem;
 }
 
 .combat-view--tight {
@@ -1993,6 +2014,14 @@ textarea {
   --combat-enemy-portrait-height: 12rem;
   --combat-enemy-intent-width: 13rem;
   --combat-enemy-status-size: 1.7rem;
+  --combat-enemy-crowded-unit-width: 15.2rem;
+  --combat-enemy-crowded-frame-width: 10.4rem;
+  --combat-enemy-crowded-info-width: 10rem;
+  --combat-enemy-crowded-row-gap: 0.5rem;
+  --combat-enemy-packed-unit-width: 12.8rem;
+  --combat-enemy-packed-frame-width: 8.9rem;
+  --combat-enemy-packed-info-width: 8.5rem;
+  --combat-enemy-packed-row-gap: 0.42rem;
 }
 
 .combat-view__shell {
@@ -2036,9 +2065,39 @@ textarea {
   padding-bottom: 0.35rem;
 }
 
+.combat-view__arena-center--crowded,
+.combat-view__arena-center--packed {
+  align-items: flex-start;
+  padding-top: clamp(1.85rem, 4.2vh, 2.4rem);
+  padding-bottom: 0.2rem;
+}
+
+.combat-view__arena-center--packed {
+  padding-top: clamp(2rem, 4.6vh, 2.6rem);
+}
+
 .combat-view__enemy-row {
   align-items: flex-end;
   gap: clamp(1.15rem, 2.2vw, 2rem);
+}
+
+.combat-view__enemy-row--crowded,
+.combat-view__enemy-row--packed {
+  width: 100%;
+  max-width: 100%;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: nowrap;
+  margin-top: clamp(2rem, 4.4vh, 2.5rem);
+}
+
+.combat-view__enemy-row--crowded {
+  gap: var(--combat-enemy-crowded-row-gap);
+}
+
+.combat-view__enemy-row--packed {
+  gap: var(--combat-enemy-packed-row-gap);
+  margin-top: clamp(2.15rem, 4.8vh, 2.7rem);
 }
 
 .combat-view__hand-shell {
@@ -2636,6 +2695,19 @@ textarea {
   gap: 0.75rem;
 }
 
+.combat-enemy--crowded {
+  width: var(--combat-enemy-crowded-unit-width);
+}
+
+.combat-enemy--packed {
+  width: var(--combat-enemy-packed-unit-width);
+}
+
+.combat-enemy--crowded .combat-enemy__layout,
+.combat-enemy--packed .combat-enemy__layout {
+  gap: 0.55rem;
+}
+
 .combat-enemy__info {
   position: relative;
   width: 100%;
@@ -2743,6 +2815,16 @@ textarea {
 .combat-enemy--side .combat-enemy__frame {
   grid-column: 1;
   grid-row: 1 / span 2;
+}
+
+.combat-enemy--crowded .combat-enemy__frame {
+  width: var(--combat-enemy-crowded-frame-width);
+  border-radius: 22px;
+}
+
+.combat-enemy--packed .combat-enemy__frame {
+  width: var(--combat-enemy-packed-frame-width);
+  border-radius: 20px;
 }
 
 .combat-enemy--side .combat-enemy__stats {
@@ -3109,6 +3191,16 @@ textarea {
   white-space: nowrap;
 }
 
+.combat-enemy--crowded .combat-enemy__info,
+.combat-enemy--crowded .combat-enemy__stats {
+  width: min(100%, var(--combat-enemy-crowded-info-width));
+}
+
+.combat-enemy--packed .combat-enemy__info,
+.combat-enemy--packed .combat-enemy__stats {
+  width: min(100%, var(--combat-enemy-packed-info-width));
+}
+
 .combat-enemy--side .combat-enemy__stats {
   align-self: stretch;
 }
@@ -3167,6 +3259,16 @@ textarea {
   text-align: center;
 }
 
+.combat-enemy--stack.combat-enemy--crowded .combat-enemy__info,
+.combat-enemy--stack.combat-enemy--crowded .combat-enemy__stats {
+  width: min(100%, var(--combat-enemy-crowded-info-width));
+}
+
+.combat-enemy--stack.combat-enemy--packed .combat-enemy__info,
+.combat-enemy--stack.combat-enemy--packed .combat-enemy__stats {
+  width: min(100%, var(--combat-enemy-packed-info-width));
+}
+
 .combat-enemy--stack .combat-enemy__line,
 .combat-enemy--stack .combat-enemy__stats-row {
   justify-content: center;
@@ -3179,6 +3281,141 @@ textarea {
 
 .combat-enemy--stack .combat-enemy__status-wrap {
   justify-content: center;
+}
+
+.combat-enemy--crowded .combat-enemy__info {
+  gap: 0.34rem;
+}
+
+.combat-enemy--packed .combat-enemy__info {
+  gap: 0.28rem;
+}
+
+.combat-enemy--crowded .combat-enemy__line {
+  gap: 0.34rem;
+}
+
+.combat-enemy--packed .combat-enemy__line {
+  gap: 0.28rem;
+}
+
+.combat-enemy--crowded .combat-enemy__name {
+  font-size: clamp(0.98rem, 1.18vw, 1.12rem);
+}
+
+.combat-enemy--packed .combat-enemy__name {
+  font-size: clamp(0.88rem, 1.05vw, 1rem);
+}
+
+.combat-enemy--crowded .combat-enemy__line-label {
+  font-size: 0.6rem;
+}
+
+.combat-enemy--packed .combat-enemy__line-label {
+  font-size: 0.56rem;
+}
+
+.combat-enemy--crowded .combat-enemy__line--intent {
+  font-size: 0.78rem;
+}
+
+.combat-enemy--packed .combat-enemy__line--intent {
+  font-size: 0.72rem;
+}
+
+.combat-enemy--crowded .combat-enemy__line-copy {
+  font-size: 0.76rem;
+}
+
+.combat-enemy--packed .combat-enemy__line-copy {
+  font-size: 0.68rem;
+}
+
+.combat-enemy--crowded .combat-enemy__intent-explanation {
+  font-size: 0.62rem;
+}
+
+.combat-enemy--packed .combat-enemy__intent-explanation {
+  font-size: 0.56rem;
+}
+
+.combat-enemy--crowded .combat-enemy__intent-explanation::before,
+.combat-enemy--packed .combat-enemy__intent-explanation::before {
+  margin-inline: 0.2rem 0.08rem;
+}
+
+.combat-enemy--crowded .combat-enemy__status-wrap {
+  gap: 0.28rem;
+}
+
+.combat-enemy--packed .combat-enemy__status-wrap {
+  gap: 0.22rem;
+}
+
+.combat-enemy--crowded .combat-enemy__status-chip {
+  width: calc(var(--combat-enemy-status-size) * 0.82);
+  height: calc(var(--combat-enemy-status-size) * 0.82);
+}
+
+.combat-enemy--packed .combat-enemy__status-chip {
+  width: calc(var(--combat-enemy-status-size) * 0.72);
+  height: calc(var(--combat-enemy-status-size) * 0.72);
+}
+
+.combat-enemy--crowded .combat-enemy__status-chip-letter,
+.combat-enemy--packed .combat-enemy__status-chip-letter {
+  font-size: 0.72rem;
+}
+
+.combat-enemy--crowded .combat-enemy__status-chip-stack {
+  min-width: 0.9rem;
+  height: 0.9rem;
+  font-size: 8px;
+}
+
+.combat-enemy--packed .combat-enemy__status-chip-stack {
+  min-width: 0.8rem;
+  height: 0.8rem;
+  font-size: 8px;
+}
+
+.combat-enemy--crowded .combat-enemy__stats-copy,
+.combat-enemy--packed .combat-enemy__stats-copy {
+  align-items: center;
+}
+
+.combat-enemy--crowded .combat-enemy__stats-row,
+.combat-enemy--packed .combat-enemy__stats-row {
+  justify-content: center;
+}
+
+.combat-enemy--crowded .combat-enemy__stats-key,
+.combat-enemy--packed .combat-enemy__stats-key {
+  font-size: 0.64rem;
+}
+
+.combat-enemy--crowded .combat-enemy__stats-value {
+  font-size: 0.82rem;
+}
+
+.combat-enemy--packed .combat-enemy__stats-value {
+  font-size: 0.76rem;
+}
+
+.combat-enemy--crowded .combat-enemy__hp-track {
+  height: 4.8rem;
+}
+
+.combat-enemy--packed .combat-enemy__hp-track {
+  height: 4.15rem;
+}
+
+.combat-enemy--crowded .combat-enemy__status-detail {
+  width: min(13rem, calc(var(--combat-enemy-crowded-info-width) + 1.8rem));
+}
+
+.combat-enemy--packed .combat-enemy__status-detail {
+  width: min(11.4rem, calc(var(--combat-enemy-packed-info-width) + 1.4rem));
 }
 
 @media (max-height: 900px) {
@@ -3220,6 +3457,13 @@ textarea {
   }
 }
 
+@media (max-width: 900px) {
+  .combat-view__enemy-row--crowded,
+  .combat-view__enemy-row--packed {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-height: 780px) {
   .combat-view {
     --combat-shell-gap: 8px;
@@ -3233,6 +3477,24 @@ textarea {
     --combat-enemy-portrait-height: 10.75rem;
     --combat-enemy-intent-width: 11.75rem;
     --combat-enemy-status-size: 1.55rem;
+    --combat-enemy-crowded-unit-width: 14.4rem;
+    --combat-enemy-crowded-frame-width: 9.8rem;
+    --combat-enemy-crowded-info-width: 9.4rem;
+    --combat-enemy-crowded-row-gap: 0.45rem;
+    --combat-enemy-packed-unit-width: 12.1rem;
+    --combat-enemy-packed-frame-width: 8.3rem;
+    --combat-enemy-packed-info-width: 8rem;
+    --combat-enemy-packed-row-gap: 0.35rem;
+  }
+
+  .combat-view__enemy-row--crowded,
+  .combat-view__enemy-row--packed {
+    margin-top: 1.55rem;
+  }
+
+  .combat-view__arena-center--crowded,
+  .combat-view__arena-center--packed {
+    padding-top: 1.35rem;
   }
 
   .combat-view__title {

@@ -5,6 +5,7 @@ import { cn } from '../utils/cn';
 import { useProgressiveAssetSource } from '../hooks/useProgressiveAssetSource';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
+type EnemyLayoutMode = 'default' | 'crowded' | 'packed';
 
 interface EnemyProps {
   enemy: EnemyType;
@@ -13,6 +14,7 @@ interface EnemyProps {
   actionPhase?: EnemyActionPhase;
   viewportTier?: CombatViewportTier;
   preferSideRail?: boolean;
+  layoutMode?: EnemyLayoutMode;
 }
 
 type FloatingPopupKind = 'hp-loss' | 'hp-gain' | 'block-loss' | 'block-gain';
@@ -84,6 +86,7 @@ const FALLBACK_IMAGES: Record<string, string> = {
   chong_ren_instability: '/assets/cards_enemy/101.png',
   jueyin_complex: '/assets/cards_enemy/102.png',
   boss_five_elements: '/assets/cards_enemy/103.png',
+  damp_minion: '/assets/cards_enemy/104-poster.png',
   reruyingxue: '/assets/cards_enemy/79.png',
   shenbunaqi: '/assets/cards_enemy/80.png',
   tanmengxinqiao: '/assets/cards_enemy/83.png',
@@ -103,6 +106,7 @@ export const Enemy: React.FC<EnemyProps> = ({
   actionPhase = 'idle',
   viewportTier = 'regular',
   preferSideRail = false,
+  layoutMode = 'default',
 }) => {
   const [floatingValues, setFloatingValues] = useState<Array<{ value: number; id: number; kind: FloatingPopupKind }>>(
     [],
@@ -205,7 +209,10 @@ export const Enemy: React.FC<EnemyProps> = ({
   }, [enemy.statusEffects]);
 
   const fallbackImagePath = FALLBACK_IMAGES[enemy.id] || FALLBACK_IMAGES[enemy.behavior ?? ''];
-  const { displaySrc: imageSrc } = useProgressiveAssetSource(enemy.image, enemy.posterImage, fallbackImagePath);
+  const {
+    displaySrc: imageSrc,
+    posterSrc: posterImageSrc,
+  } = useProgressiveAssetSource(enemy.image, enemy.posterImage, fallbackImagePath);
 
   useEffect(() => {
     setImageErrored(false);
@@ -274,7 +281,7 @@ export const Enemy: React.FC<EnemyProps> = ({
   const intentHighlight = actionPhase === 'windup';
   const impactBurst = actionPhase === 'impact';
   const tookHpHit = floatingValues.some((popup) => popup.kind === 'hp-loss');
-  const sideRail = viewportTier !== 'tight' || preferSideRail;
+  const sideRail = layoutMode === 'default' ? viewportTier !== 'tight' || preferSideRail : false;
   const hpRatio = Math.max(0, Math.min(100, (enemy.currentHp / enemy.maxHp) * 100));
   const showPortraitArt = Boolean(imageSrc) && !imageErrored;
   const highlightedStatusSet = useMemo(() => new Set(highlightedStatusIds), [highlightedStatusIds]);
@@ -298,7 +305,9 @@ export const Enemy: React.FC<EnemyProps> = ({
         'combat-enemy relative transition-transform',
         `combat-enemy--${viewportTier}`,
         sideRail ? 'combat-enemy--side' : 'combat-enemy--stack',
-        selected && 'scale-[1.02]',
+        layoutMode === 'crowded' && 'combat-enemy--crowded',
+        layoutMode === 'packed' && 'combat-enemy--packed',
+        selected && (layoutMode === 'default' ? 'scale-[1.02]' : 'scale-[1.01]'),
       )}
     >
       <div className="combat-enemy__layout">
@@ -358,10 +367,11 @@ export const Enemy: React.FC<EnemyProps> = ({
             {showPortraitArt ? (
               <>
                 <img
-                  src={imageSrc}
+                  src={posterImageSrc || imageSrc}
                   alt=""
                   aria-hidden="true"
                   className="combat-enemy__art-backdrop absolute inset-0 h-full w-full object-cover"
+                  loading="eager"
                 />
                 <div className="combat-enemy__art-stage">
                   <img

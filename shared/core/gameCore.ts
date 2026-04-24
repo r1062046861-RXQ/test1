@@ -1,4 +1,5 @@
 import { Card, Enemy, EnemyIntent, GamePhase, MapLayer, MapNode, NodeType, Player, StatusEffect } from '../baseTypes';
+import { ENEMIES } from '../data/enemies';
 
 export interface TurnFlags {
   playedAttack: boolean;
@@ -386,6 +387,7 @@ export const resolveCardPlay = (
   }
   const newEnemies = state.enemies.map(enemy => ({
     ...enemy,
+    intent: { ...enemy.intent },
     statusEffects: enemy.statusEffects.map(s => ({ ...s })),
     meta: enemy.meta ? { ...enemy.meta } : undefined
   }));
@@ -1387,11 +1389,31 @@ const clonePlayerState = (player: Player): Player => ({
 
 const cloneEnemyState = (enemy: Enemy): Enemy => ({
   ...enemy,
+  intent: { ...enemy.intent },
   statusEffects: enemy.statusEffects.map(status => ({ ...status })),
   meta: enemy.meta ? { ...enemy.meta } : undefined,
 });
 
 const cloneEnemyStateList = (enemies: Enemy[]) => enemies.map(cloneEnemyState);
+
+const createEnemyFromTemplate = (enemyId: keyof typeof ENEMIES, overrides: Partial<Enemy> = {}): Enemy => {
+  const template = cloneEnemyState(ENEMIES[enemyId]);
+  return {
+    ...template,
+    ...overrides,
+    intent: overrides.intent ? { ...overrides.intent } : template.intent,
+    statusEffects: overrides.statusEffects
+      ? overrides.statusEffects.map(status => ({ ...status }))
+      : template.statusEffects,
+    meta: overrides.meta ? { ...overrides.meta } : template.meta ? { ...template.meta } : undefined,
+  };
+};
+
+const MAX_ALIVE_ENEMIES_ON_FIELD = 2;
+
+const getAliveEnemyCount = (enemies: Enemy[]) => enemies.filter(enemy => enemy.currentHp > 0).length;
+
+const canSummonEnemy = (enemies: Enemy[]) => getAliveEnemyCount(enemies) < MAX_ALIVE_ENEMIES_ON_FIELD;
 
 const getEnemyRank = (enemy: Enemy): 'common' | 'elite' | 'boss' => {
   if (enemy.behavior?.startsWith('boss_') || enemy.id.includes('boss')) return 'boss';
@@ -1791,7 +1813,7 @@ export const resolveEnemyTurn = (
         }
         case 'boss_spleen_damp': {
           if (intent.description === '水湿不运') {
-            log('脾虚湿困：召来水湿小怪');
+            log(canSummonEnemy(newEnemies) ? '脾虚湿困：召来水湿小怪' : '脾虚湿困：湿气翻涌，但场上敌人已满');
           } else {
             const damp = Math.max(1, getStacks(enemy, 'dampness_evil'));
             removeStatus(enemy, 'dampness_evil');
@@ -2075,21 +2097,12 @@ export const resolveEnemyTurn = (
     if (enemy.behavior === 'boss_spleen_damp') {
       const turn = (enemy.meta?.turn || 0) + 1;
       enemy.meta = { ...(enemy.meta || {}), turn };
-      if (turn % 2 === 0) {
-        const minions = newEnemies.filter(entry => entry.behavior === 'damp_minion' && entry.currentHp > 0);
-        if (minions.length < 2) {
-          newEnemies.push({
+      if (turn % 2 === 0 && canSummonEnemy(newEnemies)) {
+        newEnemies.push(
+          createEnemyFromTemplate('damp_minion', {
             id: `damp_minion_${Date.now()}_${enemyIndex}`,
-            name: '水湿小怪',
-            maxHp: 20,
-            currentHp: 20,
-            block: 0,
-            statusEffects: [],
-            intent: { type: 'debuff', value: 0, description: '湿邪侵体' },
-            behavior: 'damp_minion',
-            meta: {},
-          });
-        }
+          }),
+        );
       }
       addStatus(enemy, { id: 'dampness_evil', name: '湿邪', type: 'buff', stacks: 1, canStack: true, description: '化热前积蓄湿邪' });
     }

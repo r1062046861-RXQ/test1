@@ -17,7 +17,7 @@ DEFAULT_SOURCE_DIR = ROOT_DIR / "gif"
 DEFAULT_TARGET_GIF = ROOT_DIR / "game" / "public" / "assets" / "cards_enemy" / "93.gif"
 DEFAULT_TARGET_POSTER = ROOT_DIR / "game" / "public" / "assets" / "cards_enemy" / "93-poster.png"
 DEFAULT_AUDIT_DIR = ROOT_DIR / "output" / "gif-import-report"
-DEFAULT_MAX_BYTES = 10_000_000
+DEFAULT_MAX_BYTES = 8_000_000
 
 FRAME_SKIP_STEPS = [1, 2, 3, 4]
 WIDTH_STEPS = [600, 540, 480, 420, 360, 300]
@@ -41,9 +41,11 @@ GIF_IMPORT_SPECS = [
     ("心神不交者", "heart_kidney_gap", 97),
     ("痰瘀互结", "phlegm_stasis", 98),
     ("脾虚湿困", "boss_spleen_damp", 99),
+    ("阴阳离决者", "yin_yang_split", 100),
     ("冲任不固者", "chong_ren_instability", 101),
     ("厥阴复杂症", "jueyin_complex", 102),
     ("五行失调", "boss_five_elements", 103),
+    ("水湿小怪", "damp_minion", 104),
 ]
 
 GIF_IMPORT_MAP = {name: {"enemyId": enemy_id, "slot": slot} for name, enemy_id, slot in GIF_IMPORT_SPECS}

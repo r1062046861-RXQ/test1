@@ -13,6 +13,7 @@ import { panelSettleVariants, turnBannerVariants } from './ui/motionPresets';
 import { resolveAssetUrl } from '../utils/assets';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
+type EnemyLayoutMode = 'default' | 'crowded' | 'packed';
 
 const getCombatViewportTier = (height: number): CombatViewportTier => {
   if (height <= 780) return 'tight';
@@ -88,7 +89,15 @@ export const CombatView: React.FC = () => {
   const turnLabel = combatTurn === 0 ? '我方回合' : '敌方回合';
   const turnHint = combatTurn === 0 ? '选择卡牌并规划回合。' : '观察敌方出手与受击反馈。';
   const enemyCountLabel = `敌人 ${enemies.length}`;
+  const visibleEnemies = useMemo(() => enemies.filter((enemy) => enemy.currentHp > 0), [enemies]);
+  const activeSelectedEnemyId =
+    selectedEnemyId && visibleEnemies.some((enemy) => enemy.id === selectedEnemyId)
+      ? selectedEnemyId
+      : visibleEnemies[0]?.id ?? null;
+  void enemyCountLabel;
   const contentKey = useMemo(() => `combat-act-${currentAct}`, [currentAct]);
+  const enemyLayoutMode: EnemyLayoutMode =
+    visibleEnemies.length >= 4 ? 'packed' : visibleEnemies.length >= 3 ? 'crowded' : 'default';
 
   return (
     <div
@@ -178,7 +187,7 @@ export const CombatView: React.FC = () => {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,223,169,0.14),transparent_28%)]" />
               <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-amber-300/8 blur-3xl" />
               <div className="combat-view__arena-controls absolute right-4 top-4 z-20 flex items-center gap-3">
-                <Badge variant="slate">{enemyCountLabel}</Badge>
+                <Badge variant="slate">{`鏁屼汉 ${visibleEnemies.length}`}</Badge>
                 <ActionButton variant="secondary" onClick={() => setPhase('map')}>
                   返回地图
                 </ActionButton>
@@ -204,15 +213,28 @@ export const CombatView: React.FC = () => {
               </AnimatePresence>
 
               <div className="combat-view__arena-body relative z-10 flex h-full min-h-0 flex-col">
-                <div className="combat-view__arena-center pointer-events-none flex min-h-0 flex-1 items-center justify-center">
-                  <div className="combat-view__enemy-row flex flex-wrap items-end justify-center">
-                    {enemies.map((enemy) => (
+                <div
+                  className={cn(
+                    'combat-view__arena-center pointer-events-none flex min-h-0 flex-1 justify-center',
+                    enemyLayoutMode === 'crowded' && 'combat-view__arena-center--crowded',
+                    enemyLayoutMode === 'packed' && 'combat-view__arena-center--packed',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'combat-view__enemy-row flex flex-wrap items-end justify-center',
+                      enemyLayoutMode === 'crowded' && 'combat-view__enemy-row--crowded',
+                      enemyLayoutMode === 'packed' && 'combat-view__enemy-row--packed',
+                    )}
+                  >
+                    {visibleEnemies.map((enemy) => (
                       <Enemy
                         key={enemy.id}
                         enemy={enemy}
                         viewportTier={viewportTier}
                         preferSideRail={preferSideRail}
-                        selected={enemy.id === selectedEnemyId}
+                        layoutMode={enemyLayoutMode}
+                        selected={enemy.id === activeSelectedEnemyId}
                         actionPhase={enemyActionCue?.enemyId === enemy.id ? enemyActionCue.phase : 'idle'}
                         onClick={() => selectEnemy(enemy.id)}
                       />

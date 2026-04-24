@@ -51,7 +51,7 @@ const AUTHOR_CONTACTS = [
     role: '视觉、创意作者',
     name: '王熠',
     note: '负责整体视觉气质、创意方向与美术表达。',
-    qr: '/assets/author_qr/ren-xuanqi.jpg',
+    qr: '/assets/author_qr/wang-yi.jpg',
     qrAlt: '王熠二维码',
   },
   {
@@ -145,7 +145,7 @@ export const StartMenu: React.FC = () => {
         tier: meta?.tier ?? 'common',
         summary: meta?.summary ?? enemy.intent.description,
       };
-    });
+    }).filter((entry) => ENEMY_CODEX_DETAILS[entry.enemy.id]?.adminSelectable !== false);
 
     return ADMIN_ENEMY_ACT_ORDER.map((act) => ({
       act,

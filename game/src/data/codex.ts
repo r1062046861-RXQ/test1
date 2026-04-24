@@ -9,6 +9,7 @@ export interface EnemyCodexMeta {
   mechanics: string[];
   tags: string[];
   abilityCardIds?: string[];
+  adminSelectable?: boolean;
 }
 
 export interface GlossaryEntry {
@@ -139,10 +140,18 @@ export const ENEMY_CODEX_DETAILS: Record<string, EnemyCodexMeta> = {
   boss_spleen_damp: {
     act: 2,
     tier: 'boss',
-    summary: '第二幕首领，以湿邪转热与阶段变化为核心。',
-    mechanics: ['会积累湿邪并在合适时机“化热”。', '有召唤或阶段推进节奏。', '湿邪转热后会显著提升战斗压迫感。'],
+    summary: '第二幕首领，以湿邪转热、召唤协同与阶段变化为核心。',
+    mechanics: ['会积累湿邪并在合适时机“化热”。', '会召唤水湿小怪协同作战。', '湿邪转热后会显著提升战斗压迫感。'],
     tags: ['首领', '湿邪', '化热', '阶段变化'],
     abilityCardIds: ['pixushikun'],
+  },
+  damp_minion: {
+    act: 2,
+    tier: 'common',
+    summary: '由脾虚湿困召来的协同小怪，以施加湿邪和低伤追打为主。',
+    mechanics: ['优先施加“湿邪侵体”压低格挡收益。', '会与首领并场作战，补足持续压制。'],
+    tags: ['召唤物', '湿邪', '协同作战'],
+    adminSelectable: false,
   },
   yin_yang_split: {
     act: 3,

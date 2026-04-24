@@ -15,6 +15,7 @@ import { CARD_LIBRARY, STARTING_DECK } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import { createRuntimeId } from '../utils/id';
+import { primeProgressiveAsset } from '../utils/progressiveAssets';
 import {
   INITIAL_PLAYER,
   INITIAL_TURN_FLAGS,
@@ -179,6 +180,7 @@ const cloneEnemyTemplate = (enemy: Enemy): Enemy => ({
   ...enemy,
   id: createRuntimeId('enemy_'),
   currentHp: enemy.maxHp,
+  intent: { ...enemy.intent },
   statusEffects: [],
   meta: enemy.meta ? { ...enemy.meta } : undefined
 });
@@ -205,6 +207,11 @@ const createCombatState = (state: GameStore, enemyTemplate: Enemy, nodeId: strin
       energy: state.player.maxEnergy,
     }
   };
+};
+
+const primeEnemyMedia = (enemyTemplate?: Enemy | null) => {
+  if (!enemyTemplate) return;
+  void primeProgressiveAsset(enemyTemplate.image, enemyTemplate.posterImage);
 };
 
 const completeNode = (state: GameStore) => {
@@ -349,6 +356,7 @@ export const useGameStore = create<GameStore>()(
         const enemyTemplate = ENEMIES[enemyIds[Math.floor(Math.random() * enemyIds.length)]];
         if (!enemyTemplate) return;
 
+        primeEnemyMedia(enemyTemplate);
         set(createCombatState(state, enemyTemplate, nodeId));
         get().drawCards(5);
       },
@@ -362,6 +370,7 @@ export const useGameStore = create<GameStore>()(
         const runState = buildNewRunState('balanced', challengeAct);
         const previewState = { ...get(), ...runState } as GameStore;
 
+        primeEnemyMedia(enemyTemplate);
         set({
           ...runState,
           ...createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`),

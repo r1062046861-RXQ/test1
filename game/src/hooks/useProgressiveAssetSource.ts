@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { resolveAssetUrl } from '../utils/assets';
-
-const GIF_PATTERN = /\.gif(?:$|[?#])/i;
-
-const isAnimatedGif = (src: string) => GIF_PATTERN.test(src);
+import {
+  getProgressiveAssetSources,
+  isAnimatedGifSource,
+  isAssetPreloaded,
+  preloadImageAsset,
+} from '../utils/progressiveAssets';
 
 export function useProgressiveAssetSource(
   animatedPath?: string | null,
   posterPath?: string | null,
   fallbackPath?: string | null,
 ) {
-  const animatedSrc = useMemo(() => resolveAssetUrl(animatedPath || fallbackPath), [animatedPath, fallbackPath]);
-  const posterSrc = useMemo(() => resolveAssetUrl(posterPath || fallbackPath), [posterPath, fallbackPath]);
-  const [displaySrc, setDisplaySrc] = useState(() => posterSrc || animatedSrc);
-  const [animatedReady, setAnimatedReady] = useState(() => !animatedSrc || !posterSrc || !isAnimatedGif(animatedSrc));
+  const { animatedSrc, posterSrc } = useMemo(
+    () => getProgressiveAssetSources(animatedPath, posterPath, fallbackPath),
+    [animatedPath, posterPath, fallbackPath],
+  );
+  const initiallyAnimatedReady =
+    !animatedSrc || !posterSrc || !isAnimatedGifSource(animatedSrc) || isAssetPreloaded(animatedSrc);
+  const [displaySrc, setDisplaySrc] = useState(() =>
+    initiallyAnimatedReady ? animatedSrc || posterSrc : posterSrc || animatedSrc,
+  );
+  const [animatedReady, setAnimatedReady] = useState(() => initiallyAnimatedReady);
 
   useEffect(() => {
     if (!animatedSrc) {
@@ -22,36 +29,35 @@ export function useProgressiveAssetSource(
       return undefined;
     }
 
-    if (!posterSrc || !isAnimatedGif(animatedSrc) || posterSrc === animatedSrc) {
+    if (!posterSrc || !isAnimatedGifSource(animatedSrc) || posterSrc === animatedSrc) {
       setDisplaySrc(animatedSrc);
       setAnimatedReady(true);
       return undefined;
     }
 
     let cancelled = false;
-    const preloader = new window.Image();
-
     setDisplaySrc(posterSrc);
-    setAnimatedReady(false);
+    const alreadyReady = isAssetPreloaded(animatedSrc);
+    setAnimatedReady(alreadyReady);
 
-    preloader.onload = () => {
-      if (cancelled) return;
+    if (alreadyReady) {
       setDisplaySrc(animatedSrc);
-      setAnimatedReady(true);
-    };
+      return undefined;
+    }
 
-    preloader.onerror = () => {
+    void preloadImageAsset(animatedSrc).then((loaded) => {
       if (cancelled) return;
+      if (loaded) {
+        setDisplaySrc(animatedSrc);
+        setAnimatedReady(true);
+        return;
+      }
       setDisplaySrc(posterSrc);
       setAnimatedReady(false);
-    };
-
-    preloader.src = animatedSrc;
+    });
 
     return () => {
       cancelled = true;
-      preloader.onload = null;
-      preloader.onerror = null;
     };
   }, [animatedSrc, posterSrc]);
 

@@ -155,6 +155,19 @@ export const ENEMIES: Record<string, Enemy> = {
     behavior: 'boss_spleen_damp',
     meta: { turn: 0 }
   },
+  'damp_minion': {
+    id: 'damp_minion',
+    name: '水湿小怪',
+    maxHp: 20,
+    currentHp: 20,
+    block: 0,
+    statusEffects: [],
+    intent: { type: 'debuff', value: 0, description: '湿邪侵体' },
+    image: '/assets/cards_enemy/104.gif',
+    posterImage: '/assets/cards_enemy/104-poster.png',
+    behavior: 'damp_minion',
+    meta: {}
+  },
 
   // --- Act 3: Five Elements ---
   'yin_yang_split': {
@@ -165,7 +178,8 @@ export const ENEMIES: Record<string, Enemy> = {
     block: 0,
     statusEffects: [],
     intent: { type: 'special', value: 0, description: '阴阳格拒' },
-    image: '/assets/cards_enemy/100.png',
+    image: '/assets/cards_enemy/100.gif',
+    posterImage: '/assets/cards_enemy/100-poster.png',
     behavior: 'yin_yang_split',
     meta: { form: 'yin' }
   },

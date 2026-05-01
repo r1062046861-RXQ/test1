@@ -1,6 +1,10 @@
 .playwright-cli/
 output/
 tmp/
+__pycache__/
+tmp_actions*.json
+tmp_gif_actions.json
+tmp_github_pages_docs.*
 
 game/dist/
 game/node_modules/

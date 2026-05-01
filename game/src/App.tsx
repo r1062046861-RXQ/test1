@@ -11,9 +11,12 @@ import { EventView } from './components/EventView';
 import { ChestView } from './components/ChestView';
 import { CardCodexView } from './components/CardCodexView';
 import { ensureRuntimeAssetLoadingStarted } from './hooks/useRuntimeAssetLoadingProgress';
+import { useBgmAutoSwitch } from './hooks/useAudio';
 
 function App() {
   const { phase, setPhase, fontSize } = useGameStore();
+
+  useBgmAutoSwitch();
 
   useEffect(() => {
      useGameStore.setState({ phase: 'intro' });

@@ -15,6 +15,7 @@ import {
   type ConstitutionOption,
 } from './ConstitutionIntroOverlay';
 import { ActionButton, Badge, PageShell, Panel } from './ui/PageShell';
+import { playSfx } from '../services/audioService';
 
 const CONSTITUTIONS: ConstitutionOption[] = [
   {
@@ -89,11 +90,16 @@ const MenuActionCard: React.FC<{
   variant?: 'primary' | 'secondary' | 'quiet';
   wide?: boolean;
   id?: string;
-}> = ({ title, description, icon, onClick, variant = 'secondary', wide = false, id }) => (
+}> = ({ title, description, icon, onClick, variant = 'secondary', wide = false, id }) => {
+  const handleClick = () => {
+    playSfx('button_click');
+    onClick();
+  };
+  return (
   <motion.button
     id={id}
     type="button"
-    onClick={onClick}
+    onClick={handleClick}
     whileHover={{ y: -4, scale: 1.01 }}
     whileTap={{ scale: 0.985 }}
     className={[
@@ -110,7 +116,8 @@ const MenuActionCard: React.FC<{
       <p className="start-menu__action-description">{description}</p>
     </div>
   </motion.button>
-);
+  );
+};
 
 const formatMegabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 const LOADING_STAGE_LABELS = {
@@ -196,6 +203,7 @@ export const StartMenu: React.FC = () => {
   };
 
   const handleStartGame = (constitution: Constitution) => {
+    playSfx('confirm');
     startGame(constitution);
     setNewRunStage('closed');
   };

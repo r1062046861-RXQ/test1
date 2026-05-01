@@ -11,6 +11,7 @@ import { PlayerStats } from './PlayerStats';
 import { ActionButton, Badge } from './ui/PageShell';
 import { panelSettleVariants, turnBannerVariants } from './ui/motionPresets';
 import { resolveAssetUrl } from '../utils/assets';
+import { playSfx } from '../services/audioService';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
 type EnemyLayoutMode = 'default' | 'crowded' | 'packed';
@@ -279,7 +280,7 @@ export const CombatView: React.FC = () => {
                       variant={combatTurn === 1 ? 'ghost' : 'danger'}
                       disabled={combatTurn === 1}
                       className="relative min-w-[11rem] px-6 py-4 text-base"
-                      onClick={endTurn}
+                      onClick={() => { playSfx('confirm'); endTurn(); }}
                     >
                       {combatTurn === 1 ? (
                         <>

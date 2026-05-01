@@ -5,6 +5,7 @@ import { Card } from './Card';
 import { CARD_LIBRARY } from '../data/cards';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground } from '../utils/assets';
+import { playSfx } from '../services/audioService';
 
 export const ChestView: React.FC = () => {
   const { currentAct, addGold, addCardToDeck, completeNonCombat } = useGameStore();
@@ -20,6 +21,7 @@ export const ChestView: React.FC = () => {
 
   const handleOpen = () => {
     if (opened) return;
+    playSfx('chest_open');
     const gold = 40 + Math.floor(Math.random() * 41) + currentAct * 8;
     addGold(gold);
     setGoldReward(gold);

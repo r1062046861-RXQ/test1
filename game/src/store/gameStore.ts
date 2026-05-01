@@ -27,6 +27,7 @@ import {
   type CoreState,
   type TurnFlags,
 } from '../../../shared/core/gameCore';
+import { playSfx } from '../services/audioService';
 
 interface GameStore extends GameState {
   combatLog: string[];
@@ -379,6 +380,10 @@ export const useGameStore = create<GameStore>()(
       },
 
       drawCards: (count) => {
+        const pre = get();
+        if (pre.phase === 'combat' && pre.player.hand.length > 0) {
+          playSfx('card_draw');
+        }
         set(state => {
           let { drawPile, discardPile, hand } = state.player;
           const nextHand = [...hand];
@@ -408,6 +413,7 @@ export const useGameStore = create<GameStore>()(
       completeCombat: () => {
         cancelAllScheduledTasks();
         const state = get();
+        playSfx('victory');
 
         if (isAdminEnemyChallengeNode(state.currentNodeId)) {
           set({
@@ -650,14 +656,18 @@ export const useGameStore = create<GameStore>()(
       },
 
       addGold: (amount) => {
+        if (amount > 0) playSfx('gold_gain');
         set(state => ({ player: { ...state.player, gold: Math.max(0, state.player.gold + amount) } }));
       },
 
       spendGold: (amount) => {
+        const pre = get();
+        if (amount > 0 && pre.phase === 'shop') playSfx('shop_purchase');
         set(state => ({ player: { ...state.player, gold: Math.max(0, state.player.gold - amount) } }));
       },
 
       healPlayer: (amount) => {
+        if (amount > 0) playSfx('heal');
         set(state => ({
           player: {
             ...state.player,

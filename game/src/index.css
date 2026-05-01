@@ -45,6 +45,82 @@ textarea {
   font: inherit;
 }
 
+/* ─── GPU 硬件加速层 ─── */
+.combat-enemy__frame,
+.combat-enemy__portrait,
+.combat-enemy__art-stage,
+.combat-enemy__art,
+.combat-enemy__art-backdrop {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.combat-card__art-shell,
+.combat-card__art-image,
+.combat-card__art-backdrop,
+.combat-card--hand,
+.combat-card--reward {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.combat-view__enemy-row,
+.constitution-deck-packet-shell,
+.constitution-shuffle-card__front,
+.constitution-shuffle-card__back,
+.constitution-layer-card__surface,
+.constitution-choice-card {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* 降级集成显卡昂贵的 backdrop-filter，改用更轻量的实现 */
+.ornate-panel,
+.inset-panel,
+.immersive-modal,
+.immersive-modal-backdrop,
+.combat-parchment-panel,
+.combat-parchment-inset,
+.codex-modal-backdrop,
+.card-text-modal-backdrop {
+  backdrop-filter: none;
+}
+
+/* 仅保留必须的 backdrop-filter，限制最大开销 */
+.immersive-modal,
+.codex-modal-backdrop {
+  backdrop-filter: blur(6px);
+}
+
+/* 减轻敌人背景模糊半径：26px → 12px，极大减少 GPU 开销 */
+.combat-enemy__art-backdrop {
+  filter: blur(12px) saturate(0.88) brightness(0.72) !important;
+}
+
+/* 减轻卡牌背景模糊 */
+.combat-card__art-backdrop {
+  filter: blur(12px) saturate(0.84) brightness(0.94) !important;
+}
+
+/* GIF 渲染优化：提示浏览器使用硬件解码 */
+.combat-enemy__art {
+  image-rendering: auto;
+  transform: translateZ(0);
+}
+
+/* 减少 CSS filter 在动画元素上的使用 */
+.combat-enemy__portrait {
+  isolation: isolate;
+  contain: layout style paint;
+}
+
+.combat-enemy__frame {
+  contain: layout style paint;
+}
+
 /* Force text elements to inherit font size but prevent container scaling */
 .text-xs { font-size: calc(var(--app-font-size) * 0.88); }
 .text-sm { font-size: calc(var(--app-font-size) * 1); }

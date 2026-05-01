@@ -371,7 +371,8 @@ export const Enemy: React.FC<EnemyProps> = ({
                   alt=""
                   aria-hidden="true"
                   className="combat-enemy__art-backdrop absolute inset-0 h-full w-full object-cover"
-                  loading="eager"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="combat-enemy__art-stage">
                   <img
@@ -379,6 +380,7 @@ export const Enemy: React.FC<EnemyProps> = ({
                     alt={enemy.name}
                     className="combat-enemy__art"
                     loading="eager"
+                    decoding="async"
                     onError={() => setImageErrored(true)}
                   />
                 </div>

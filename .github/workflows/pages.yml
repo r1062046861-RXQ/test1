@@ -6,6 +6,8 @@ on:
       - main
       - master
     paths:
+      - README.md
+      - AI_HANDOFF.md
       - game/**
       - shared/**
       - .github/workflows/pages.yml

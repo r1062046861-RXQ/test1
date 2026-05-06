@@ -38,6 +38,8 @@ export const INITIAL_PLAYER: Player = {
   relics: [],
   potions: [],
   gold: 99,
+  obtainedCardIds: [],
+  obtainedEnemyTemplateIds: [],
 };
 
 export const INITIAL_TURN_FLAGS: TurnFlags = {
@@ -176,110 +178,20 @@ const MAP_X_PRESETS: Record<number, number[]> = {
   1: [50],
   2: [34, 66],
   3: [22, 50, 78],
-  4: [16, 38, 62, 84],
-  5: [12, 31, 50, 69, 88],
+  4: [14, 36, 58, 80],
+  5: [10, 28, 48, 68, 86],
 };
 
 const jitterX = (value: number, amount = 2.5) => clamp(value + (Math.random() * amount * 2 - amount), 10, 90);
 
-const weightedNodeType = (weights: Array<[NodeType, number]>): NodeType => {
-  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
-  let roll = Math.random() * total;
-  for (const [type, weight] of weights) {
-    roll -= weight;
-    if (roll <= 0) return type;
-  }
-  return weights[weights.length - 1][0];
-};
-
-const getNodeCountForLayer = (layerIndex: number, layers: number) => {
-  if (layerIndex === 0 || layerIndex === layers - 1) return 1;
-  if (layers === 8) {
-    switch (layerIndex) {
-      case 1:
-        return Math.random() < 0.45 ? 2 : 3;
-      case 2:
-        return Math.random() < 0.35 ? 2 : Math.random() < 0.8 ? 3 : 4;
-      case 3:
-        return Math.random() < 0.3 ? 2 : Math.random() < 0.78 ? 3 : 4;
-      case 4:
-        return Math.random() < 0.45 ? 3 : 4;
-      case 5:
-        return 1;
-      case 6:
-        return Math.random() < 0.55 ? 2 : 3;
-      default:
-        return 3;
-    }
-  }
-  if (layerIndex === Math.floor(layers * 0.7)) return 1;
-  if (layerIndex === 1 || layerIndex === layers - 2) return Math.random() < 0.5 ? 2 : 3;
-  return Math.random() < 0.55 ? 3 : 4;
-};
-
-const getNodeTypeForLayer = (layerIndex: number, layers: number, nodeIndex: number, nodeCount: number): NodeType => {
-  if (layerIndex === 0) return 'start';
-  if (layerIndex === layers - 1) return 'boss';
-  if (layers === 8) {
-    if (layerIndex === 1) return 'combat';
-    if (layerIndex === 5) return 'chest';
-    if (layerIndex === 4) {
-      const eliteSlots = nodeCount >= 4 ? [1, nodeCount - 2] : [Math.floor(nodeCount / 2)];
-      if (eliteSlots.includes(nodeIndex)) return 'elite';
-      if (nodeIndex === 0) return 'combat';
-      if (nodeIndex === nodeCount - 1) return 'rest';
-      return 'event';
-    }
-    if (layerIndex === 6) {
-      return nodeIndex === 0 ? 'rest' : nodeIndex === nodeCount - 1 ? 'combat' : 'event';
-    }
-    if (layerIndex === 3) {
-      return weightedNodeType([
-        ['combat', 40],
-        ['event', 24],
-        ['shop', 18],
-        ['rest', 18],
-      ]);
-    }
-    if (layerIndex === 2) {
-      return weightedNodeType([
-        ['combat', 58],
-        ['event', 18],
-        ['shop', 12],
-        ['rest', 12],
-      ]);
-    }
-  }
-  if (layerIndex === Math.floor(layers * 0.7)) return 'chest';
-  if (layerIndex === Math.floor(layers * 0.55)) {
-    const eliteSlots = nodeCount >= 4 ? [1, nodeCount - 2] : [Math.floor(nodeCount / 2)];
-    if (eliteSlots.includes(nodeIndex)) return 'elite';
-    return nodeIndex === 0 ? 'combat' : nodeIndex === nodeCount - 1 ? 'rest' : 'event';
-  }
-  if (layerIndex === layers - 2) {
-    return nodeIndex === 0 ? 'rest' : nodeIndex === nodeCount - 1 ? 'combat' : 'event';
-  }
-
-  return weightedNodeType([
-    ['combat', 48],
-    ['event', 18],
-    ['rest', 16],
-    ['shop', 12],
-    ['combat', 6],
-  ]);
-};
-
-const createNode = (layerIndex: number, nodeIndex: number, layers: number, nodeCount: number): MapNode => {
+const createNodeWithType = (layerIndex: number, nodeIndex: number, _layers: number, nodeCount: number, nodeType: NodeType): MapNode => {
   const preset = MAP_X_PRESETS[nodeCount] ?? MAP_X_PRESETS[3];
   const baseX = preset[nodeIndex] ?? 50;
-  const fixedNode =
-    layerIndex === 0 ||
-    layerIndex === layers - 1 ||
-    (layers === 8 ? layerIndex === 5 : layerIndex === Math.floor(layers * 0.7));
+  const fixedNode = layerIndex === 0;
 
   return {
     id: `node_${layerIndex}_${nodeIndex}`,
-    type: getNodeTypeForLayer(layerIndex, layers, nodeIndex, nodeCount),
+    type: nodeType,
     x: fixedNode ? baseX : jitterX(baseX),
     y: layerIndex * 80 + 50,
     children: [],
@@ -307,28 +219,46 @@ const closestNodeIndex = (nodes: MapNode[], x: number) =>
   ).index;
 
 // Helper to generate map with branches
-export function generateMap(layers: number): MapLayer[] {
-  const safeLayers = Math.max(layers, 8);
-  const map: MapLayer[] = [];
+export function generateMap(layers: number, startOffset = 0): MapLayer[] {
+  const safeLayers = Math.max(layers, startOffset === 0 ? 14 : layers);
+  return generateMapSegment(safeLayers, startOffset);
+}
 
-  for (let layerIndex = 0; layerIndex < safeLayers; layerIndex += 1) {
-    const nodeCount = getNodeCountForLayer(layerIndex, safeLayers);
-    const nodes = Array.from({ length: nodeCount }, (_, nodeIndex) => createNode(layerIndex, nodeIndex, safeLayers, nodeCount));
-    map.push({ nodes });
+export const generateMapSegment = (totalLayers: number, startLayerIndex: number): MapLayer[] => {
+  const layers: MapLayer[] = [];
+  let combatSinceShop = 0;
+  let combatSinceEvent = 0;
+
+  for (let li = 0; li < totalLayers; li += 1) {
+    const absoluteLayer = startLayerIndex + li;
+    const nodeCount = getNodeCountForLayerV3(absoluteLayer);
+    const types = generateLayerTypes(absoluteLayer, nodeCount, combatSinceShop, combatSinceEvent);
+
+    for (const t of types) {
+      if (t === 'shop') { combatSinceShop = 0; combatSinceEvent += 1; }
+      else if (t === 'event') { combatSinceEvent = 0; combatSinceShop += 1; }
+      else if (t === 'combat' || t === 'elite') { combatSinceShop += 1; combatSinceEvent += 1; }
+    }
+
+    const nodes = types.map((nodeType, ni) =>
+      createNodeWithType(absoluteLayer, ni, startLayerIndex + totalLayers, nodeCount, nodeType)
+    );
+    layers.push({ nodes });
   }
 
-  for (let layerIndex = 0; layerIndex < safeLayers - 1; layerIndex += 1) {
-    const currentLayer = map[layerIndex].nodes;
-    const nextLayer = map[layerIndex + 1].nodes;
+  for (let li = 0; li < totalLayers - 1; li += 1) {
+    const currentLayer = layers[li].nodes;
+    const nextLayer = layers[li + 1].nodes;
 
     currentLayer.forEach((node, nodeIndex) => {
+      if (nodeIndex >= 3) return;
       const baseTarget =
         currentLayer.length === 1
           ? Math.floor((nextLayer.length - 1) / 2)
           : Math.round((nodeIndex / (currentLayer.length - 1)) * (nextLayer.length - 1));
 
       const targetIndexes = new Set<number>([baseTarget]);
-      const canBranch = nextLayer.length > 1 && node.type !== 'boss' && (layerIndex === 0 || Math.random() < 0.48);
+      const canBranch = nextLayer.length > 1 && node.type !== 'boss' && (absoluteLayer(li, startLayerIndex) === 0 || Math.random() < 0.48);
 
       if (canBranch) {
         const branchDirection = Math.random() > 0.5 ? 1 : -1;
@@ -344,19 +274,96 @@ export function generateMap(layers: number): MapLayer[] {
       });
 
       if (node.children.length === 0) {
-        connectNodes(node, nextLayer[closestNodeIndex(nextLayer, node.x)]);
+        const mainNodes = nextLayer.slice(0, 3);
+        if (mainNodes.length > 0) {
+          connectNodes(node, mainNodes[closestNodeIndex(mainNodes, node.x)]);
+        }
       }
     });
 
-    nextLayer.forEach((node) => {
+    nextLayer.forEach((node, nodeIndex) => {
+      if (nodeIndex >= 3) return;
       if (node.parents.length === 0) {
-        connectNodes(currentLayer[closestNodeIndex(currentLayer, node.x)], node);
+        const mainParents = currentLayer.slice(0, 3);
+        if (mainParents.length > 0) {
+          connectNodes(mainParents[closestNodeIndex(mainParents, node.x)], node);
+        }
       }
     });
   }
 
-  return map;
-}
+  if (totalLayers >= 3) {
+    connectNodes(layers[1].nodes[0], layers[2].nodes[3]);
+  }
+  for (let li = 2; li < totalLayers - 1; li += 1) {
+    const cur = layers[li].nodes;
+    const nxt = layers[li + 1].nodes;
+    if (cur.length > 3 && nxt.length > 3 && cur[3].type !== 'boss' && cur[3].parents.length > 0) {
+      connectNodes(cur[3], nxt[3]);
+    }
+    if (cur.length > 3 && (cur[3].type === 'rest' || cur[3].type === 'boss')) {
+      const mainNodes = cur.slice(0, 3);
+      connectNodes(mainNodes[closestNodeIndex(mainNodes, cur[3].x)], cur[3]);
+    }
+  }
+
+  return layers;
+};
+
+const absoluteLayer = (li: number, startLayerIndex: number) => startLayerIndex + li;
+
+const ACT_LENGTH = 10;
+
+const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinceShop: number, combatSinceEvent: number): NodeType[] => {
+  if (absoluteLayer === 0) return ['start'];
+  if (absoluteLayer === 1) return ['event'];
+
+  const cyclePos = (absoluteLayer - 2) % ACT_LENGTH;
+
+  // cyclePos 8: pre-boss rest (boss lane, col 3)
+  if (cyclePos === 8) return ['combat', 'combat', 'combat', 'rest'];
+  // cyclePos 9: boss (boss lane, col 3)
+  if (cyclePos === 9) return ['combat', 'combat', 'combat', 'boss'];
+  // cyclePos 4: mid-act rest (boss lane, col 3)
+  if (cyclePos === 4) return ['combat', 'combat', 'combat', 'rest'];
+
+  const isCombatLayer = (cyclePos >= 0 && cyclePos <= 3) || (cyclePos >= 5 && cyclePos <= 7);
+  if (isCombatLayer) {
+    // cols 0-2 = main content, col 3 = boss lane connector (combat)
+    const forceShop = combatSinceShop >= 4;
+    const forceEvent = combatSinceEvent >= 4;
+    let specialType: NodeType = 'combat';
+    if (forceShop && forceEvent) {
+      specialType = Math.random() < 0.5 ? 'shop' : 'event';
+    } else if (forceShop) {
+      specialType = 'shop';
+    } else if (forceEvent) {
+      specialType = 'event';
+    } else {
+      const roll = Math.random();
+      if (roll < 0.25) specialType = 'event';
+      else if (roll < 0.55) specialType = 'shop';
+    }
+    const specialIdx = Math.floor(Math.random() * 3);
+    const r: NodeType[] = ['combat', 'combat', 'combat', 'combat'];
+    r[specialIdx] = specialType;
+    return r;
+  }
+
+  return Array.from({ length: nodeCount }, () => 'combat');
+};
+
+const getNodeCountForLayerV3 = (absoluteLayer: number): number => {
+  if (absoluteLayer === 0 || absoluteLayer === 1) return 1;
+  return 4;
+};
+
+export const getBossUnlockWinsRequired = (): number => 3;
+
+export const getEnemyScaling = (floor: number) => ({
+  hpMultiplier: 1 + floor * 0.05,
+  damageBonus: Math.floor(floor * 0.03),
+});
 
 export interface PlayCardResult {
   player: Player;
@@ -430,7 +437,8 @@ export const resolveCardPlay = (
     };
   };
 
-  const { cost: effectiveCost, consumeCostUp } = computeCardCost();
+  const { cost: baseCost, consumeCostUp } = computeCardCost();
+  const effectiveCost = card.type === 'attack' ? 0 : baseCost;
   if (newPlayer.energy < effectiveCost) return null;
   if (consumeCostUp) {
     removeStatus(newPlayer, 'cost_up_next');
@@ -550,7 +558,6 @@ export const resolveCardPlay = (
 
   const drawCardsLocal = (count: number) => {
     for (let i = 0; i < count; i += 1) {
-      if (newPlayer.hand.length >= 10) break;
       if (newPlayer.drawPile.length === 0) {
         if (newPlayer.discardPile.length === 0) break;
         newPlayer.drawPile = [...newPlayer.discardPile].sort(() => Math.random() - 0.5);
@@ -1293,8 +1300,8 @@ export const resolvePlayerEndTurn = (
   const newPlayer: Player = {
     ...state.player,
     statusEffects: state.player.statusEffects.map(s => ({ ...s })),
-    hand: [],
-    discardPile: [...state.player.discardPile, ...state.player.hand]
+    hand: state.player.hand.map(c => ({ ...c })),
+    discardPile: [...state.player.discardPile]
   };
   const newEnemies = state.enemies.map(enemy => ({
     ...enemy,
@@ -2224,22 +2231,6 @@ export const resolveEnemyTurn = (
 
   if (getStacks(newPlayer, 'retain_block') === 0) {
     newPlayer.block = 0;
-  }
-
-  const drawDown = getStacks(newPlayer, 'draw_down');
-  const drawCount = Math.max(0, 5 - drawDown);
-  if (drawDown > 0) {
-    removeStatus(newPlayer, 'draw_down');
-  }
-  for (let i = 0; i < drawCount; i += 1) {
-    if (newPlayer.hand.length >= 10) break;
-    if (newPlayer.drawPile.length === 0) {
-      if (newPlayer.discardPile.length === 0) break;
-      newPlayer.drawPile = [...newPlayer.discardPile].sort(() => Math.random() - 0.5);
-      newPlayer.discardPile = [];
-    }
-    const drawn = newPlayer.drawPile.pop();
-    if (drawn) newPlayer.hand.push(drawn);
   }
 
   return {

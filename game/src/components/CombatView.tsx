@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Hourglass, RefreshCw, ScrollText, Swords } from 'lucide-react';
+import { Hourglass, RefreshCw, ScrollText, Swords, Trash2 } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../utils/cn';
+import { Card } from './Card';
 import { CombatLog } from './CombatLog';
 import { Enemy } from './Enemy';
 import { Hand } from './Hand';
@@ -34,6 +35,9 @@ export const CombatView: React.FC = () => {
     enemyActionCue,
     playerImpactCue,
     player,
+    getHandLimit,
+    bossKills,
+    discardOverflowCard,
   } = useGameStore();
 
   const [turnBanner, setTurnBanner] = useState<{ token: number; label: string; hint: string } | null>(null);
@@ -140,8 +144,18 @@ export const CombatView: React.FC = () => {
                 <h2 className="combat-view__title text-3xl font-bold text-amber-50">战斗</h2>
                 <Badge variant={combatTurn === 0 ? 'amber' : 'crimson'}>{turnLabel}</Badge>
                 <Badge variant="slate">第 {currentAct} 幕</Badge>
+                {bossKills > 0 && (
+                  <Badge variant="amber">已斩首领 {bossKills}</Badge>
+                )}
               </div>
-              <p className="combat-view__hint mt-1 text-sm text-stone-300">{turnHint}</p>
+              <p className="combat-view__hint mt-1 text-sm text-stone-300">
+                  {turnHint}
+                  {bossKills > 0 && (
+                    <span className="ml-2 text-amber-300/80">
+                      · 手牌上限{8 + Math.min(bossKills, 2)} · 补牌{3 + Math.min(bossKills, 2)}/回合
+                    </span>
+                  )}
+                </p>
             </div>
 
             <motion.div animate={playerShake} transition={{ duration: playerShakeDuration, ease: 'easeOut' }} className="relative">
@@ -188,7 +202,7 @@ export const CombatView: React.FC = () => {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,223,169,0.14),transparent_28%)]" />
               <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-amber-300/8 blur-3xl" />
               <div className="combat-view__arena-controls absolute right-4 top-4 z-20 flex items-center gap-3">
-                <Badge variant="slate">{`鏁屼汉 ${visibleEnemies.length}`}</Badge>
+                <Badge variant="slate">敌 {visibleEnemies.length}</Badge>
                 <ActionButton variant="secondary" onClick={() => setPhase('map')}>
                   返回地图
                 </ActionButton>
@@ -303,6 +317,61 @@ export const CombatView: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {combatTurn === 0 && player.hand.length > getHandLimit() && (
+          <motion.div
+            className="immersive-modal-backdrop fixed inset-0 z-50 flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              className="immersive-modal w-full max-w-[64rem] px-6 py-6"
+            >
+              <div className="immersive-modal__header mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <div className="immersive-modal__kicker text-[12px] font-semibold tracking-[0.18em]">手牌超限</div>
+                  <h2 className="immersive-modal__title mt-2 text-2xl font-bold">丢弃卡牌</h2>
+                  <p className="immersive-modal__copy mt-2 text-sm leading-7">
+                    手牌上限 {getHandLimit()} 张，当前 {player.hand.length} 张。请丢弃 {player.hand.length - getHandLimit()} 张。
+                  </p>
+                </div>
+                <div className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs tracking-[0.2em] text-red-300">
+                  溢 {player.hand.length - getHandLimit()}
+                </div>
+              </div>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3 justify-items-center max-h-[60vh] overflow-y-auto ornate-scroll p-2">
+                {player.hand.map((cardData) => (
+                  <button
+                    key={cardData.id}
+                    type="button"
+                    onClick={() => discardOverflowCard(cardData.id)}
+                    className="group relative transition hover:scale-[1.02]"
+                  >
+                    <div className="relative">
+                      <Card
+                        card={cardData}
+                        interactive={false}
+                        hoverLift={false}
+                        layoutVariant="hand"
+                        descriptionModalEnabled={false}
+                      />
+                      <div className="pointer-events-none absolute inset-0 rounded-[22px] ring-2 ring-red-500/0 transition group-hover:ring-red-500/40" />
+                      <div className="absolute -top-1 -right-1 z-20 rounded-full bg-red-600 p-1 text-white shadow-lg transition group-hover:scale-110">
+                        <Trash2 size={14} />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

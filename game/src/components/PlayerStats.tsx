@@ -92,7 +92,7 @@ const getFloatingBadgeTone = (variant: FloatingTextVariant) => {
 };
 
 export const PlayerStats: React.FC = () => {
-  const { player } = useGameStore();
+  const { player, getHandLimit, getDrawPerTurn } = useGameStore();
   const prevHpRef = useRef(player.hp);
   const prevBlockRef = useRef(player.block);
   const prevEnergyRef = useRef(player.energy);
@@ -380,8 +380,16 @@ export const PlayerStats: React.FC = () => {
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs tracking-[0.18em] text-stone-300/75">
         <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">牌组 {player.deck.length}</div>
         <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">金币 {player.gold}</div>
-        <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">抽牌堆 {player.drawPile.length}</div>
         <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">弃牌堆 {player.discardPile.length}</div>
+        <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">抽牌堆 {player.drawPile.length}</div>
+      </div>
+      <div className="mt-2 flex gap-2 text-xs tracking-[0.14em]">
+        <div className="flex-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-center text-amber-200/80">
+          手牌 {player.hand.length}/{getHandLimit()}
+        </div>
+        <div className="flex-1 rounded-full border border-sky-500/20 bg-sky-500/8 px-3 py-2 text-center text-sky-200/80">
+          补牌 {getDrawPerTurn()}/回合
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { CARD_LIBRARY } from '../data/cards';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import type { Card, Enemy, Player } from '../types';
@@ -84,14 +84,14 @@ describe('shared game core', () => {
   });
 
   it('脾虚湿盛者在场时会稳定提高卡牌消耗', () => {
-    const shanzha = makeCard('shanzha', 'cost');
+    const chenpi = makeCard('chenpi', 'cost');
     const enemy = makeEnemy('spleen_dampness');
     const player = makePlayer({
       energy: 0,
-      hand: [shanzha],
+      hand: [chenpi],
     });
 
-    const result = resolveCardPlay(makeState(player, [enemy]), shanzha.id, enemy.id, () => undefined);
+    const result = resolveCardPlay(makeState(player, [enemy]), chenpi.id, enemy.id, () => undefined);
     expect(result).toBeNull();
   });
 

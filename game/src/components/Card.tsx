@@ -25,10 +25,16 @@ const TYPE_LABELS = {
   power: '能力',
 } satisfies Record<CardType['type'], string>;
 
+const costTheme: Record<CardType['type'], string> = {
+  attack: 'border-red-800/40 bg-gradient-to-b from-red-950/80 to-red-900/80 text-red-200 shadow-[0_10px_20px_rgba(127,29,29,0.3)]',
+  skill: 'border-amber-400/30 bg-gradient-to-b from-yellow-100/90 to-amber-100/80 text-amber-950 shadow-[0_10px_20px_rgba(120,80,20,0.15)]',
+  power: 'border-purple-800/40 bg-gradient-to-b from-purple-950/80 to-violet-900/80 text-violet-200 shadow-[0_10px_20px_rgba(76,29,149,0.3)]',
+};
+
 const typeTheme: Record<CardType['type'], string> = {
-  attack: 'from-red-100/55 to-red-50/32 border-red-900/28',
-  skill: 'from-sky-100/52 to-slate-50/30 border-sky-900/24',
-  power: 'from-amber-100/5 to-yellow-50/28 border-yellow-900/26',
+  attack: 'from-red-950/60 to-red-900/40 border-red-800/35',
+  skill: 'from-amber-100/55 to-yellow-50/40 border-amber-400/40',
+  power: 'from-purple-950/60 to-violet-900/40 border-purple-800/35',
 };
 
 const rarityLabel = {
@@ -178,8 +184,8 @@ export const Card: React.FC<CardProps> = ({
         className={cn(
           'combat-card group relative isolate overflow-hidden rounded-[22px] border bg-gradient-to-b shadow-[0_18px_30px_rgba(35,22,10,0.2)] transition-all duration-200 select-none',
           'flex min-h-0 flex-col justify-between',
-          !handLayout && !codexLayout && (rewardLayout ? 'h-[20.75rem] w-[13.75rem]' : 'h-[18rem] w-48'),
-          handLayout && 'combat-card--hand',
+          handLayout && 'border-[1.5px] combat-card--hand',
+          !handLayout && !codexLayout && (rewardLayout ? 'h-[20.75rem] w-[13.75rem] border-2' : 'h-[18rem] w-48 border-2'),
           rewardLayout && 'combat-card--reward',
           codexLayout && 'combat-card--codex',
           typeTheme[card.type],
@@ -237,7 +243,9 @@ export const Card: React.FC<CardProps> = ({
 
         <div className="combat-card__header relative z-10">
           <div className="combat-card__header-row">
-            <div className="combat-card__cost">{card.cost}</div>
+            <div className={cn('combat-card__cost', costTheme[card.type])}>
+              {card.type === 'attack' ? '攻' : card.cost}
+            </div>
 
             <div className="combat-card__title-pill">
               <div className="combat-card__title">{card.name}</div>

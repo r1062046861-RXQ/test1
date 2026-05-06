@@ -45,6 +45,66 @@ const CONSTITUTIONS: ConstitutionOption[] = [
     accent: 'from-yellow-100 to-amber-50 border-yellow-700/30',
     image: '/assets/constitutions/qi_deficiency.png',
   },
+  {
+    id: 'blood_stasis',
+    title: '血瘀体质',
+    subtitle: '专攻瘀血，对有血瘀的敌人额外造成伤害。',
+    passive: '对有血瘀的敌人额外造成2点伤害',
+    detail: '偏破瘀强攻。',
+    accent: 'from-red-100 to-rose-50 border-red-700/30',
+    image: '/assets/constitutions/blood_stasis.svg',
+    locked: true,
+  },
+  {
+    id: 'phlegm_dampness',
+    title: '痰湿体质',
+    subtitle: '防守反击，回合结束时保留部分格挡。',
+    passive: '回合结束时保留最多3点格挡',
+    detail: '偏防御扎根。',
+    accent: 'from-green-100 to-lime-50 border-green-700/30',
+    image: '/assets/constitutions/phlegm_dampness.svg',
+    locked: true,
+  },
+  {
+    id: 'fire_heat',
+    title: '火热体质',
+    subtitle: '攻势如火，攻击牌额外造成伤害。',
+    passive: '攻击牌额外造成1点伤害',
+    detail: '偏极限快攻。',
+    accent: 'from-orange-100 to-red-50 border-orange-700/30',
+    image: '/assets/constitutions/fire_heat.svg',
+    locked: true,
+  },
+  {
+    id: 'qi_stagnation',
+    title: '气滞体质',
+    subtitle: '运气周转，每回合额外抽牌扩大选择。',
+    passive: '每回合多抽1张牌',
+    detail: '偏过牌运营。',
+    accent: 'from-indigo-100 to-violet-50 border-indigo-700/30',
+    image: '/assets/constitutions/qi_stagnation.svg',
+    locked: true,
+  },
+  {
+    id: 'jing_deficiency',
+    title: '精虚体质',
+    subtitle: '精通技法，技能牌费用降低。',
+    passive: '技能牌费用-1（最低0）',
+    detail: '偏技能连发。',
+    accent: 'from-slate-100 to-gray-50 border-slate-700/30',
+    image: '/assets/constitutions/jing_deficiency.svg',
+    locked: true,
+  },
+  {
+    id: 'yang_deficiency',
+    title: '阳虚体质',
+    subtitle: '背水一战，低血量时攻击力大幅提升。',
+    passive: '生命低于50%时攻击+3',
+    detail: '偏绝境翻盘。',
+    accent: 'from-amber-100 to-yellow-50 border-amber-700/30',
+    image: '/assets/constitutions/yang_deficiency.svg',
+    locked: true,
+  },
 ];
 
 const AUTHOR_CONTACTS = [
@@ -146,8 +206,12 @@ export const StartMenu: React.FC = () => {
     startCombat,
     startAdminEnemyChallenge,
     setPhase,
+    setBgmVolume,
+    setSfxVolume,
     setFontSize,
     fontSize,
+    bgmVolume,
+    sfxVolume,
   } = useGameStore();
   const shouldReduceMotion = useReducedMotion();
   const [showSettings, setShowSettings] = useState(false);
@@ -435,6 +499,28 @@ export const StartMenu: React.FC = () => {
                 </button>
               </div>
               <div className="immersive-modal__panel px-4 py-4">
+                <label className="block text-base font-semibold text-amber-50">音乐音量：{Math.round(bgmVolume * 100)}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={Math.round(bgmVolume * 100)}
+                  onChange={(event) => setBgmVolume(Number(event.target.value) / 100)}
+                  className="mt-3 w-full accent-amber-700"
+                />
+                <div className="mt-4 mb-1 border-t border-stone-700/50" />
+                <label className="block text-base font-semibold text-amber-50">音效音量：{Math.round(sfxVolume * 100)}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={Math.round(sfxVolume * 100)}
+                  onChange={(event) => setSfxVolume(Number(event.target.value) / 100)}
+                  className="mt-3 w-full accent-amber-700"
+                />
+                <div className="mt-4 mb-1 border-t border-stone-700/50" />
                 <label className="block text-base font-semibold text-amber-50">字体大小：{fontSize}px</label>
                 <input
                   type="range"
@@ -443,7 +529,7 @@ export const StartMenu: React.FC = () => {
                   step="2"
                   value={fontSize}
                   onChange={(event) => setFontSize(Number(event.target.value))}
-                  className="mt-4 w-full accent-amber-700"
+                  className="mt-3 w-full accent-amber-700"
                 />
                 <div className="mt-3 text-sm text-stone-300">仅影响网页端界面的基础字号。</div>
               </div>
@@ -500,7 +586,7 @@ export const StartMenu: React.FC = () => {
                       closeAdminPanel();
                     }}
                   >
-                    直接进入药铺
+                    直接进入药房
                   </ActionButton>
                   <ActionButton
                     variant="secondary"

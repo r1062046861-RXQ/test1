@@ -26,7 +26,7 @@ export const ChestView: React.FC = () => {
     addGold(gold);
     setGoldReward(gold);
 
-    const pool = Object.values(CARD_LIBRARY).filter((card) => (!card.act || card.act <= currentAct) && !card.unplayable);
+    const pool = Object.values(CARD_LIBRARY).filter((card) => !card.unplayable);
     const picked: string[] = [];
     const copy = [...pool];
     while (picked.length < 3 && copy.length > 0) {

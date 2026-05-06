@@ -1,4 +1,4 @@
-export type Constitution = 'balanced' | 'yin_deficiency' | 'qi_deficiency';
+export type Constitution = 'balanced' | 'yin_deficiency' | 'qi_deficiency' | 'blood_stasis' | 'phlegm_dampness' | 'fire_heat' | 'qi_stagnation' | 'jing_deficiency' | 'yang_deficiency';
 
 export type CardType = 'attack' | 'skill' | 'power';
 export type CardRarity = 'common' | 'uncommon' | 'rare';
@@ -87,6 +87,8 @@ export interface Player {
   relics: Relic[];
   potions: Potion[];
   gold: number;
+  obtainedCardIds: string[];
+  obtainedEnemyTemplateIds: string[];
 }
 
 export type NodeType = 'combat' | 'elite' | 'boss' | 'event' | 'shop' | 'rest' | 'chest' | 'start';

@@ -41,7 +41,8 @@ const SFX_FILES: Record<string, SfxEntry> = {
 const CROSSFADE_DURATION = 500;
 const MAX_SFX_POOL = 6;
 
-let masterVolume = 1;
+let bgmVolume = 1;
+let sfxVolume = 1;
 let muted = false;
 let unlockResolve: (() => void) | null = null;
 let audioUnlocked = false;
@@ -98,7 +99,7 @@ const getSfxElement = (key: string): HTMLAudioElement | null => {
   if (pool.length >= MAX_SFX_POOL) return pool[0];
   const audio = new Audio(entry.path);
   audio.preload = 'auto';
-  audio.volume = masterVolume;
+  audio.volume = sfxVolume;
   pool.push(audio);
   sfxPool.set(key, pool);
   return audio;
@@ -115,27 +116,34 @@ const stopAllBgm = () => {
   currentBgmKey = null;
 };
 
-export const setVolume = (value: number) => {
-  masterVolume = Math.max(0, Math.min(1, value));
+export const setBgmVolume = (value: number) => {
+  bgmVolume = Math.max(0, Math.min(1, value));
   if (currentBgmEl && !muted) {
-    currentBgmEl.volume = masterVolume;
+    currentBgmEl.volume = bgmVolume;
   }
-  sfxPool.forEach((pool) => {
-    pool.forEach((el) => { if (!muted) el.volume = masterVolume; });
-  });
+};
+
+export const setSfxVolume = (value: number) => {
+  sfxVolume = Math.max(0, Math.min(1, value));
+  if (!muted) {
+    sfxPool.forEach((pool) => {
+      pool.forEach((el) => { el.volume = sfxVolume; });
+    });
+  }
 };
 
 export const setMuted = (value: boolean) => {
   muted = value;
   if (currentBgmEl) {
-    currentBgmEl.volume = muted ? 0 : masterVolume;
+    currentBgmEl.volume = muted ? 0 : bgmVolume;
   }
   sfxPool.forEach((pool) => {
-    pool.forEach((el) => { el.volume = muted ? 0 : masterVolume; });
+    pool.forEach((el) => { el.volume = muted ? 0 : sfxVolume; });
   });
 };
 
-export const getVolume = () => masterVolume;
+export const getBgmVolume = () => bgmVolume;
+export const getSfxVolume = () => sfxVolume;
 export const isMuted = () => muted;
 
 const resumeAudio = async (): Promise<void> => {
@@ -174,7 +182,7 @@ export const playBgm = async (key: string): Promise<void> => {
   currentBgmEl = nextEl;
 
   if (!prevEl) {
-    nextEl.volume = muted ? 0 : masterVolume;
+    nextEl.volume = muted ? 0 : bgmVolume;
     nextEl.currentTime = 0;
     nextEl.play().catch(() => {});
     return;
@@ -197,12 +205,12 @@ export const playBgm = async (key: string): Promise<void> => {
       prevEl.pause();
       prevEl.currentTime = 0;
       prevEl.volume = 0;
-      nextEl.volume = muted ? 0 : masterVolume;
+      nextEl.volume = muted ? 0 : bgmVolume;
       return;
     }
     const factor = 1 - step / steps;
     prevEl.volume = factor * startVol;
-    nextEl.volume = muted ? 0 : (1 - factor) * masterVolume;
+    nextEl.volume = muted ? 0 : (1 - factor) * bgmVolume;
   }, stepMs);
 };
 
@@ -215,7 +223,7 @@ export const playSfx = (key: string): void => {
     if (muted) return;
     const el = getSfxElement(key);
     if (!el) return;
-    el.volume = masterVolume;
+    el.volume = sfxVolume;
     el.currentTime = 0;
     el.play().catch(() => {});
   });

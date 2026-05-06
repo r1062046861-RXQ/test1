@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BedSingle, Crown, Gift, ScrollText, ShieldAlert, Skull, ShoppingBag } from 'lucide-react';
+import { BedSingle, Crown, Lock, ScrollText, ShieldAlert, Skull, ShoppingBag } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
+import { getBossUnlockWinsRequired } from '../../../shared/core/gameCore';
 import type { NodeType } from '../types';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground } from '../utils/assets';
@@ -18,19 +19,20 @@ const NODE_META: Record<NodeType, { label: string; hint: string; icon: React.Rea
   elite: { label: '精英', hint: '高风险高回报。', icon: <ShieldAlert size={18} /> },
   boss: { label: '首领', hint: '幕末决战。', icon: <Crown size={18} /> },
   event: { label: '事件', hint: '分支抉择。', icon: <ScrollText size={18} /> },
-  shop: { label: '药铺', hint: '购牌与净化。', icon: <ShoppingBag size={18} /> },
+  shop: { label: '药房', hint: '买卖药材。', icon: <ShoppingBag size={18} /> },
   rest: { label: '休憩', hint: '恢复或净牌。', icon: <BedSingle size={18} /> },
-  chest: { label: '宝箱', hint: '额外奖励。', icon: <Gift size={18} /> },
+  chest: { label: '', hint: '', icon: <></> },
 };
 
-const LAYER_SPACING = 118;
-const NODE_CENTER_OFFSET = 28;
+const LAYER_SPACING = 110;
+const NODE_CENTER_OFFSET = 22;
 
 export const MapView: React.FC = () => {
-  const { map, startCombat, currentFloor, currentAct, player, setPhase } = useGameStore();
+  const { map, startCombat, currentFloor, currentAct, player, setPhase, combatWinsThisCycle = 0 } = useGameStore();
+  const requiredWins = getBossUnlockWinsRequired();
   const mapContainerRef = React.useRef<HTMLDivElement>(null);
   const totalLayers = map.length;
-  const mapHeight = Math.max(720, (Math.max(totalLayers, 1) - 1) * LAYER_SPACING + 160);
+  const mapHeight = Math.max(400, (Math.max(totalLayers, 1) - 1) * LAYER_SPACING + 100);
 
   const alignCurrentFloor = React.useCallback(() => {
     const container = mapContainerRef.current;
@@ -170,18 +172,36 @@ export const MapView: React.FC = () => {
                   className="absolute w-full"
                   style={{ top: `${(totalLayers - 1 - layerIndex) * LAYER_SPACING}px` }}
                 >
-                  {layer.nodes.map((node) => {
+                  {layer.nodes.map((node, ni) => {
                     const meta = NODE_META[node.type];
-                    const isAvailable = node.status === 'available';
+                    const isNodeCol3 = layer.nodes.length === 4 && ni === 3;
+                    const isConnector = isNodeCol3 && node.type === 'combat';
+
+                    const isBoss = node.type === 'boss';
+                    const isBossLane = isNodeCol3 && (node.type === 'boss' || node.type === 'rest');
+                    const bossLocked = isBossLane && combatWinsThisCycle < requiredWins;
+                    const isAvailable = node.status === 'available' && !bossLocked;
                     const isCompleted = node.status === 'completed';
-                    const isLocked = node.status === 'locked';
-                    const canEnter = isAvailable && node.type !== 'start';
+                    const isLocked = node.status === 'locked' || bossLocked;
+                    const canEnter = isAvailable && !isConnector && node.type !== 'start';
+
+                    if (isConnector) {
+                      return (
+                        <div
+                          key={node.id}
+                          className="absolute flex w-10 -translate-x-1/2 flex-col items-center"
+                          style={{ left: `${node.x}%` }}
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-stone-600/50" />
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
                         key={node.id}
                         className={[
-                          'absolute flex w-28 -translate-x-1/2 flex-col items-center gap-2 text-center',
+                          'absolute flex w-20 -translate-x-1/2 flex-col items-center gap-1.5 text-center',
                           canEnter ? 'cursor-pointer' : isLocked ? 'cursor-not-allowed opacity-45 grayscale' : 'cursor-default',
                         ].join(' ')}
                         style={{ left: `${node.x}%` }}
@@ -197,6 +217,7 @@ export const MapView: React.FC = () => {
                             whileTap={canEnter ? { scale: 0.98 } : undefined}
                             className={[
                               'map-page__node-shell',
+                              isBoss ? 'map-page__node-shell--boss' : '',
                               isAvailable
                                 ? 'map-page__node-shell--available animate-soft-pulse'
                                 : isCompleted
@@ -204,7 +225,7 @@ export const MapView: React.FC = () => {
                                   : 'map-page__node-shell--locked',
                             ].join(' ')}
                           >
-                            {meta.icon}
+                            {bossLocked ? <Lock size={18} /> : meta.icon}
                           </motion.div>
                         </button>
 
@@ -221,17 +242,9 @@ export const MapView: React.FC = () => {
 
       <div className="map-page__aside-stack">
         <Panel className="map-page__aside px-5 py-5 md:px-6">
-          <SectionTitle title="节点图例" hint="只保留节点用途。" />
-          <div className="map-page__legend-grid">
-            {(Object.values(NODE_META) as Array<(typeof NODE_META)[NodeType]>).map((meta) => (
-              <div key={meta.label} className="map-page__legend-item">
-                <div className="map-page__legend-icon">{meta.icon}</div>
-                <div>
-                  <div className="map-page__legend-title">{meta.label}</div>
-                  <div className="map-page__legend-copy">{meta.hint}</div>
-                </div>
-              </div>
-            ))}
+          <SectionTitle title="首领进度" hint={`击败 ${combatWinsThisCycle}/${requiredWins} 次解锁首领`} />
+          <div className="mt-3 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-200">
+            {combatWinsThisCycle >= requiredWins ? '首领已解锁' : `还需 ${requiredWins - combatWinsThisCycle} 场战斗`}
           </div>
         </Panel>
       </div>

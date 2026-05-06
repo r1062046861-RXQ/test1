@@ -1,1 +1,1 @@
-export { CARD_LIBRARY, STARTING_DECK } from '../../../shared/data/cards';
+export { CARD_LIBRARY, STARTING_DECK, STARTING_DECKS } from '../../../shared/data/cards';

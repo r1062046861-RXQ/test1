@@ -23,6 +23,8 @@ describe('Game Store', () => {
         relics: [],
         potions: [],
         gold: 0,
+        obtainedCardIds: [],
+        obtainedEnemyTemplateIds: [],
       },
       currentAct: 1,
       currentFloor: 0,
@@ -53,7 +55,7 @@ describe('Game Store', () => {
     const newState = useGameStore.getState();
     expect(newState.phase).toBe('map');
     expect(newState.player.deck.length).toBeGreaterThan(0);
-    expect(newState.map.length).toBe(8);
+    expect(newState.map.length).toBe(14);
     expect(newState.enemyActionCue).toBeNull();
     expect(newState.playerImpactCue).toBeNull();
   });
@@ -61,13 +63,7 @@ describe('Game Store', () => {
   it('starts combat correctly', () => {
     const store = useGameStore.getState();
     store.startGame();
-    const firstAvailableNode = useGameStore
-      .getState()
-      .map.flatMap((layer) => layer.nodes)
-      .find((node) => node.status === 'available' && node.type !== 'start');
-
-    expect(firstAvailableNode).toBeTruthy();
-    store.startCombat(firstAvailableNode!.id);
+    store.startAdminEnemyChallenge('wind_cold_guest');
 
     const newState = useGameStore.getState();
     expect(newState.phase).toBe('combat');
@@ -86,7 +82,7 @@ describe('Game Store', () => {
     expect(newState.phase).toBe('combat');
     expect(newState.currentAct).toBe(2);
     expect(newState.currentNodeId).toBe('admin_enemy_boss_spleen_damp');
-    expect(newState.map.length).toBe(8);
+    expect(newState.map.length).toBe(14);
     expect(newState.enemies).toHaveLength(1);
     expect(newState.enemies[0]?.name).toBe('脾虚湿困');
     expect(newState.player.constitution).toBe('balanced');

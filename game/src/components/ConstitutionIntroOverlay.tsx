@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CARD_LIBRARY } from '../data/cards';
 import type { Constitution } from '../types';
 import { cn } from '../utils/cn';
@@ -19,6 +19,7 @@ export interface ConstitutionOption {
   detail: string;
   accent: string;
   image: string;
+  locked?: boolean;
 }
 
 interface ConstitutionIntroOverlayProps {
@@ -257,6 +258,10 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
 }) => {
   const reducedMotion = useReducedMotion();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 3;
+  const totalPages = Math.ceil(options.length / PAGE_SIZE);
+  const currentOptions = options.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -374,59 +379,102 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
                 </motion.div>
               </div>
 
-              <div className="constitution-select-stage__grid">
-                {options.map((option, index) => {
-                  const initialMotion = getDealtCardInitial(index, isMobile);
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={page}
+                  className="constitution-select-stage__grid"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.22, ease: EASE_OUT }}
+                >
+                  {currentOptions.map((option, index) => {
+                    const initialMotion = getDealtCardInitial(index, isMobile);
+                    const isLocked = option.locked;
 
-                  return (
-                    <motion.button
-                      key={option.id}
-                      type="button"
-                      onClick={() => onSelect(option.id)}
-                      className={cn(
-                        'constitution-choice-card group',
-                        `constitution-choice-card--${PACKET_TONES[index]}`,
-                        SELECT_CARD_CLASSES[index],
-                      )}
-                      initial={{
-                        opacity: 0,
-                        x: initialMotion.x,
-                        y: initialMotion.y,
-                        rotate: initialMotion.rotate,
-                        scale: initialMotion.scale,
-                      }}
-                      animate={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
-                      transition={{
-                        duration: 0.38,
-                        delay: 0.12 + index * 0.09,
-                        ease: EASE_OUT,
-                      }}
-                      whileHover={reducedMotion ? undefined : { y: -4, scale: 1.008 }}
-                      whileTap={reducedMotion ? undefined : { scale: 0.988 }}
-                    >
-                      <div className="constitution-choice-card__frame" />
-                      <div className="constitution-choice-card__sheen" />
-                      <div className="constitution-choice-card__art">
-                        <img
-                          src={resolveAssetUrl(option.image)}
-                          alt={option.title}
-                          className="constitution-choice-card__image"
-                          onError={(event) => {
-                            const target = event.target as HTMLImageElement;
-                            target.style.display = 'none';
+                    return (
+                      <motion.button
+                        key={option.id}
+                        type="button"
+                        onClick={isLocked ? undefined : () => onSelect(option.id)}
+                        className={cn(
+                          'constitution-choice-card group',
+                          `constitution-choice-card--${PACKET_TONES[index]}`,
+                          SELECT_CARD_CLASSES[index],
+                          isLocked && 'opacity-50 cursor-not-allowed saturate-0',
+                        )}
+                          initial={{
+                            opacity: 0,
+                            x: initialMotion.x,
+                            y: initialMotion.y,
+                            rotate: initialMotion.rotate,
+                            scale: initialMotion.scale,
                           }}
-                        />
-                      </div>
-                      <div className="constitution-choice-card__body">
-                        <div className="constitution-choice-card__name">{option.title}</div>
-                        <p className="constitution-choice-card__subtitle">{option.subtitle}</p>
-                        <div className="constitution-choice-card__badge">{option.passive}</div>
-                        <p className="constitution-choice-card__detail">{option.detail}</p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
+                          animate={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
+                          transition={{
+                            duration: 0.38,
+                            delay: 0.12 + index * 0.09,
+                            ease: EASE_OUT,
+                          }}
+                          whileHover={reducedMotion || isLocked ? undefined : { y: -4, scale: 1.008 }}
+                          whileTap={reducedMotion || isLocked ? undefined : { scale: 0.988 }}
+                        >
+                          <div className="constitution-choice-card__frame" />
+                          {!isLocked && <div className="constitution-choice-card__sheen" />}
+                          <div className="constitution-choice-card__art">
+                            <img
+                              src={resolveAssetUrl(option.image)}
+                              alt={option.title}
+                              className="constitution-choice-card__image"
+                              onError={(event) => {
+                                const target = event.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                          <div className="constitution-choice-card__body">
+                            <div className="constitution-choice-card__name">
+                              {isLocked ? '???' : option.title}
+                            </div>
+                            <p className="constitution-choice-card__subtitle">
+                              {isLocked ? '完成更多巡诊后解锁' : option.subtitle}
+                            </p>
+                            <div className="constitution-choice-card__badge">
+                              {isLocked ? '未解锁' : option.passive}
+                            </div>
+                            <p className="constitution-choice-card__detail">
+                              {isLocked ? '' : option.detail}
+                            </p>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </motion.div>
+                </AnimatePresence>
+
+              {totalPages > 1 && (
+                <div className="mt-5 flex items-center justify-center gap-6">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="constitution-flow__icon-action rounded-full p-3 disabled:opacity-30"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
+                  <span className="text-sm font-semibold tracking-[0.2em] text-amber-200/70">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="constitution-flow__icon-action rounded-full p-3 disabled:opacity-30"
+                  >
+                    <ChevronRight size={22} />
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

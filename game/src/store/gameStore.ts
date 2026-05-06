@@ -5,13 +5,14 @@ import type {
   Constitution,
   Enemy,
   EnemyActionCue,
+  EnemyActionPhase,
   GamePhase,
   GameState,
   MapNode,
   PlayerImpactCue,
   StatusEffect,
 } from '../types';
-import { CARD_LIBRARY, STARTING_DECK } from '../data/cards';
+import { CARD_LIBRARY, STARTING_DECKS } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import { createRuntimeId } from '../utils/id';
@@ -21,23 +22,31 @@ import {
   INITIAL_TURN_FLAGS,
   applyCardUpgrade,
   generateMap,
+  getBossUnlockWinsRequired,
+  getEnemyScaling,
   resolveCardPlay,
   resolveEnemyTurn,
   resolvePlayerEndTurn,
   type CoreState,
+  type EnemyTurnResult,
   type TurnFlags,
 } from '../../../shared/core/gameCore';
-import { playSfx } from '../services/audioService';
+import { playSfx, setBgmVolume, setSfxVolume } from '../services/audioService';
 
 interface GameStore extends GameState {
   combatLog: string[];
-  volume: number;
+  bgmVolume: number;
+  sfxVolume: number;
   fontSize: number;
+  bossKills: number;
+  combatWinsThisCycle: number;
   selectedEnemyId: string | null;
   turnFlags: TurnFlags;
   enemyActionCue: EnemyActionCue | null;
   playerImpactCue: PlayerImpactCue | null;
   setFontSize: (size: number) => void;
+  setBgmVolume: (value: number) => void;
+  setSfxVolume: (value: number) => void;
   startCombat: (nodeId: string) => void;
   startAdminEnemyChallenge: (enemyId: string) => void;
   completeCombat: () => void;
@@ -56,6 +65,12 @@ interface GameStore extends GameState {
   increaseMaxHp: (amount: number) => void;
   increaseShopRemovalCost: (amount: number) => void;
   advanceTime: (ms: number) => void;
+  discardOverflowCard: (cardId: string) => void;
+  getHandLimit: () => number;
+  getDrawPerTurn: () => number;
+  sellCardFromDeck: (cardId: string) => void;
+  combineCards: (cardIds: string[], targetCardId: string) => void;
+  getObtainedCardIds: () => string[];
 }
 
 const INITIAL_SHOP_REMOVAL_COST = 75;
@@ -172,6 +187,12 @@ const scheduleEnemyTurn = (fn: () => void) => {
   });
 };
 
+const MAX_CARD_COPIES = 10;
+const BASE_HAND_LIMIT = 8;
+const BASE_DRAW_PER_TURN = 3;
+const MAX_HAND_LIMIT = 10;
+const MAX_DRAW_PER_TURN = 5;
+
 const createCardInstance = (cardId: string): Card => ({
   ...CARD_LIBRARY[cardId],
   id: createRuntimeId(),
@@ -252,7 +273,8 @@ const isAdminEnemyChallengeNode = (nodeId: string | null) =>
   typeof nodeId === 'string' && nodeId.startsWith('admin_enemy_');
 
 const buildStartingPlayer = (constitution: Constitution) => {
-  const deck = STARTING_DECK.map(createCardInstance);
+  const deckIds = STARTING_DECKS[constitution] || STARTING_DECKS.balanced;
+  const deck = deckIds.map(createCardInstance);
   const statusEffects: StatusEffect[] = [];
 
   if (constitution === 'yin_deficiency') {
@@ -273,6 +295,60 @@ const buildStartingPlayer = (constitution: Constitution) => {
       description: '每次打出攻击牌，恢复1点生命',
       canStack: false,
     });
+  } else if (constitution === 'blood_stasis') {
+    statusEffects.push({
+      id: 'blood_stasis_passive',
+      name: '血瘀体质',
+      type: 'buff',
+      stacks: 1,
+      description: '对有血瘀的敌人额外造成2点伤害',
+      canStack: false,
+    });
+  } else if (constitution === 'phlegm_dampness') {
+    statusEffects.push({
+      id: 'phlegm_dampness_passive',
+      name: '痰湿体质',
+      type: 'buff',
+      stacks: 1,
+      description: '回合结束时保留最多3点格挡',
+      canStack: false,
+    });
+  } else if (constitution === 'fire_heat') {
+    statusEffects.push({
+      id: 'fire_heat_passive',
+      name: '火热体质',
+      type: 'buff',
+      stacks: 1,
+      description: '攻击牌额外造成1点伤害',
+      canStack: false,
+    });
+  } else if (constitution === 'qi_stagnation') {
+    statusEffects.push({
+      id: 'qi_stagnation_passive',
+      name: '气滞体质',
+      type: 'buff',
+      stacks: 1,
+      description: '每回合多抽1张牌',
+      canStack: false,
+    });
+  } else if (constitution === 'jing_deficiency') {
+    statusEffects.push({
+      id: 'jing_deficiency_passive',
+      name: '精虚体质',
+      type: 'buff',
+      stacks: 1,
+      description: '技能牌费用-1（最低0）',
+      canStack: false,
+    });
+  } else if (constitution === 'yang_deficiency') {
+    statusEffects.push({
+      id: 'yang_deficiency_passive',
+      name: '阳虚体质',
+      type: 'buff',
+      stacks: 1,
+      description: '生命低于50%时攻击+3',
+      canStack: false,
+    });
   }
 
   return {
@@ -288,13 +364,15 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
   player: buildStartingPlayer(constitution),
   currentAct,
   currentFloor: 0,
-  map: generateMap(8),
+  map: generateMap(12),
   currentNodeId: null,
   enemies: [],
   combatTurn: 0,
   combatLog: [],
   selectedCardId: null,
   selectedEnemyId: null,
+  bossKills: 0,
+  combatWinsThisCycle: 0,
   shopRemovalCost: INITIAL_SHOP_REMOVAL_COST,
   turnFlags: { ...INITIAL_TURN_FLAGS },
   enemyActionCue: null,
@@ -303,8 +381,119 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
 
 export const useGameStore = create<GameStore>()(
   persist(
-    (set, get) => ({
-      phase: 'start_menu',
+    (set, get) => {
+      const setEnemyActionCue = (
+        enemyId: string,
+        phase: EnemyActionPhase,
+        token: number,
+        playerImpactCue: PlayerImpactCue | null = null,
+      ) => {
+        set({
+          enemyActionCue: { enemyId, phase, token },
+          playerImpactCue,
+        });
+      };
+
+      const applyEnemyTurnResult = (enemyTurnResult: EnemyTurnResult) => {
+        if (enemyTurnResult.phase) {
+          set({ phase: enemyTurnResult.phase, enemyActionCue: null, playerImpactCue: null });
+          return;
+        }
+        set({
+          player: enemyTurnResult.player,
+          enemies: enemyTurnResult.enemies,
+          combatTurn: enemyTurnResult.combatTurn,
+          turnFlags: enemyTurnResult.turnFlags,
+          selectedEnemyId: enemyTurnResult.selectedEnemyId,
+        });
+      };
+
+      const scheduleSingleEnemyAction = (action: EnemyTurnResult['actions'][number], index: number) => {
+        const token = Date.now() + index;
+        const startOffset = index * (ENEMY_ATTACK_TOTAL_MS + ENEMY_ACTION_CHAIN_GAP_MS);
+
+        scheduleTask(startOffset, () => {
+          setEnemyActionCue(action.enemyId, 'windup', token, null);
+        });
+
+        scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS, () => {
+          setEnemyActionCue(action.enemyId, 'lunge', token);
+        });
+
+        scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS, () => {
+          set({
+            player: action.player,
+            enemies: action.enemies,
+            selectedEnemyId: action.selectedEnemyId,
+            enemyActionCue: { enemyId: action.enemyId, phase: 'impact', token },
+            playerImpactCue: action.impactKind
+              ? { token, kind: action.impactKind }
+              : null,
+          });
+        });
+
+        scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS + ENEMY_ATTACK_IMPACT_MS, () => {
+          setEnemyActionCue(action.enemyId, 'recover', token);
+        });
+      };
+
+      const scheduleEnemyActionAnimations = (enemyTurnResult: EnemyTurnResult) => {
+        enemyTurnResult.actions.forEach((action, index) => {
+          scheduleSingleEnemyAction(action, index);
+        });
+
+        const finalOffset =
+          enemyTurnResult.actions.length * (ENEMY_ATTACK_TOTAL_MS + ENEMY_ACTION_CHAIN_GAP_MS) -
+          ENEMY_ACTION_CHAIN_GAP_MS;
+
+        scheduleTask(finalOffset, () => {
+          applyEnemyTurnResult(enemyTurnResult);
+          set({ enemyActionCue: null, playerImpactCue: null });
+          if (enemyTurnResult.victory) {
+            get().completeCombat();
+          } else {
+            get().drawCards(get().getDrawPerTurn());
+          }
+        });
+      };
+
+      const handleEnemyTurn = () => {
+        const currentState = get();
+        const enemyTurnResult = resolveEnemyTurn(currentState as CoreState, message => get().addLog(message));
+        if (!enemyTurnResult) return;
+
+        if (enemyTurnResult.actions.length === 0) {
+          applyEnemyTurnResult(enemyTurnResult);
+          if (enemyTurnResult.victory) {
+            get().completeCombat();
+          } else {
+            get().drawCards(get().getDrawPerTurn());
+          }
+          return;
+        }
+
+        scheduleEnemyActionAnimations(enemyTurnResult);
+      };
+
+      const handlePlayerTurnEnd = () => {
+        const state = get();
+        const playerTurnResult = resolvePlayerEndTurn(state as CoreState, message => get().addLog(message));
+        if (!playerTurnResult) return false;
+
+        set({
+          combatTurn: 1,
+          player: playerTurnResult.player,
+          enemies: playerTurnResult.enemies,
+          turnFlags: playerTurnResult.turnFlags,
+          enemyActionCue: null,
+          playerImpactCue: null,
+        });
+
+        return true;
+      };
+
+      return {
+        phase: 'start_menu',
       player: { ...INITIAL_PLAYER },
       currentAct: 1,
       currentFloor: 0,
@@ -316,7 +505,11 @@ export const useGameStore = create<GameStore>()(
       selectedCardId: null,
       selectedEnemyId: null,
       volume: 1,
+      bgmVolume: 1,
+      sfxVolume: 1,
       fontSize: 16,
+      bossKills: 0,
+      combatWinsThisCycle: 0,
       shopRemovalCost: INITIAL_SHOP_REMOVAL_COST,
       turnFlags: { ...INITIAL_TURN_FLAGS },
       enemyActionCue: null,
@@ -324,10 +517,31 @@ export const useGameStore = create<GameStore>()(
 
       startGame: (constitution: Constitution = 'balanced') => {
         cancelAllScheduledTasks();
-        set(buildNewRunState(constitution));
+        const prevObtainedCards = get().player.obtainedCardIds ?? [];
+        const prevObtainedEnemies = get().player.obtainedEnemyTemplateIds ?? [];
+        set({
+          ...buildNewRunState(constitution),
+          player: {
+            ...buildNewRunState(constitution).player,
+            obtainedCardIds: prevObtainedCards,
+            obtainedEnemyTemplateIds: prevObtainedEnemies,
+          }
+        });
       },
 
       setFontSize: (size) => set({ fontSize: size }),
+
+      setBgmVolume: (value) => {
+        const clamped = Math.max(0, Math.min(1, value));
+        setBgmVolume(clamped);
+        set({ bgmVolume: clamped });
+      },
+
+      setSfxVolume: (value) => {
+        const clamped = Math.max(0, Math.min(1, value));
+        setSfxVolume(clamped);
+        set({ sfxVolume: clamped });
+      },
 
       startCombat: (nodeId) => {
         cancelAllScheduledTasks();
@@ -350,15 +564,33 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        const actKey = `act${state.currentAct}` as keyof typeof ENEMY_POOLS;
-        const pools = ENEMY_POOLS[actKey] || ENEMY_POOLS.act1;
+        if (nodeType === 'boss' && state.combatWinsThisCycle < getBossUnlockWinsRequired()) {
+          return;
+        }
+
+        const allPools = ENEMY_POOLS.act1;
         const enemyIds =
-          nodeType === 'boss' ? pools.boss : nodeType === 'elite' ? pools.elite : pools.common;
+          nodeType === 'boss' ? allPools.boss : nodeType === 'elite' ? allPools.elite : allPools.common;
         const enemyTemplate = ENEMIES[enemyIds[Math.floor(Math.random() * enemyIds.length)]];
         if (!enemyTemplate) return;
 
         primeEnemyMedia(enemyTemplate);
-        set(createCombatState(state, enemyTemplate, nodeId));
+        const scale = getEnemyScaling(state.currentFloor);
+         const scaledEnemy = {
+           ...enemyTemplate,
+           maxHp: Math.ceil(enemyTemplate.maxHp * scale.hpMultiplier),
+           currentHp: Math.ceil(enemyTemplate.maxHp * scale.hpMultiplier),
+         };
+        const combatState = createCombatState(state, scaledEnemy, nodeId);
+        set({
+          ...combatState,
+          player: {
+            ...combatState.player,
+            obtainedEnemyTemplateIds: (state.player.obtainedEnemyTemplateIds ?? []).includes(enemyTemplate.id)
+              ? state.player.obtainedEnemyTemplateIds ?? []
+              : [...(state.player.obtainedEnemyTemplateIds ?? []), enemyTemplate.id],
+          }
+        });
         get().drawCards(5);
       },
 
@@ -372,31 +604,38 @@ export const useGameStore = create<GameStore>()(
         const previewState = { ...get(), ...runState } as GameStore;
 
         primeEnemyMedia(enemyTemplate);
+        const combatState = createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`);
         set({
           ...runState,
-          ...createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`),
+          ...combatState,
+          player: {
+            ...combatState.player,
+            obtainedEnemyTemplateIds: (previewState.player.obtainedEnemyTemplateIds ?? []).includes(enemyTemplate.id)
+              ? previewState.player.obtainedEnemyTemplateIds ?? []
+              : [...(previewState.player.obtainedEnemyTemplateIds ?? []), enemyTemplate.id],
+          }
         });
         get().drawCards(5);
       },
 
       drawCards: (count) => {
-        const pre = get();
-        if (pre.phase === 'combat' && pre.player.hand.length > 0) {
-          playSfx('card_draw');
-        }
         set(state => {
           let { drawPile, discardPile, hand } = state.player;
           const nextHand = [...hand];
+          let drawn = 0;
 
           for (let i = 0; i < count; i += 1) {
-            if (nextHand.length >= 10) break;
             if (drawPile.length === 0) {
               if (discardPile.length === 0) break;
               drawPile = [...discardPile].sort(() => Math.random() - 0.5);
               discardPile = [];
             }
             const card = drawPile.pop();
-            if (card) nextHand.push(card);
+            if (card) { nextHand.push(card); drawn += 1; }
+          }
+
+          if (drawn > 0 && state.phase === 'combat') {
+            setTimeout(() => playSfx('card_draw'), 0);
           }
 
           return {
@@ -430,29 +669,33 @@ export const useGameStore = create<GameStore>()(
         const { map, currentLayerIndex, currentNode } = completeNode(state);
 
         if (currentNode?.type === 'boss') {
-          if (state.currentAct >= 3) {
-            set({ phase: 'victory', map, enemyActionCue: null, playerImpactCue: null });
-            return;
-          }
-
-          const nextAct = state.currentAct + 1;
+          const nextBossKills = state.bossKills + 1;
           set({
-            currentAct: nextAct,
-            currentFloor: 0,
-            map: generateMap(8),
             phase: 'reward',
-            currentNodeId: null,
-            combatLog: [`进入第 ${nextAct} 幕...`],
+            currentFloor: currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor,
+            map,
+            bossKills: nextBossKills,
+            combatWinsThisCycle: 0,
             enemyActionCue: null,
             playerImpactCue: null,
           });
           return;
         }
 
+        const nextWins = state.combatWinsThisCycle + 1;
+        let nextMap = map;
+        let nextFloor = currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor;
+
+        if (nextFloor >= map.length - 2) {
+          nextMap = [...map, ...generateMap(12, map.length)];
+          nextFloor = Math.min(nextFloor, nextMap.length - 1);
+        }
+
         set({
           phase: 'reward',
-          currentFloor: Math.max(0, currentLayerIndex + 1),
-          map,
+          currentFloor: nextFloor,
+          map: nextMap,
+          combatWinsThisCycle: nextWins,
           enemyActionCue: null,
           playerImpactCue: null,
         });
@@ -462,10 +705,16 @@ export const useGameStore = create<GameStore>()(
         cancelAllScheduledTasks();
         const state = get();
         const { map, currentLayerIndex } = completeNode(state);
+        let nextMap = map;
+        let nextFloor = currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor;
+        if (nextFloor >= map.length - 2) {
+          nextMap = [...map, ...generateMap(12, map.length)];
+          nextFloor = Math.min(nextFloor, nextMap.length - 1);
+        }
         set({
           phase: 'map',
-          currentFloor: currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor,
-          map,
+          currentFloor: nextFloor,
+          map: nextMap,
           currentNodeId: null,
           enemyActionCue: null,
           playerImpactCue: null,
@@ -496,113 +745,8 @@ export const useGameStore = create<GameStore>()(
       },
 
       endTurn: () => {
-        const state = get();
-        const playerTurnResult = resolvePlayerEndTurn(state as CoreState, message => get().addLog(message));
-        if (!playerTurnResult) return;
-
-        set({
-          combatTurn: 1,
-          player: playerTurnResult.player,
-          enemies: playerTurnResult.enemies,
-          turnFlags: playerTurnResult.turnFlags,
-          enemyActionCue: null,
-          playerImpactCue: null,
-        });
-
-        scheduleEnemyTurn(() => {
-          const currentState = get();
-          const enemyTurnResult = resolveEnemyTurn(currentState as CoreState, message => get().addLog(message));
-          if (!enemyTurnResult) return;
-
-          const applyEnemyTurnResult = () => {
-            if (enemyTurnResult.phase) {
-              set({ phase: enemyTurnResult.phase, enemyActionCue: null, playerImpactCue: null });
-              return;
-            }
-
-            set({
-              player: enemyTurnResult.player,
-              enemies: enemyTurnResult.enemies,
-              combatTurn: enemyTurnResult.combatTurn,
-              turnFlags: enemyTurnResult.turnFlags,
-              selectedEnemyId: enemyTurnResult.selectedEnemyId,
-            });
-          };
-
-          if (enemyTurnResult.actions.length === 0) {
-            applyEnemyTurnResult();
-            if (enemyTurnResult.victory) {
-              get().completeCombat();
-            }
-            return;
-          }
-
-          enemyTurnResult.actions.forEach((action, index) => {
-            const token = Date.now() + index;
-            const startOffset = index * (ENEMY_ATTACK_TOTAL_MS + ENEMY_ACTION_CHAIN_GAP_MS);
-
-            scheduleTask(startOffset, () => {
-              set({
-                enemyActionCue: {
-                  enemyId: action.enemyId,
-                  phase: 'windup',
-                  token,
-                },
-                playerImpactCue: null,
-              });
-            });
-
-            scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS, () => {
-              set({
-                enemyActionCue: {
-                  enemyId: action.enemyId,
-                  phase: 'lunge',
-                  token,
-                },
-              });
-            });
-
-            scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS, () => {
-              set({
-                player: action.player,
-                enemies: action.enemies,
-                selectedEnemyId: action.selectedEnemyId,
-                enemyActionCue: {
-                  enemyId: action.enemyId,
-                  phase: 'impact',
-                  token,
-                },
-                playerImpactCue: action.impactKind
-                  ? {
-                      token,
-                      kind: action.impactKind,
-                    }
-                  : null,
-              });
-            });
-
-            scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS + ENEMY_ATTACK_IMPACT_MS, () => {
-              set({
-                enemyActionCue: {
-                  enemyId: action.enemyId,
-                  phase: 'recover',
-                  token,
-                },
-              });
-            });
-          });
-
-          const finalOffset =
-            enemyTurnResult.actions.length * (ENEMY_ATTACK_TOTAL_MS + ENEMY_ACTION_CHAIN_GAP_MS) - ENEMY_ACTION_CHAIN_GAP_MS;
-
-          scheduleTask(finalOffset, () => {
-            applyEnemyTurnResult();
-            set({ enemyActionCue: null, playerImpactCue: null });
-            if (enemyTurnResult.victory) {
-              get().completeCombat();
-            }
-          });
-        });
+        if (!handlePlayerTurnEnd()) return;
+        scheduleEnemyTurn(handleEnemyTurn);
       },
 
       selectNode: (nodeId) => {
@@ -617,12 +761,18 @@ export const useGameStore = create<GameStore>()(
       },
 
       addCardToDeck: (cardId) => {
-        set(state => ({
-          player: {
-            ...state.player,
-            deck: [...state.player.deck, createCardInstance(cardId)],
-          }
-        }));
+        set(state => {
+          const count = state.player.deck.filter(c => c.id === cardId || c.name === CARD_LIBRARY[cardId]?.name).length;
+          if (count >= MAX_CARD_COPIES) return {};
+          const ids = state.player.obtainedCardIds ?? [];
+          return {
+            player: {
+              ...state.player,
+              deck: [...state.player.deck, createCardInstance(cardId)],
+              obtainedCardIds: ids.includes(cardId) ? ids : [...ids, cardId],
+            }
+          };
+        });
       },
 
       addLog: (message) => {
@@ -690,14 +840,82 @@ export const useGameStore = create<GameStore>()(
         set(state => ({ shopRemovalCost: Math.max(0, state.shopRemovalCost + amount) }));
       },
 
+      getHandLimit: () => {
+        const state = get();
+        return BASE_HAND_LIMIT + Math.min(state.bossKills, MAX_HAND_LIMIT - BASE_HAND_LIMIT);
+      },
+
+      getDrawPerTurn: () => {
+        const state = get();
+        const drawDown = state.player.statusEffects.find(s => s.id === 'draw_down')?.stacks ?? 0;
+        const base = BASE_DRAW_PER_TURN + Math.min(state.bossKills, MAX_DRAW_PER_TURN - BASE_DRAW_PER_TURN);
+        return Math.max(0, base - drawDown);
+      },
+
+      discardOverflowCard: (cardId) => {
+        set(state => {
+          const idx = state.player.hand.findIndex(c => c.id === cardId);
+          if (idx < 0) return {};
+          const nextHand = [...state.player.hand];
+          nextHand.splice(idx, 1);
+          return {
+            player: {
+              ...state.player,
+              hand: nextHand,
+              discardPile: [...state.player.discardPile, state.player.hand[idx]],
+            }
+          };
+        });
+      },
+
+      getObtainedCardIds: () => {
+        return get().player.obtainedCardIds ?? [];
+      },
+
+      sellCardFromDeck: (cardId) => {
+        set(state => {
+          const idx = state.player.deck.findIndex(c => c.id === cardId);
+          if (idx < 0) return {};
+          const card = state.player.deck[idx];
+          const nextDeck = [...state.player.deck];
+          nextDeck.splice(idx, 1);
+          const sellPrice = card.rarity === 'rare' ? 50 : card.rarity === 'uncommon' ? 30 : 15;
+          return {
+            player: {
+              ...state.player,
+              deck: nextDeck,
+              gold: state.player.gold + sellPrice,
+            }
+          };
+        });
+      },
+
+      combineCards: (cardIds, targetCardId) => {
+        set(state => {
+          const nextDeck = state.player.deck.filter(c => !cardIds.includes(c.id));
+          const alreadyHas = nextDeck.filter(c => c.id === targetCardId || c.name === CARD_LIBRARY[targetCardId]?.name).length;
+          if (alreadyHas >= MAX_CARD_COPIES) return {};
+          return {
+            player: {
+              ...state.player,
+              deck: [...nextDeck, createCardInstance(targetCardId)],
+              obtainedCardIds: (state.player.obtainedCardIds ?? []).includes(targetCardId)
+                ? state.player.obtainedCardIds ?? []
+                : [...(state.player.obtainedCardIds ?? []), targetCardId],
+            }
+          };
+        });
+      },
+
       advanceTime: (ms) => {
         advanceScheduledTasks(ms);
       },
-    }),
+    };
+  },
     {
       name: 'wuxing-yidao-storage',
       storage: createJSONStorage(() => webStorage),
-      version: 7,
+      version: 9,
       partialize: state => ({
         phase: state.phase === 'card_codex' || state.phase === 'intro' ? 'start_menu' : state.phase,
         player: state.player,
@@ -710,13 +928,17 @@ export const useGameStore = create<GameStore>()(
         combatLog: state.combatLog,
         selectedCardId: state.selectedCardId,
         selectedEnemyId: state.selectedEnemyId,
-        volume: state.volume,
+        bgmVolume: state.bgmVolume,
+        sfxVolume: state.sfxVolume,
         fontSize: state.fontSize,
+        bossKills: state.bossKills,
+        combatWinsThisCycle: state.combatWinsThisCycle,
         shopRemovalCost: state.shopRemovalCost,
         turnFlags: state.turnFlags,
       }),
       migrate: (persistedState, version) => {
-        if (version < 7) {
+        if (version < 8) {
+          const legacy = persistedState as any;
           return {
             phase: 'start_menu',
             player: { ...INITIAL_PLAYER },
@@ -729,8 +951,9 @@ export const useGameStore = create<GameStore>()(
             combatLog: [],
             selectedCardId: null,
             selectedEnemyId: null,
-            volume: 1,
-            fontSize: 16,
+            bgmVolume: typeof legacy.bgmVolume === 'number' ? legacy.bgmVolume : 1,
+            sfxVolume: typeof legacy.sfxVolume === 'number' ? legacy.sfxVolume : 1,
+            fontSize: typeof legacy.fontSize === 'number' ? legacy.fontSize : 16,
             shopRemovalCost: INITIAL_SHOP_REMOVAL_COST,
             turnFlags: { ...INITIAL_TURN_FLAGS },
             enemyActionCue: null,

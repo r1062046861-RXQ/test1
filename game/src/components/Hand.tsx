@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../utils/cn';
+import type { Card as CardType } from '../types';
 import { Card } from './Card';
 import { cardReleaseTransition, handHoverTransition, handSettleTransition } from './ui/motionPresets';
 
@@ -9,6 +10,7 @@ type CombatViewportTier = 'regular' | 'compact' | 'tight';
 
 interface HandProps {
   viewportTier?: CombatViewportTier;
+  onLongHoverCard?: (card: CardType | null) => void;
 }
 
 interface HandLayout {
@@ -28,12 +30,12 @@ interface HandLayout {
 const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLayout => {
   const base =
     count <= 4
-      ? { spread: 108, angle: 4.0, scale: 1, curve: 9, hoverLift: 42, neighborShift: 26 }
+      ? { spread: 118, angle: 4.0, scale: 1, curve: 10, hoverLift: 42, neighborShift: 26 }
       : count <= 6
-        ? { spread: 92, angle: 3.2, scale: 0.98, curve: 8, hoverLift: 38, neighborShift: 24 }
+        ? { spread: 100, angle: 3.2, scale: 0.98, curve: 9, hoverLift: 38, neighborShift: 24 }
         : count <= 8
-          ? { spread: 76, angle: 2.6, scale: 0.94, curve: 6, hoverLift: 32, neighborShift: 20 }
-          : { spread: 64, angle: 2.1, scale: 0.9, curve: 5, hoverLift: 28, neighborShift: 16 };
+          ? { spread: 82, angle: 2.6, scale: 0.94, curve: 7, hoverLift: 32, neighborShift: 20 }
+          : { spread: 68, angle: 2.1, scale: 0.9, curve: 6, hoverLift: 28, neighborShift: 16 };
 
   const tierAdjust =
     viewportTier === 'regular'
@@ -93,7 +95,7 @@ const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLay
   };
 };
 
-export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular' }) => {
+export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHoverCard }) => {
   const { player, playCard, selectedEnemyId } = useGameStore((state) => ({
     player: state.player,
     playCard: state.playCard,
@@ -102,6 +104,22 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular' }) => {
 
   const [playingCardId, setPlayingCardId] = useState<string | null>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const longHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCardMouseEnter = (card: (typeof player.hand)[number]) => {
+    if (playingCardId) return;
+    setHoveredCardId(card.id);
+    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    longHoverTimerRef.current = setTimeout(() => {
+      onLongHoverCard?.(card);
+    }, 3000);
+  };
+
+  const handleCardMouseLeave = (card: (typeof player.hand)[number]) => {
+    setHoveredCardId((current) => (current === card.id ? null : current));
+    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    onLongHoverCard?.(null);
+  };
 
   const hoveredIndex = useMemo(
     () => player.hand.findIndex((card) => card.id === hoveredCardId),
@@ -191,8 +209,8 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular' }) => {
               transition={isPlaying ? cardReleaseTransition : isHovered ? handHoverTransition : handSettleTransition}
               className="combat-hand__card absolute bottom-0 origin-bottom transform-gpu"
               style={{ zIndex: isPlaying ? 60 : isHovered ? 45 : index + 1 }}
-              onMouseEnter={() => !playingCardId && setHoveredCardId(card.id)}
-              onMouseLeave={() => setHoveredCardId((current) => (current === card.id ? null : current))}
+              onMouseEnter={() => handleCardMouseEnter(card)}
+              onMouseLeave={() => handleCardMouseLeave(card)}
             >
               <Card
                 card={card}

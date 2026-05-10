@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { Card as CardType } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
+import { getCardCategory } from '../data/cards';
 
 interface CardProps {
   card: CardType;
@@ -49,6 +50,13 @@ const targetLabelShort = {
   self: '自身',
   random: '随机',
 } satisfies Record<CardType['target'], string>;
+
+const CATEGORY_LABELS = {
+  herb: '药材牌',
+  formula: '药方牌',
+  equipment: '装备牌',
+  enemy: '敌方牌',
+} as const;
 
 export const Card: React.FC<CardProps> = ({
   card,
@@ -98,8 +106,10 @@ export const Card: React.FC<CardProps> = ({
   const showNote = !handLayout && !codexLayout && Boolean(card.tcmNote);
   const allowDescriptionModal =
     descriptionModalEnabled && !handLayout && !codexLayout && Boolean(card.description || card.tcmNote);
+  const cardCategory = getCardCategory(card);
+  const categoryLabel = CATEGORY_LABELS[cardCategory];
   const metaBadges = codexLayout
-    ? [rarityLabel[card.rarity], targetLabelShort[card.target]]
+    ? [categoryLabel, rarityLabel[card.rarity], targetLabelShort[card.target]]
     : [TYPE_LABELS[card.type], rarityLabel[card.rarity], targetLabelShort[card.target]];
 
   const handleDescriptionOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -138,6 +148,8 @@ export const Card: React.FC<CardProps> = ({
                         {card.name}
                       </h3>
                       <div className="card-text-modal__meta">
+                        <span>{categoryLabel}</span>
+                        <span>·</span>
                         <span>{TYPE_LABELS[card.type]}</span>
                         <span>·</span>
                         <span>{rarityLabel[card.rarity]}</span>
@@ -196,6 +208,8 @@ export const Card: React.FC<CardProps> = ({
           playable && 'border-amber-500/75 shadow-[0_20px_36px_rgba(168,110,29,0.24)]',
           focus && 'border-amber-600/80 shadow-[0_24px_42px_rgba(168,110,29,0.3)]',
           muted && 'brightness-[0.96] saturate-[0.9] opacity-[0.94]',
+          cardCategory === 'formula' && 'combat-card--formula',
+          cardCategory === 'equipment' && 'combat-card--equipment',
           className,
         )}
         style={handLayout ? { width: 'var(--combat-hand-card-width, 11.5rem)', height: 'var(--combat-hand-card-height, 16.75rem)' } : undefined}
@@ -244,7 +258,7 @@ export const Card: React.FC<CardProps> = ({
         <div className="combat-card__header relative z-10">
           <div className="combat-card__header-row">
             <div className={cn('combat-card__cost', costTheme[card.type])}>
-              {card.type === 'attack' ? '攻' : card.cost}
+              {cardCategory === 'equipment' ? '装' : card.type === 'attack' ? '攻' : card.cost}
             </div>
 
             <div className="combat-card__title-pill">

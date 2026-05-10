@@ -8,9 +8,9 @@ const outputPath = path.join(projectRoot, 'src', 'data', 'runtimeAssetManifest.t
 const IMAGE_EXTENSIONS = new Set(['.png', '.gif', '.jpg', '.jpeg', '.webp', '.svg']);
 const CRITICAL_ASSET_PATHS = new Set([
   '/assets/background_main_menu.png',
-  '/assets/constitutions/balanced.png',
-  '/assets/constitutions/yin_deficiency.png',
-  '/assets/constitutions/qi_deficiency.png',
+  '/assets/constitutions/balanced.webp',
+  '/assets/constitutions/yin_deficiency.webp',
+  '/assets/constitutions/qi_deficiency.webp',
 ]);
 
 const toPosixPath = (value) => value.split(path.sep).join('/');
@@ -62,7 +62,16 @@ const assetFiles = walk(assetRoot)
       stage: getAssetStage(assetPath),
     };
   })
-  .sort((left, right) => left.path.localeCompare(right.path, 'en'));
+  .sort((left, right) => {
+    const stageOrder = { critical: 0, static: 1, gif: 2 };
+    if (left.stage !== right.stage) return stageOrder[left.stage] - stageOrder[right.stage];
+    if (left.stage === 'static' && right.stage === 'static') {
+      const leftBg = left.path.startsWith('/assets/background_combat');
+      const rightBg = right.path.startsWith('/assets/background_combat');
+      if (leftBg !== rightBg) return leftBg ? 1 : -1;
+    }
+    return left.path.localeCompare(right.path, 'en');
+  });
 
 const totalBytes = assetFiles.reduce((sum, entry) => sum + entry.bytes, 0);
 

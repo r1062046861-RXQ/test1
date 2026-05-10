@@ -464,8 +464,10 @@ export const Enemy: React.FC<EnemyProps> = ({
             title={`${enemy.intent.description}：${intentExplanation}`}
           >
             <span className="combat-enemy__line-label">意图</span>
-            <span className="combat-enemy__line-copy">{enemy.intent.description}</span>
-            <span className="combat-enemy__intent-explanation">{intentExplanation}</span>
+            <div className="combat-enemy__intent-body">
+              <span className="combat-enemy__line-copy">{enemy.intent.description}</span>
+              <span className="combat-enemy__intent-explanation">{intentExplanation}</span>
+            </div>
           </motion.div>
 
           <div className="combat-enemy__status-zone">

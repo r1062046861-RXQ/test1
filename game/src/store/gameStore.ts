@@ -12,7 +12,9 @@ import type {
   PlayerImpactCue,
   StatusEffect,
 } from '../types';
-import { CARD_LIBRARY, STARTING_DECKS } from '../data/cards';
+import { CARD_LIBRARY, EQUIPMENT_CARD_IDS, STARTING_DECKS } from '../data/cards';
+import { FORMULA_BLUEPRINTS, FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
+import { countCardCopies, getCardCategory, getTemplateCardId, isFormulaCard, isHerbCard } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
 import { createRuntimeId } from '../utils/id';
@@ -44,6 +46,9 @@ interface GameStore extends GameState {
   turnFlags: TurnFlags;
   enemyActionCue: EnemyActionCue | null;
   playerImpactCue: PlayerImpactCue | null;
+  pendingEquipmentRewardId: string | null;
+  pendingFormulaBlueprintId: string | null;
+  shownFormulaPoemIds: string[];
   setFontSize: (size: number) => void;
   setBgmVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
@@ -70,7 +75,28 @@ interface GameStore extends GameState {
   getDrawPerTurn: () => number;
   sellCardFromDeck: (cardId: string) => void;
   combineCards: (cardIds: string[], targetCardId: string) => void;
+  recordFormulaBlueprint: (blueprintId: string) => CraftFormulaResult;
+  craftFormulaFromBlueprint: (blueprintId: string, ingredientInstanceIds: string[]) => CraftFormulaResult;
+  clearPendingEquipmentReward: () => void;
+  clearPendingFormulaBlueprintReward: () => void;
   getObtainedCardIds: () => string[];
+}
+
+export interface CraftFormulaResult {
+  ok: boolean;
+  reason?:
+    | 'phase_unavailable'
+    | 'unknown_blueprint'
+    | 'blueprint_not_recorded'
+    | 'recipe_pending'
+    | 'invalid_ingredients'
+    | 'ingredients_mismatch'
+    | 'target_unavailable'
+    | 'copy_limit';
+  message: string;
+  formulaCardId?: string;
+  showPoem?: boolean;
+  poem?: string;
 }
 
 const INITIAL_SHOP_REMOVAL_COST = 75;
@@ -192,11 +218,192 @@ const BASE_HAND_LIMIT = 8;
 const BASE_DRAW_PER_TURN = 3;
 const MAX_HAND_LIMIT = 10;
 const MAX_DRAW_PER_TURN = 5;
+const EQUIPMENT_DRAW_PER_TURN_CAP = 6;
 
 const createCardInstance = (cardId: string): Card => ({
   ...CARD_LIBRARY[cardId],
   id: createRuntimeId(),
 });
+
+const createEquipmentRelic = (cardId: string) => {
+  const card = CARD_LIBRARY[cardId];
+  return {
+    id: card.id,
+    name: card.name,
+    description: card.description,
+    effectId: card.effectId,
+  };
+};
+
+const hasEquipment = (player: GameStore['player'], cardId: string) =>
+  player.relics?.some(relic => relic.id === cardId) ?? false;
+
+const applyEquipmentBlock = (player: GameStore['player'], amount: number) => {
+  const nextPlayer = { ...player };
+  nextPlayer.block += amount;
+  if (hasEquipment(nextPlayer, 'equipment_qixue_jinye')) {
+    nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp + Math.min(2, Math.floor(amount / 5)));
+  }
+  return nextPlayer;
+};
+
+const getPlayerHealAmount = (player: GameStore['player'], amount: number) => {
+  if (amount <= 0) return 0;
+  return amount + (hasEquipment(player, 'equipment_zhengti') ? 1 : 0);
+};
+
+const getEquipmentDropChance = (nodeType: MapNode['type'] | undefined) => {
+  if (nodeType === 'boss') return 0.5;
+  if (nodeType === 'elite') return 0.2;
+  if (nodeType === 'combat') return 0.1;
+  return 0;
+};
+
+const rollEquipmentReward = (player: GameStore['player'], nodeType: MapNode['type'] | undefined) => {
+  const chance = getEquipmentDropChance(nodeType);
+  if (chance <= 0 || Math.random() >= chance) return null;
+
+  const candidates = EQUIPMENT_CARD_IDS.filter((cardId) => !hasEquipment(player, cardId));
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+};
+
+const rollFormulaBlueprintReward = (nodeType: MapNode['type'] | undefined) => {
+  if (nodeType !== 'combat' && nodeType !== 'elite' && nodeType !== 'boss') return null;
+  if (FORMULA_BLUEPRINTS.length === 0) return null;
+  const roll = Math.random();
+  const safeRoll = Number.isFinite(roll) ? roll : 0;
+  const index = Math.min(FORMULA_BLUEPRINTS.length - 1, Math.floor(safeRoll * FORMULA_BLUEPRINTS.length));
+  return FORMULA_BLUEPRINTS[index]?.id ?? null;
+};
+
+const normalizeConstitution = (constitution: unknown): Constitution => {
+  if (constitution === 'fire_heat') return 'damp_heat';
+  if (constitution === 'jing_deficiency') return 'special_diathesis';
+  if (
+    constitution === 'balanced' ||
+    constitution === 'yin_deficiency' ||
+    constitution === 'qi_deficiency' ||
+    constitution === 'yang_deficiency' ||
+    constitution === 'phlegm_dampness' ||
+    constitution === 'damp_heat' ||
+    constitution === 'blood_stasis' ||
+    constitution === 'qi_stagnation' ||
+    constitution === 'special_diathesis'
+  ) {
+    return constitution;
+  }
+  return 'balanced';
+};
+
+const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
+  balanced: [
+    {
+      id: 'balanced_passive',
+      name: '平和质',
+      type: 'buff',
+      stacks: 1,
+      description: '攻击、格挡和治疗效果各+1。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  yin_deficiency: [
+    {
+      id: 'yin_deficiency_passive',
+      name: '阴虚质',
+      type: 'buff',
+      stacks: 1,
+      description: '获得滋阴时额外+1层；回合开始真气+1；受到伤害+1。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  qi_deficiency: [
+    {
+      id: 'qi_deficiency_passive',
+      name: '气虚质',
+      type: 'buff',
+      stacks: 1,
+      description: '攻击伤害-1，格挡+2，治疗+1；打出攻击牌恢复1点生命。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  yang_deficiency: [
+    {
+      id: 'yang_deficiency_passive',
+      name: '阳虚质',
+      type: 'buff',
+      stacks: 1,
+      description: '回合开始获得温阳，前2次启动真气-1；3层温阳造成群体爆发。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  phlegm_dampness: [
+    {
+      id: 'phlegm_dampness_passive',
+      name: '痰湿质',
+      type: 'buff',
+      stacks: 1,
+      description: '打出技能牌给敌人叠加痰湿禁锢，3层时眩晕并虚弱。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  damp_heat: [
+    {
+      id: 'damp_heat_passive',
+      name: '湿热质',
+      type: 'buff',
+      stacks: 1,
+      description: '攻击牌施加热邪；每回合首张攻击牌使全体敌人获得热邪；格挡-2。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  blood_stasis: [
+    {
+      id: 'blood_stasis_passive',
+      name: '血瘀质',
+      type: 'buff',
+      stacks: 1,
+      description: '攻击牌叠加血瘀；攻击血瘀目标伤害+50%并无视格挡；格挡与治疗减半。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  qi_stagnation: [
+    {
+      id: 'qi_stagnation_passive',
+      name: '气郁质',
+      type: 'buff',
+      stacks: 1,
+      description: '每回合多抽1张；首张技能牌额外抽1张；敌方回合首次受伤-4；攻防-1。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  special_diathesis: [
+    {
+      id: 'special_diathesis_passive',
+      name: '特禀质',
+      type: 'buff',
+      stacks: 1,
+      description: '每个玩家回合开始随机触发一种先天禀赋。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+};
+
+const CRAFTING_PHASES = new Set<GamePhase>(['map', 'reward', 'shop', 'rest', 'event', 'chest']);
+
+const isCraftingPhase = (phase: GamePhase) => CRAFTING_PHASES.has(phase);
+
+const sameRecipe = (left: string[], right: string[]) =>
+  left.length === right.length && [...left].sort().every((value, index) => value === [...right].sort()[index]);
 
 const cloneEnemyTemplate = (enemy: Enemy): Enemy => ({
   ...enemy,
@@ -215,6 +422,7 @@ const createCombatState = (state: GameStore, enemyTemplate: Enemy, nodeId: strin
     currentNodeId: nodeId,
     enemies: [enemy],
     combatTurn: 0,
+    combatLog: [],
     selectedEnemyId: enemy.id,
     enemyActionCue: null,
     playerImpactCue: null,
@@ -227,6 +435,9 @@ const createCombatState = (state: GameStore, enemyTemplate: Enemy, nodeId: strin
       exhaustPile: [],
       block: 0,
       energy: state.player.maxEnergy,
+      statusEffects: state.player.statusEffects.filter(status =>
+        status.dispelImmune
+      ),
     }
   };
 };
@@ -245,14 +456,32 @@ const completeNode = (state: GameStore) => {
   const currentNode =
     currentLayerIndex >= 0 ? map[currentLayerIndex].nodes.find(node => node.id === currentNodeId) ?? null : null;
 
-  if (currentNode?.children) {
-    const nextLayer = map[currentLayerIndex + 1];
-    if (nextLayer) {
-      currentNode.children.forEach(childId => {
-        const childNode = nextLayer.nodes.find(node => node.id === childId);
-        if (childNode) childNode.status = 'available';
-      });
+  const processed = new Set<string>();
+  const unlockQueue: string[] = currentNode?.children ? [...currentNode.children] : [];
+
+  const lookUpNode = (childId: string) => {
+    for (const layer of map) {
+      const found = layer.nodes.find(node => node.id === childId);
+      if (found) return found;
     }
+    return null;
+  };
+
+  while (unlockQueue.length > 0) {
+    const childId = unlockQueue.shift()!;
+    if (processed.has(childId)) continue;
+    processed.add(childId);
+    const childNode = lookUpNode(childId);
+    if (!childNode || childNode.status !== 'locked') continue;
+    childNode.status = 'available';
+    // col 3 connector: 灰色圆点，不可点击，需自动级联
+    const isCol3Connector = childNode.type === 'combat' && childId.endsWith('_3');
+    if (isCol3Connector && childNode.children) {
+      unlockQueue.push(...childNode.children);
+    }
+  }
+
+  if (currentNode) {
     currentNode.status = 'completed';
   }
 
@@ -273,88 +502,15 @@ const isAdminEnemyChallengeNode = (nodeId: string | null) =>
   typeof nodeId === 'string' && nodeId.startsWith('admin_enemy_');
 
 const buildStartingPlayer = (constitution: Constitution) => {
-  const deckIds = STARTING_DECKS[constitution] || STARTING_DECKS.balanced;
+  const normalizedConstitution = normalizeConstitution(constitution);
+  const deckIds = STARTING_DECKS[normalizedConstitution] || STARTING_DECKS.balanced;
   const deck = deckIds.map(createCardInstance);
-  const statusEffects: StatusEffect[] = [];
-
-  if (constitution === 'yin_deficiency') {
-    statusEffects.push({
-      id: 'yin_deficiency_passive',
-      name: '阴虚火旺',
-      type: 'buff',
-      stacks: 1,
-      description: '回合开始时获得1点能量，但受到伤害+1',
-      canStack: false,
-    });
-  } else if (constitution === 'qi_deficiency') {
-    statusEffects.push({
-      id: 'qi_deficiency_passive',
-      name: '气虚血瘀',
-      type: 'buff',
-      stacks: 1,
-      description: '每次打出攻击牌，恢复1点生命',
-      canStack: false,
-    });
-  } else if (constitution === 'blood_stasis') {
-    statusEffects.push({
-      id: 'blood_stasis_passive',
-      name: '血瘀体质',
-      type: 'buff',
-      stacks: 1,
-      description: '对有血瘀的敌人额外造成2点伤害',
-      canStack: false,
-    });
-  } else if (constitution === 'phlegm_dampness') {
-    statusEffects.push({
-      id: 'phlegm_dampness_passive',
-      name: '痰湿体质',
-      type: 'buff',
-      stacks: 1,
-      description: '回合结束时保留最多3点格挡',
-      canStack: false,
-    });
-  } else if (constitution === 'fire_heat') {
-    statusEffects.push({
-      id: 'fire_heat_passive',
-      name: '火热体质',
-      type: 'buff',
-      stacks: 1,
-      description: '攻击牌额外造成1点伤害',
-      canStack: false,
-    });
-  } else if (constitution === 'qi_stagnation') {
-    statusEffects.push({
-      id: 'qi_stagnation_passive',
-      name: '气滞体质',
-      type: 'buff',
-      stacks: 1,
-      description: '每回合多抽1张牌',
-      canStack: false,
-    });
-  } else if (constitution === 'jing_deficiency') {
-    statusEffects.push({
-      id: 'jing_deficiency_passive',
-      name: '精虚体质',
-      type: 'buff',
-      stacks: 1,
-      description: '技能牌费用-1（最低0）',
-      canStack: false,
-    });
-  } else if (constitution === 'yang_deficiency') {
-    statusEffects.push({
-      id: 'yang_deficiency_passive',
-      name: '阳虚体质',
-      type: 'buff',
-      stacks: 1,
-      description: '生命低于50%时攻击+3',
-      canStack: false,
-    });
-  }
+  const statusEffects: StatusEffect[] = CONSTITUTION_PASSIVES[normalizedConstitution].map(status => ({ ...status }));
 
   return {
     ...INITIAL_PLAYER,
     deck,
-    constitution,
+    constitution: normalizedConstitution,
     statusEffects,
   };
 };
@@ -377,6 +533,9 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
   turnFlags: { ...INITIAL_TURN_FLAGS },
   enemyActionCue: null,
   playerImpactCue: null,
+  pendingEquipmentRewardId: null,
+  pendingFormulaBlueprintId: null,
+  shownFormulaPoemIds: [],
 });
 
 export const useGameStore = create<GameStore>()(
@@ -514,18 +673,25 @@ export const useGameStore = create<GameStore>()(
       turnFlags: { ...INITIAL_TURN_FLAGS },
       enemyActionCue: null,
       playerImpactCue: null,
+      pendingEquipmentRewardId: null,
+      pendingFormulaBlueprintId: null,
+      shownFormulaPoemIds: [],
 
-      startGame: (constitution: Constitution = 'balanced') => {
-        cancelAllScheduledTasks();
-        const prevObtainedCards = get().player.obtainedCardIds ?? [];
-        const prevObtainedEnemies = get().player.obtainedEnemyTemplateIds ?? [];
+        startGame: (constitution: Constitution = 'balanced') => {
+          cancelAllScheduledTasks();
+          const normalizedConstitution = normalizeConstitution(constitution);
+          const newRunState = buildNewRunState(normalizedConstitution);
         set({
-          ...buildNewRunState(constitution),
+          ...newRunState,
           player: {
-            ...buildNewRunState(constitution).player,
-            obtainedCardIds: prevObtainedCards,
-            obtainedEnemyTemplateIds: prevObtainedEnemies,
-          }
+            ...newRunState.player,
+            obtainedCardIds: [],
+            obtainedEnemyTemplateIds: [],
+            knownFormulaBlueprintIds: [],
+          },
+          pendingEquipmentRewardId: null,
+          pendingFormulaBlueprintId: null,
+          shownFormulaPoemIds: [],
         });
       },
 
@@ -568,7 +734,8 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        const allPools = ENEMY_POOLS.act1;
+        const poolKey = `act${Math.min(state.currentAct, 3)}` as keyof typeof ENEMY_POOLS;
+        const allPools = ENEMY_POOLS[poolKey] ?? ENEMY_POOLS.act1;
         const enemyIds =
           nodeType === 'boss' ? allPools.boss : nodeType === 'elite' ? allPools.elite : allPools.common;
         const enemyTemplate = ENEMIES[enemyIds[Math.floor(Math.random() * enemyIds.length)]];
@@ -582,10 +749,14 @@ export const useGameStore = create<GameStore>()(
            currentHp: Math.ceil(enemyTemplate.maxHp * scale.hpMultiplier),
          };
         const combatState = createCombatState(state, scaledEnemy, nodeId);
+        let startingPlayer: GameStore['player'] = combatState.player;
+        if (hasEquipment(startingPlayer, 'equipment_zhiweibing')) {
+          startingPlayer = applyEquipmentBlock(startingPlayer, 5);
+        }
         set({
           ...combatState,
           player: {
-            ...combatState.player,
+            ...startingPlayer,
             obtainedEnemyTemplateIds: (state.player.obtainedEnemyTemplateIds ?? []).includes(enemyTemplate.id)
               ? state.player.obtainedEnemyTemplateIds ?? []
               : [...(state.player.obtainedEnemyTemplateIds ?? []), enemyTemplate.id],
@@ -605,11 +776,15 @@ export const useGameStore = create<GameStore>()(
 
         primeEnemyMedia(enemyTemplate);
         const combatState = createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`);
+        let startingPlayer: GameStore['player'] = combatState.player;
+        if (hasEquipment(startingPlayer, 'equipment_zhiweibing')) {
+          startingPlayer = applyEquipmentBlock(startingPlayer, 5);
+        }
         set({
           ...runState,
           ...combatState,
           player: {
-            ...combatState.player,
+            ...startingPlayer,
             obtainedEnemyTemplateIds: (previewState.player.obtainedEnemyTemplateIds ?? []).includes(enemyTemplate.id)
               ? previewState.player.obtainedEnemyTemplateIds ?? []
               : [...(previewState.player.obtainedEnemyTemplateIds ?? []), enemyTemplate.id],
@@ -662,22 +837,41 @@ export const useGameStore = create<GameStore>()(
             selectedEnemyId: null,
             enemyActionCue: null,
             playerImpactCue: null,
+            pendingEquipmentRewardId: null,
+            pendingFormulaBlueprintId: null,
           });
           return;
         }
 
         const { map, currentLayerIndex, currentNode } = completeNode(state);
+        const equipmentRewardId = rollEquipmentReward(state.player, currentNode?.type);
+        const formulaBlueprintRewardId = rollFormulaBlueprintReward(currentNode?.type);
+        const rewardPlayer = equipmentRewardId
+          ? {
+              ...state.player,
+              relics: [...(state.player.relics ?? []), createEquipmentRelic(equipmentRewardId)],
+              obtainedCardIds: (state.player.obtainedCardIds ?? []).includes(equipmentRewardId)
+                ? state.player.obtainedCardIds ?? []
+                : [...(state.player.obtainedCardIds ?? []), equipmentRewardId],
+            }
+          : state.player;
 
         if (currentNode?.type === 'boss') {
           const nextBossKills = state.bossKills + 1;
+          const nextAct = Math.min(state.currentAct + 1, 3);
+          const freshMap = generateMap(12);
           set({
             phase: 'reward',
-            currentFloor: currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor,
-            map,
+            player: rewardPlayer,
+            currentFloor: 0,
+            map: freshMap,
+            currentAct: nextAct,
             bossKills: nextBossKills,
             combatWinsThisCycle: 0,
             enemyActionCue: null,
             playerImpactCue: null,
+            pendingEquipmentRewardId: equipmentRewardId,
+            pendingFormulaBlueprintId: formulaBlueprintRewardId,
           });
           return;
         }
@@ -693,11 +887,14 @@ export const useGameStore = create<GameStore>()(
 
         set({
           phase: 'reward',
+          player: rewardPlayer,
           currentFloor: nextFloor,
           map: nextMap,
           combatWinsThisCycle: nextWins,
           enemyActionCue: null,
           playerImpactCue: null,
+          pendingEquipmentRewardId: equipmentRewardId,
+          pendingFormulaBlueprintId: formulaBlueprintRewardId,
         });
       },
 
@@ -718,6 +915,8 @@ export const useGameStore = create<GameStore>()(
           currentNodeId: null,
           enemyActionCue: null,
           playerImpactCue: null,
+          pendingEquipmentRewardId: null,
+          pendingFormulaBlueprintId: null,
         });
       },
 
@@ -762,7 +961,9 @@ export const useGameStore = create<GameStore>()(
 
       addCardToDeck: (cardId) => {
         set(state => {
-          const count = state.player.deck.filter(c => c.id === cardId || c.name === CARD_LIBRARY[cardId]?.name).length;
+          const cardTemplate = CARD_LIBRARY[cardId];
+          if (!cardTemplate || !isHerbCard(cardTemplate) || cardTemplate.unplayable) return {};
+          const count = countCardCopies(state.player.deck, cardId);
           if (count >= MAX_CARD_COPIES) return {};
           const ids = state.player.obtainedCardIds ?? [];
           return {
@@ -821,7 +1022,7 @@ export const useGameStore = create<GameStore>()(
         set(state => ({
           player: {
             ...state.player,
-            hp: Math.min(state.player.maxHp, state.player.hp + amount),
+            hp: Math.min(state.player.maxHp, state.player.hp + getPlayerHealAmount(state.player, amount)),
           }
         }));
       },
@@ -849,7 +1050,9 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const drawDown = state.player.statusEffects.find(s => s.id === 'draw_down')?.stacks ?? 0;
         const base = BASE_DRAW_PER_TURN + Math.min(state.bossKills, MAX_DRAW_PER_TURN - BASE_DRAW_PER_TURN);
-        return Math.max(0, base - drawDown);
+        const equipmentBonus = hasEquipment(state.player, 'equipment_ziwuliuzhu') && state.phase === 'combat' ? 1 : 0;
+        const cap = equipmentBonus > 0 ? EQUIPMENT_DRAW_PER_TURN_CAP : MAX_DRAW_PER_TURN;
+        return Math.max(0, Math.min(cap, base + equipmentBonus) - drawDown);
       },
 
       discardOverflowCard: (cardId) => {
@@ -892,8 +1095,10 @@ export const useGameStore = create<GameStore>()(
 
       combineCards: (cardIds, targetCardId) => {
         set(state => {
+          const targetTemplate = CARD_LIBRARY[targetCardId];
+          if (!targetTemplate || !isHerbCard(targetTemplate) || targetTemplate.unplayable) return {};
           const nextDeck = state.player.deck.filter(c => !cardIds.includes(c.id));
-          const alreadyHas = nextDeck.filter(c => c.id === targetCardId || c.name === CARD_LIBRARY[targetCardId]?.name).length;
+          const alreadyHas = countCardCopies(nextDeck, targetCardId);
           if (alreadyHas >= MAX_CARD_COPIES) return {};
           return {
             player: {
@@ -907,15 +1112,120 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
+      recordFormulaBlueprint: (blueprintId) => {
+        const blueprint = FORMULA_BLUEPRINT_BY_ID[blueprintId];
+        if (!blueprint) {
+          return { ok: false, reason: 'unknown_blueprint', message: '未找到该药方蓝图。' };
+        }
+        if (!isCraftingPhase(get().phase)) {
+          return { ok: false, reason: 'phase_unavailable', message: '合成台只能在战斗外使用。' };
+        }
+
+        set(state => {
+          const known = state.player.knownFormulaBlueprintIds ?? [];
+          if (known.includes(blueprintId)) return {};
+          return {
+            player: {
+              ...state.player,
+              knownFormulaBlueprintIds: [...known, blueprintId],
+            },
+          };
+        });
+
+        return { ok: true, message: '药方蓝图已录入合成台。' };
+      },
+
+      craftFormulaFromBlueprint: (blueprintId, ingredientInstanceIds) => {
+        const state = get();
+        const blueprint = FORMULA_BLUEPRINT_BY_ID[blueprintId];
+        if (!isCraftingPhase(state.phase)) {
+          return { ok: false, reason: 'phase_unavailable', message: '合成台只能在战斗外使用。' };
+        }
+        if (!blueprint) {
+          return { ok: false, reason: 'unknown_blueprint', message: '未找到该药方蓝图。' };
+        }
+        if (!(state.player.knownFormulaBlueprintIds ?? []).includes(blueprintId)) {
+          return { ok: false, reason: 'blueprint_not_recorded', message: '请先录入这张药方蓝图。' };
+        }
+        if (blueprint.status === 'recipe_pending' || blueprint.ingredientCardIds.length === 0) {
+          return { ok: false, reason: 'recipe_pending', message: '该蓝图配方尚未录入，暂不能合成。' };
+        }
+        if (ingredientInstanceIds.length !== blueprint.ingredientCardIds.length) {
+          return {
+            ok: false,
+            reason: 'invalid_ingredients',
+            message: `合成该药方需要选择 ${blueprint.ingredientCardIds.length} 张药材牌。`,
+          };
+        }
+        if (new Set(ingredientInstanceIds).size !== ingredientInstanceIds.length) {
+          return { ok: false, reason: 'invalid_ingredients', message: '同一张药材牌不能重复作为材料。' };
+        }
+
+        const selectedCards = ingredientInstanceIds
+          .map((instanceId) => state.player.deck.find((card) => card.id === instanceId) ?? null);
+        if (selectedCards.some((card) => !card || getCardCategory(card) !== 'herb')) {
+          return { ok: false, reason: 'invalid_ingredients', message: '只能使用牌组中的药材牌作为材料。' };
+        }
+
+        const selectedTemplateIds = selectedCards
+          .map((card) => (card ? getTemplateCardId(card) : null))
+          .filter((id): id is string => Boolean(id));
+        if (!sameRecipe(selectedTemplateIds, blueprint.ingredientCardIds)) {
+          return { ok: false, reason: 'ingredients_mismatch', message: '所选药材与蓝图配方不匹配。' };
+        }
+
+        const targetTemplate = CARD_LIBRARY[blueprint.formulaCardId];
+        if (!targetTemplate || !isFormulaCard(targetTemplate)) {
+          return { ok: false, reason: 'target_unavailable', message: '该药方牌尚未配置。' };
+        }
+        const alreadyHas = countCardCopies(state.player.deck, blueprint.formulaCardId);
+        if (alreadyHas >= MAX_CARD_COPIES) {
+          return { ok: false, reason: 'copy_limit', message: '该药方牌已达到牌组数量上限。' };
+        }
+
+        const shownPoems = state.shownFormulaPoemIds ?? [];
+        const showPoem = !shownPoems.includes(blueprintId);
+
+        set(current => ({
+          player: {
+            ...current.player,
+            deck: [
+              ...current.player.deck.filter(card => !ingredientInstanceIds.includes(card.id)),
+              createCardInstance(blueprint.formulaCardId),
+            ],
+            obtainedCardIds: (current.player.obtainedCardIds ?? []).includes(blueprint.formulaCardId)
+              ? current.player.obtainedCardIds ?? []
+              : [...(current.player.obtainedCardIds ?? []), blueprint.formulaCardId],
+          },
+          shownFormulaPoemIds: showPoem
+            ? [...(current.shownFormulaPoemIds ?? []), blueprintId]
+            : current.shownFormulaPoemIds ?? [],
+        }));
+
+        return {
+          ok: true,
+          message: '药方牌已合成并加入牌组。',
+          formulaCardId: blueprint.formulaCardId,
+          showPoem,
+          poem: showPoem ? blueprint.poem : undefined,
+        };
+      },
+
       advanceTime: (ms) => {
         advanceScheduledTasks(ms);
+      },
+      clearPendingEquipmentReward: () => {
+        set({ pendingEquipmentRewardId: null });
+      },
+      clearPendingFormulaBlueprintReward: () => {
+        set({ pendingFormulaBlueprintId: null });
       },
     };
   },
     {
       name: 'wuxing-yidao-storage',
       storage: createJSONStorage(() => webStorage),
-      version: 9,
+      version: 14,
       partialize: state => ({
         phase: state.phase === 'card_codex' || state.phase === 'intro' ? 'start_menu' : state.phase,
         player: state.player,
@@ -935,6 +1245,9 @@ export const useGameStore = create<GameStore>()(
         combatWinsThisCycle: state.combatWinsThisCycle,
         shopRemovalCost: state.shopRemovalCost,
         turnFlags: state.turnFlags,
+        pendingEquipmentRewardId: state.pendingEquipmentRewardId,
+        pendingFormulaBlueprintId: state.pendingFormulaBlueprintId,
+        shownFormulaPoemIds: state.shownFormulaPoemIds,
       }),
       migrate: (persistedState, version) => {
         if (version < 8) {
@@ -958,12 +1271,42 @@ export const useGameStore = create<GameStore>()(
             turnFlags: { ...INITIAL_TURN_FLAGS },
             enemyActionCue: null,
             playerImpactCue: null,
+            pendingEquipmentRewardId: null,
+            pendingFormulaBlueprintId: null,
+            shownFormulaPoemIds: [],
           } as Partial<GameStore>;
         }
+        const migrated = persistedState as GameStore;
+        const normalizedConstitution = normalizeConstitution(migrated.player?.constitution);
+        const existingPlayer = migrated.player ?? INITIAL_PLAYER;
         return {
-          ...(persistedState as GameStore),
+          ...migrated,
+          player: {
+            ...existingPlayer,
+            constitution: normalizedConstitution,
+            statusEffects: existingPlayer.statusEffects?.map((status) => {
+              if (status.id === 'fire_heat_passive') {
+                return { ...CONSTITUTION_PASSIVES.damp_heat[0] };
+              }
+              if (status.id === 'jing_deficiency_passive') {
+                return { ...CONSTITUTION_PASSIVES.special_diathesis[0] };
+              }
+              const refreshedPassive = CONSTITUTION_PASSIVES[normalizedConstitution].find(passive => passive.id === status.id);
+              if (refreshedPassive) {
+                return { ...refreshedPassive };
+              }
+              return status;
+            }) ?? CONSTITUTION_PASSIVES[normalizedConstitution].map(status => ({ ...status })),
+            relics: existingPlayer.relics ?? [],
+            obtainedCardIds: existingPlayer.obtainedCardIds ?? [],
+            obtainedEnemyTemplateIds: existingPlayer.obtainedEnemyTemplateIds ?? [],
+            knownFormulaBlueprintIds: existingPlayer.knownFormulaBlueprintIds ?? [],
+          },
           enemyActionCue: null,
           playerImpactCue: null,
+          pendingEquipmentRewardId: null,
+          pendingFormulaBlueprintId: null,
+          shownFormulaPoemIds: migrated.shownFormulaPoemIds ?? [],
         } as GameStore;
       }
     }

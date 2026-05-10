@@ -3,6 +3,7 @@ import { ENEMIES } from '../data/enemies';
 
 export interface TurnFlags {
   playedAttack: boolean;
+  playedSkill: boolean;
   tookAttackDamage: boolean;
   cardsPlayed: number;
 }
@@ -22,6 +23,18 @@ export interface CoreState {
 }
 
 export const BASE_YIN_CAP = 5;
+export const CONSTITUTION_PASSIVE_IDS = new Set([
+  'balanced_passive',
+  'yin_deficiency_passive',
+  'qi_deficiency_passive',
+  'yang_deficiency_passive',
+  'phlegm_dampness_passive',
+  'damp_heat_passive',
+  'blood_stasis_passive',
+  'qi_stagnation_passive',
+  'special_diathesis_passive',
+]);
+
 export const INITIAL_PLAYER: Player = {
   hp: 80,
   maxHp: 80,
@@ -40,10 +53,12 @@ export const INITIAL_PLAYER: Player = {
   gold: 99,
   obtainedCardIds: [],
   obtainedEnemyTemplateIds: [],
+  knownFormulaBlueprintIds: [],
 };
 
 export const INITIAL_TURN_FLAGS: TurnFlags = {
   playedAttack: false,
+  playedSkill: false,
   tookAttackDamage: false,
   cardsPlayed: 0,
 };
@@ -68,9 +83,50 @@ const getYinCap = (entity: { statusEffects: StatusEffect[] }) =>
 const getEffectiveMaxEnergy = (entity: Player) =>
   Math.max(1, entity.maxEnergy - getStacks(entity, 'energy_drain') - getStacks(entity, 'max_energy_down'));
 
+const hasPassive = (entity: { statusEffects: StatusEffect[] }, id: string) =>
+  getStacks(entity, id) > 0;
+
+const hasRelic = (player: Player, id: string) =>
+  player.relics?.some(relic => relic.id === id) ?? false;
+
+const getCombatRound = (player: Player) =>
+  getStacks(player, 'combat_round') || 1;
+
+const gainPlayerBlock = (player: Player, amount: number) => {
+  if (amount <= 0) return 0;
+  player.block += amount;
+  if (hasRelic(player, 'equipment_qixue_jinye')) {
+    applyHealToPlayer(player, Math.min(2, Math.floor(amount / 5)));
+  }
+  return amount;
+};
+
+const takePlayerHpDamage = (player: Player, amount: number) => {
+  if (amount <= 0) return 0;
+  const finalDamage = hasRelic(player, 'equipment_zhengti') ? Math.max(0, amount - 1) : amount;
+  if (finalDamage <= 0) return 0;
+  player.hp = Math.max(0, player.hp - finalDamage);
+  return finalDamage;
+};
+
+const isConstitutionPassive = (status: StatusEffect) =>
+  status.dispelImmune || CONSTITUTION_PASSIVE_IDS.has(status.id);
+
 const applyHealToPlayer = (player: Player, amount: number) => {
   if (amount <= 0) return 0;
   let heal = amount;
+  if (hasPassive(player, 'balanced_passive')) {
+    heal += 1;
+  }
+  if (hasPassive(player, 'qi_deficiency_passive')) {
+    heal += 1;
+  }
+  if (hasRelic(player, 'equipment_zhengti')) {
+    heal += 1;
+  }
+  if (hasPassive(player, 'blood_stasis_passive')) {
+    heal = Math.floor(heal * 0.5);
+  }
   if (getStacks(player, 'lung_dryness') > 0) {
     heal = Math.floor(heal * 0.5);
   }
@@ -85,9 +141,10 @@ const gainYin = (player: Player, amount: number, log?: (message: string) => void
     log?.('你暂时无法获得滋阴。');
     return 0;
   }
+  const passiveBonus = hasPassive(player, 'yin_deficiency_passive') ? 1 : 0;
   const yinCap = getYinCap(player);
   const current = getStacks(player, 'yin');
-  const capped = clamp(current + amount, 0, yinCap);
+  const capped = clamp(current + amount + passiveBonus, 0, yinCap);
   const delta = capped - current;
   if (delta > 0) {
     addStatus(player, {
@@ -100,6 +157,18 @@ const gainYin = (player: Player, amount: number, log?: (message: string) => void
     });
   }
   return delta;
+};
+
+const drawCardsForPlayer = (player: Player, count: number) => {
+  for (let i = 0; i < count; i += 1) {
+    if (player.drawPile.length === 0) {
+      if (player.discardPile.length === 0) break;
+      player.drawPile = [...player.discardPile].sort(() => Math.random() - 0.5);
+      player.discardPile = [];
+    }
+    const cardDrawn = player.drawPile.pop();
+    if (cardDrawn) player.hand.push(cardDrawn);
+  }
 };
 
 const addStatus = (entity: { statusEffects: StatusEffect[] }, status: StatusEffect) => {
@@ -116,6 +185,12 @@ const addStatus = (entity: { statusEffects: StatusEffect[] }, status: StatusEffe
     if (status.sourceId) {
       existing.sourceId = status.sourceId;
     }
+    if (status.dispelImmune) {
+      existing.dispelImmune = true;
+    }
+    if (status.hidden) {
+      existing.hidden = true;
+    }
     return;
   }
   entity.statusEffects.push({ ...status });
@@ -127,12 +202,12 @@ const removeStatus = (entity: { statusEffects: StatusEffect[] }, id: string) => 
 
 const removeDebuffs = (entity: { statusEffects: StatusEffect[] }, count?: number) => {
   if (!count) {
-    entity.statusEffects = entity.statusEffects.filter(s => s.type !== 'debuff');
+    entity.statusEffects = entity.statusEffects.filter(s => s.type !== 'debuff' || isConstitutionPassive(s));
     return;
   }
   let remaining = count;
   entity.statusEffects = entity.statusEffects.filter(s => {
-    if (remaining > 0 && s.type === 'debuff') {
+    if (remaining > 0 && s.type === 'debuff' && !isConstitutionPassive(s)) {
       remaining -= 1;
       return false;
     }
@@ -141,7 +216,7 @@ const removeDebuffs = (entity: { statusEffects: StatusEffect[] }, count?: number
 };
 
 const removeBuffs = (entity: { statusEffects: StatusEffect[] }) => {
-  entity.statusEffects = entity.statusEffects.filter(s => s.type !== 'buff');
+  entity.statusEffects = entity.statusEffects.filter(s => s.type !== 'buff' || isConstitutionPassive(s));
 };
 
 const decrementDurations = (entity: { statusEffects: StatusEffect[] }) => {
@@ -371,6 +446,7 @@ export interface PlayCardResult {
   selectedEnemyId: string | null;
   turnFlags: {
     playedAttack: boolean;
+    playedSkill: boolean;
     tookAttackDamage: boolean;
     cardsPlayed: number;
   };
@@ -449,6 +525,9 @@ export const resolveCardPlay = (
   if (card.type === 'attack') {
     turnFlags.playedAttack = true;
   }
+  if (card.type === 'skill') {
+    turnFlags.playedSkill = true;
+  }
   const skillBonus = card.type === 'skill' ? getStacks(newPlayer, 'next_skill_bonus') : 0;
   let skillBonusConsumed = false;
   const consumeSkillBonus = () => {
@@ -462,6 +541,18 @@ export const resolveCardPlay = (
   const applyBlock = (amount: number) => {
     if (amount <= 0) return;
     let blockGain = amount + getDexterity(newPlayer);
+    if (hasPassive(newPlayer, 'balanced_passive')) {
+      blockGain += 1;
+    }
+    if (hasPassive(newPlayer, 'qi_deficiency_passive')) {
+      blockGain += 2;
+    }
+    if (hasPassive(newPlayer, 'damp_heat_passive')) {
+      blockGain -= 2;
+    }
+    if (hasPassive(newPlayer, 'qi_stagnation_passive')) {
+      blockGain -= 1;
+    }
     const dampness = getStacks(newPlayer, 'dampness_evil');
     if (dampness > 0) {
       blockGain = Math.max(0, blockGain - dampness * 2);
@@ -475,9 +566,19 @@ export const resolveCardPlay = (
     if (getStacks(newPlayer, 'double_block') > 0) {
       blockGain *= 2;
     }
+    if (getStacks(newPlayer, 'formula_zhenwu_guard') > 0) {
+      blockGain = Math.floor(blockGain * 1.5);
+    }
+    if (hasPassive(newPlayer, 'blood_stasis_passive')) {
+      blockGain = Math.floor(blockGain * 0.5);
+    }
+    if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 >= newPlayer.maxHp) {
+      blockGain += 1;
+    }
+    blockGain += getStacks(newPlayer, 'equipment_zhengqi');
     const totalGain = getStacks(newPlayer, 'block_echo') > 0 ? blockGain * 2 : blockGain;
     if (totalGain > 0) {
-      newPlayer.block += totalGain;
+      gainPlayerBlock(newPlayer, totalGain);
     }
     if (blockGain > 0 && getStacks(newPlayer, 'block_to_strength') > 0) {
       addStatus(newPlayer, { id: 'temp_strength', name: '临时力量', type: 'buff', stacks: 1, canStack: true, description: '回合结束时失去', duration: 1 });
@@ -493,7 +594,9 @@ export const resolveCardPlay = (
       dmg += virtualHeat;
     }
 
-    if (getStacks(enemy, 'blood_stasis') > 0) {
+    if (hasPassive(newPlayer, 'blood_stasis_passive') && getStacks(enemy, 'blood_stasis') > 0) {
+      dmg = Math.round(dmg * 1.5);
+    } else if (getStacks(enemy, 'blood_stasis') > 0) {
       dmg = Math.round(dmg * 1.25);
     }
     if (getStacks(enemy, 'vulnerable') > 0) {
@@ -515,7 +618,7 @@ export const resolveCardPlay = (
     }
 
     if (!options?.trueDamage) {
-      if (options?.pierceAll) {
+      if (options?.pierceAll || (hasPassive(newPlayer, 'blood_stasis_passive') && getStacks(enemy, 'blood_stasis') > 0)) {
         enemy.block = 0;
       } else if (options?.pierceAmount) {
         enemy.block = Math.max(0, enemy.block - options.pierceAmount);
@@ -534,7 +637,7 @@ export const resolveCardPlay = (
 
   const applyDamageToPlayer = (baseDamage: number) => {
     let dmg = baseDamage;
-    if (getStacks(newPlayer, 'yin_deficiency_passive') > 0) {
+    if (hasPassive(newPlayer, 'yin_deficiency_passive')) {
       dmg += 1;
     }
     const bloodStasis = getStacks(newPlayer, 'blood_stasis');
@@ -552,20 +655,11 @@ export const resolveCardPlay = (
     }
     dmg -= newPlayer.block;
     newPlayer.block = 0;
-    newPlayer.hp = Math.max(0, newPlayer.hp - dmg);
-    return dmg;
+    return takePlayerHpDamage(newPlayer, dmg);
   };
 
   const drawCardsLocal = (count: number) => {
-    for (let i = 0; i < count; i += 1) {
-      if (newPlayer.drawPile.length === 0) {
-        if (newPlayer.discardPile.length === 0) break;
-        newPlayer.drawPile = [...newPlayer.discardPile].sort(() => Math.random() - 0.5);
-        newPlayer.discardPile = [];
-      }
-      const cardDrawn = newPlayer.drawPile.pop();
-      if (cardDrawn) newPlayer.hand.push(cardDrawn);
-    }
+    drawCardsForPlayer(newPlayer, count);
   };
 
   const removeRandomCard = () => {
@@ -601,6 +695,21 @@ export const resolveCardPlay = (
   const applyAttackDamage = (amount: number, options?: { trueDamage?: boolean }) => {
     if (!targetEnemy) return 0;
     let dmg = amount + getStrength(newPlayer);
+    if (hasPassive(newPlayer, 'balanced_passive')) {
+      dmg += 1;
+    }
+    if (hasPassive(newPlayer, 'qi_deficiency_passive')) {
+      dmg -= 1;
+    }
+    if (hasPassive(newPlayer, 'qi_stagnation_passive')) {
+      dmg -= 1;
+    }
+    if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
+      dmg += 1;
+    }
+    if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
+      dmg += 1;
+    }
     if (getStacks(newPlayer, 'attack_buff') > 0) {
       dmg += 3;
       removeStatus(newPlayer, 'attack_buff');
@@ -627,7 +736,22 @@ export const resolveCardPlay = (
   const applyAoeDamage = (amount: number, options?: { trueDamage?: boolean }) => {
     newEnemies.forEach(enemy => {
       if (enemy.currentHp <= 0) return;
-      const dmg = amount + getStrength(newPlayer);
+      let dmg = amount + getStrength(newPlayer);
+      if (hasPassive(newPlayer, 'balanced_passive')) {
+        dmg += 1;
+      }
+      if (hasPassive(newPlayer, 'qi_deficiency_passive')) {
+        dmg -= 1;
+      }
+      if (hasPassive(newPlayer, 'qi_stagnation_passive')) {
+        dmg -= 1;
+      }
+      if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
+        dmg += 1;
+      }
+      if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
+        dmg += 1;
+      }
       const dealt = applyDamageToEnemy(enemy, dmg, options);
       if (dealt > 0) {
         log(`你对 ${enemy.name} 造成了 ${dealt} 点伤害`);
@@ -643,9 +767,9 @@ export const resolveCardPlay = (
     addStatus(newPlayer, status);
   };
 
-  const removeEnemyBuffs = (enemy: Enemy) => {
-    enemy.statusEffects = enemy.statusEffects.filter(s => s.type !== 'buff');
-  };
+    const removeEnemyBuffs = (enemy: Enemy) => {
+      enemy.statusEffects = enemy.statusEffects.filter(s => s.type !== 'buff' || isConstitutionPassive(s));
+    };
 
   const removeAllEnemyBuffs = () => {
     newEnemies.forEach(enemy => removeEnemyBuffs(enemy));
@@ -692,6 +816,145 @@ export const resolveCardPlay = (
       applyBlock(card.effectValue || 0);
       removeDebuffs(newPlayer, 1);
       log(`你获得了 ${card.effectValue} 点格挡并移除负面状态`);
+      break;
+    case 'formula_gegen_tang':
+      applyBlock(card.effectValue || 8);
+      removeDebuffs(newPlayer, 1);
+      drawCardsLocal(card.secondaryValue || 1);
+      log('葛根汤舒筋解表：获得格挡、清除负面状态并抽牌');
+      break;
+    case 'formula_maxing_shigan_tang':
+      if (targetEnemy) {
+        applyAttackDamage(card.effectValue || 10);
+        applyDebuffToEnemy(targetEnemy, {
+          id: 'heat_evil',
+          name: '热邪',
+          type: 'debuff',
+          stacks: card.secondaryValue || 2,
+          canStack: true,
+          description: '回合结束受到伤害',
+        });
+        log(`麻杏石甘汤清肺泄热：${targetEnemy.name} 获得热邪`);
+      }
+      break;
+    case 'formula_xiaochaihu_tang':
+      applyHealToPlayer(newPlayer, card.effectValue || 6);
+      drawCardsLocal(card.secondaryValue || 2);
+      removeDebuffs(newPlayer, 1);
+      log('小柴胡汤和解少阳：恢复生命、抽牌并清除负面状态');
+      break;
+    case 'formula_lizhong_wan':
+      applyHealToPlayer(newPlayer, card.effectValue || 8);
+      applyBuffToPlayer({
+        id: 'strength',
+        name: '力量',
+        type: 'buff',
+        stacks: card.secondaryValue || 1,
+        canStack: true,
+        description: '攻击伤害提高',
+      });
+      log('理中丸温中补气：恢复生命并获得力量');
+      break;
+    case 'formula_banxia_houpu_tang':
+      if (targetEnemy) {
+        const shouldDraw = getStacks(targetEnemy, 'phlegm_bind') > 0 || getStacks(targetEnemy, 'dampness_evil') > 0;
+        applyAttackDamage(card.effectValue || 8);
+        applyDebuffToEnemy(targetEnemy, {
+          id: 'weak',
+          name: '虚弱',
+          type: 'debuff',
+          stacks: 1,
+          canStack: true,
+          description: '造成伤害降低25%',
+          duration: card.secondaryValue || 2,
+        });
+        if (shouldDraw) {
+          drawCardsLocal(1);
+        }
+        log(`半夏厚朴汤行气化痰：${targetEnemy.name} 获得虚弱`);
+      }
+      break;
+    case 'formula_jiaotai_wan':
+      applyBlock(card.effectValue || 6);
+      removeDebuffs(newPlayer, 1);
+      log('交泰丸交通心肾：获得格挡并清除负面状态');
+      break;
+    case 'formula_sijunzi_tang':
+      applyHealToPlayer(newPlayer, card.effectValue || 10);
+      applyBlock(card.secondaryValue || 6);
+      log('四君子汤益气健脾：恢复生命并获得格挡');
+      break;
+    case 'formula_zhenwu_tang':
+      applyBuffToPlayer({
+        id: 'formula_zhenwu_guard',
+        name: '真武护阳',
+        type: 'buff',
+        stacks: 1,
+        canStack: false,
+        description: '本场战斗格挡效果+50%，回合结束获得1点格挡',
+      });
+      log('真武汤温阳利水：本场战斗格挡效果提升');
+      break;
+    case 'formula_xiaoqinglong_tang':
+      newEnemies.forEach(enemy => {
+        if (enemy.currentHp <= 0) return;
+        let dmg = (card.effectValue || 7) + getStrength(newPlayer);
+        if (getStacks(enemy, 'cold_evil') > 0) {
+          dmg += card.secondaryValue || 3;
+        }
+        if (hasPassive(newPlayer, 'balanced_passive')) dmg += 1;
+        if (hasPassive(newPlayer, 'qi_deficiency_passive')) dmg -= 1;
+        if (hasPassive(newPlayer, 'qi_stagnation_passive')) dmg -= 1;
+        if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) dmg += 1;
+        if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) dmg += 1;
+        const dealt = applyDamageToEnemy(enemy, dmg);
+        if (dealt > 0) log(`小青龙汤对 ${enemy.name} 造成了 ${dealt} 点伤害`);
+      });
+      break;
+    case 'formula_suanzaoren_tang':
+      if (targetEnemy) {
+        applyDebuffToEnemy(targetEnemy, {
+          id: 'stun',
+          name: '困倦',
+          type: 'debuff',
+          stacks: card.secondaryValue || 1,
+          canStack: true,
+          description: '跳过行动',
+          duration: card.secondaryValue || 1,
+        });
+        log(`酸枣仁汤安神：${targetEnemy.name} 困倦`);
+      }
+      applyHealToPlayer(newPlayer, card.effectValue || 5);
+      break;
+    case 'formula_mahuang_tang':
+      applyBuffToPlayer({
+        id: 'pierce_all',
+        name: '麻黄发汗',
+        type: 'buff',
+        stacks: 1,
+        canStack: false,
+        description: '本回合攻击无视格挡',
+        duration: 1,
+      });
+      drawCardsLocal(1);
+      log('麻黄汤宣肺解表：本回合攻击无视格挡并抽牌');
+      break;
+    case 'formula_yinqiao_san':
+      applyAoeDamage(card.effectValue || 6);
+      newEnemies.forEach(enemy => {
+        if (enemy.currentHp <= 0) return;
+        applyDebuffToEnemy(enemy, {
+          id: 'heat_evil',
+          name: '热邪',
+          type: 'debuff',
+          stacks: card.secondaryValue || 1,
+          canStack: true,
+          description: '回合结束受到伤害',
+        });
+        const buff = enemy.statusEffects.find(s => s.type === 'buff' && !isConstitutionPassive(s));
+        if (buff) removeStatus(enemy, buff.id);
+      });
+      log('银翘散辛凉解表：群体伤害、施加热邪并清除敌方正面状态');
       break;
     case 'buff_attack':
       applyBuffToPlayer({ id: 'attack_buff', name: '发散', type: 'buff', stacks: 1, canStack: false, description: '下一次攻击伤害+3' });
@@ -1015,7 +1278,7 @@ export const resolveCardPlay = (
       break;
     case 'steal_buffs':
       if (targetEnemy) {
-        const buffs = targetEnemy.statusEffects.filter(s => s.type === 'buff');
+          const buffs = targetEnemy.statusEffects.filter(s => s.type === 'buff' && !isConstitutionPassive(s));
         removeEnemyBuffs(targetEnemy);
         buffs.forEach(buff => addStatus(newPlayer, { ...buff }));
         log(`夺取了敌人的正面状态`);
@@ -1130,7 +1393,7 @@ export const resolveCardPlay = (
       log(`获得力量与格挡`);
       break;
     case 'copy_buff_exhaust': {
-      const buffs = newPlayer.statusEffects.filter(s => s.type === 'buff' && s.id !== 'copy_buff_exhaust');
+      const buffs = newPlayer.statusEffects.filter(s => s.type === 'buff' && s.id !== 'copy_buff_exhaust' && !isConstitutionPassive(s));
       if (buffs.length > 0) {
         const picked = buffs[Math.floor(Math.random() * buffs.length)];
         if (picked.canStack) {
@@ -1181,6 +1444,9 @@ export const resolveCardPlay = (
       case 'yin_block':
       case 'strength_dex_block':
       case 'strength_block':
+      case 'formula_gegen_tang':
+      case 'formula_jiaotai_wan':
+      case 'formula_sijunzi_tang':
         applyBlock(bonus);
         break;
       case 'heal_draw':
@@ -1189,6 +1455,9 @@ export const resolveCardPlay = (
       case 'heal_draw_block':
       case 'yin_heal_scaling':
       case 'cleanse_self_heal':
+      case 'formula_xiaochaihu_tang':
+      case 'formula_lizhong_wan':
+      case 'formula_suanzaoren_tang':
         applyHealToPlayer(newPlayer, bonus);
         break;
       case 'aoe_damage_cleanse':
@@ -1196,6 +1465,8 @@ export const resolveCardPlay = (
       case 'aoe_damage_heat':
       case 'aoe_damage':
       case 'cleanse_heat_aoe_damage':
+      case 'formula_xiaoqinglong_tang':
+      case 'formula_yinqiao_san':
         applyAoeDamage(bonus);
         break;
       case 'buff_yin':
@@ -1240,6 +1511,48 @@ export const resolveCardPlay = (
   if (card.type === 'attack' && targetEnemy && getStacks(newPlayer, 'attack_virtual_heat') > 0) {
     applyDebuffToEnemy(targetEnemy, { id: 'virtual_heat', name: '虚热', type: 'debuff', stacks: 1, canStack: true, description: '受到额外伤害' });
   }
+  if (card.type === 'attack' && targetEnemy && hasPassive(newPlayer, 'damp_heat_passive')) {
+    applyDebuffToEnemy(targetEnemy, { id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 1, canStack: true, description: '回合结束受到伤害' });
+    if (!state.turnFlags.playedAttack) {
+      newEnemies.forEach(enemy => {
+        if (enemy.currentHp > 0) {
+          applyDebuffToEnemy(enemy, { id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 1, canStack: true, description: '回合结束受到伤害' });
+        }
+      });
+      log('[湿热质] 湿热外蒸：所有敌人获得1层热邪');
+    }
+  }
+  if (card.type === 'attack' && targetEnemy && hasPassive(newPlayer, 'blood_stasis_passive')) {
+    applyDebuffToEnemy(targetEnemy, { id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加25%' });
+  }
+  if (card.type === 'skill' && hasPassive(newPlayer, 'phlegm_dampness_passive')) {
+    const bindTarget = targetEnemy ?? newEnemies.find(enemy => enemy.currentHp > 0) ?? null;
+    if (bindTarget) {
+      applyDebuffToEnemy(bindTarget, {
+        id: 'phlegm_bind',
+        name: '痰湿禁锢',
+        type: 'debuff',
+        stacks: 1,
+        canStack: true,
+        description: '每层攻击-1，受到伤害+1；3层时眩晕并虚弱',
+      });
+      const bind = getStatus(bindTarget, 'phlegm_bind');
+      if (bind && bind.stacks >= 3) {
+        removeStatus(bindTarget, 'phlegm_bind');
+        applyDebuffToEnemy(bindTarget, { id: 'stun', name: '眩晕', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
+        applyDebuffToEnemy(bindTarget, { id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
+        log(`[痰湿质] 痰湿禁锢触发，${bindTarget.name} 被眩晕并虚弱`);
+      }
+    }
+  }
+  if (card.type === 'skill' && hasPassive(newPlayer, 'qi_stagnation_passive') && !state.turnFlags.playedSkill) {
+    drawCardsLocal(1);
+    log('[气郁质] 气机流转：额外抽1张牌');
+  }
+  if (card.type === 'skill' && hasRelic(newPlayer, 'equipment_jingluo') && !state.turnFlags.playedSkill) {
+    gainPlayerBlock(newPlayer, 2);
+    log('[经络学说] 经络通行：获得2点格挡');
+  }
   if (card.type === 'attack' && targetEnemy && getStacks(newPlayer, 'attack_stun_chance') > 0) {
     if (Math.random() < 0.25) {
       applyDebuffToEnemy(targetEnemy, { id: 'stun', name: '眩晕', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
@@ -1247,9 +1560,9 @@ export const resolveCardPlay = (
     }
   }
 
-  if (card.type === 'attack' && getStacks(newPlayer, 'qi_deficiency_passive') > 0) {
-    newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + 1);
-    log(`[气虚血瘀] 触发：恢复1点生命`);
+  if (card.type === 'attack' && hasPassive(newPlayer, 'qi_deficiency_passive')) {
+    applyHealToPlayer(newPlayer, 1);
+    log(`[气虚质] 固表续航：恢复1点生命`);
   }
   const zusanliStacks = getStacks(newPlayer, 'zusanli');
   if (card.type === 'attack' && zusanliStacks > 0) {
@@ -1288,6 +1601,7 @@ export interface PlayerEndTurnResult {
   enemies: Enemy[];
   turnFlags: {
     playedAttack: boolean;
+    playedSkill: boolean;
     tookAttackDamage: boolean;
     cardsPlayed: number;
   };
@@ -1311,24 +1625,28 @@ export const resolvePlayerEndTurn = (
 
   const heatStacks = getStacks(newPlayer, 'heat_evil');
   if (heatStacks > 0) {
-    newPlayer.hp = Math.max(0, newPlayer.hp - heatStacks);
-    log(`你受到热邪伤害 ${heatStacks} 点`);
+    const dealt = takePlayerHpDamage(newPlayer, heatStacks);
+    log(`你受到热邪伤害 ${dealt} 点`);
   }
   const firePhaseActive = newEnemies.some(enemy => enemy.behavior === 'boss_five_elements' && enemy.meta?.phase === 'fire');
   if (firePhaseActive && heatStacks > 0) {
-    newPlayer.hp = Math.max(0, newPlayer.hp - heatStacks);
-    log(`五行失调（火）引发灼伤 ${heatStacks} 点`);
+    const dealt = takePlayerHpDamage(newPlayer, heatStacks);
+    log(`五行失调（火）引发灼伤 ${dealt} 点`);
   }
   const reruyingxueCount = newEnemies.filter(enemy => enemy.behavior === 'reruyingxue' && enemy.currentHp > 0).length;
   if (reruyingxueCount > 0 && heatStacks > 0) {
     const scorchDamage = heatStacks * reruyingxueCount;
-    newPlayer.hp = Math.max(0, newPlayer.hp - scorchDamage);
-    log(`热入营血追袭：额外灼伤 ${scorchDamage} 点`);
+    const dealt = takePlayerHpDamage(newPlayer, scorchDamage);
+    log(`热入营血追袭：额外灼伤 ${dealt} 点`);
   }
   const endTurnHeal = getStacks(newPlayer, 'end_turn_heal');
   if (endTurnHeal > 0) {
-    newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + endTurnHeal);
-    log(`山药平补恢复 ${endTurnHeal} 点生命`);
+    const healed = applyHealToPlayer(newPlayer, endTurnHeal);
+    log(`山药平补恢复 ${healed} 点生命`);
+  }
+  if (getStacks(newPlayer, 'formula_zhenwu_guard') > 0) {
+    gainPlayerBlock(newPlayer, 1);
+    log('真武护阳：获得1点格挡');
   }
   const strengthDecay = getStacks(newPlayer, 'strength_decay');
   if (strengthDecay > 0) {
@@ -1343,6 +1661,23 @@ export const resolvePlayerEndTurn = (
     newPlayer.block = 0;
     log(`阳明腑实：护盾被清除`);
   }
+  if (hasRelic(newPlayer, 'equipment_zangxiang')) {
+    addStatus(newPlayer, {
+      id: 'zangfu_essence',
+      name: '脏腑精气',
+      type: 'buff',
+      stacks: 1,
+      canStack: true,
+      description: '满3层时恢复生命',
+    });
+    const essence = getStatus(newPlayer, 'zangfu_essence');
+    if (essence && essence.stacks >= 3) {
+      essence.stacks -= 3;
+      if (essence.stacks <= 0) removeStatus(newPlayer, 'zangfu_essence');
+      const healed = applyHealToPlayer(newPlayer, 4);
+      log(`[藏象学说] 脏腑精气充盈：恢复${healed}点生命`);
+    }
+  }
 
   decayStacks(newPlayer, ['heat_evil', 'cold_evil', 'dampness_evil', 'blood_stasis', 'virtual_heat', 'diarrhea']);
   decrementDurations(newPlayer);
@@ -1352,6 +1687,7 @@ export const resolvePlayerEndTurn = (
     enemies: newEnemies,
     turnFlags: {
       playedAttack: false,
+      playedSkill: false,
       tookAttackDamage: false,
       cardsPlayed: 0
     }
@@ -1373,6 +1709,7 @@ export interface EnemyTurnResult {
   combatTurn: number;
   turnFlags: {
     playedAttack: boolean;
+    playedSkill: boolean;
     tookAttackDamage: boolean;
     cardsPlayed: number;
   };
@@ -1483,8 +1820,12 @@ export const resolveEnemyTurn = (
 
   const applyDamageToPlayer = (baseDamage: number) => {
     let dmg = baseDamage;
-    if (getStacks(newPlayer, 'yin_deficiency_passive') > 0) {
+    if (hasPassive(newPlayer, 'yin_deficiency_passive')) {
       dmg += 1;
+    }
+    if (hasPassive(newPlayer, 'qi_stagnation_passive') && !nextTurnFlags.tookAttackDamage) {
+      dmg = Math.max(0, dmg - 4);
+      log('[气郁质] 闪转腾挪：本次伤害减少4点');
     }
     const bloodStasis = getStacks(newPlayer, 'blood_stasis');
     if (bloodStasis > 0) {
@@ -1501,11 +1842,27 @@ export const resolveEnemyTurn = (
     }
     dmg -= newPlayer.block;
     newPlayer.block = 0;
-    newPlayer.hp = Math.max(0, newPlayer.hp - dmg);
-    if (dmg > 0) {
+    const dealt = takePlayerHpDamage(newPlayer, dmg);
+    if (dealt > 0) {
       nextTurnFlags.tookAttackDamage = true;
     }
-    return dmg;
+    if (dealt > 0 && hasRelic(newPlayer, 'equipment_zhengxie')) {
+      const current = getStacks(newPlayer, 'equipment_zhengqi');
+      if (current < 3) {
+        addStatus(newPlayer, {
+          id: 'equipment_zhengqi',
+          name: '正气',
+          type: 'buff',
+          stacks: 1,
+          canStack: true,
+          description: '每层使格挡获得+1，最多3层',
+        });
+        const status = getStatus(newPlayer, 'equipment_zhengqi');
+        if (status && status.stacks > 3) status.stacks = 3;
+        log('[正邪相争] 正气被激发，格挡收益提高');
+      }
+    }
+    return dealt;
   };
 
   const applyDebuffToPlayer = (status: StatusEffect) => {
@@ -1767,6 +2124,10 @@ export const resolveEnemyTurn = (
       const hits = intent.hits || 1;
       for (let i = 0; i < hits; i += 1) {
         let dmg = (intent.value || 0) + getStrength(enemy);
+        const phlegmBind = getStacks(enemy, 'phlegm_bind');
+        if (phlegmBind > 0) {
+          dmg = Math.max(0, dmg - phlegmBind);
+        }
         if (getStacks(enemy, 'weak') > 0) {
           dmg = Math.floor(dmg * 0.75);
         }
@@ -2170,11 +2531,12 @@ export const resolveEnemyTurn = (
       player: newPlayer,
       enemies: newEnemies,
       combatTurn: 0,
-      turnFlags: {
-        playedAttack: false,
-        tookAttackDamage: false,
-        cardsPlayed: 0,
-      },
+          turnFlags: {
+            playedAttack: false,
+            playedSkill: false,
+            tookAttackDamage: false,
+            cardsPlayed: 0,
+          },
       selectedEnemyId: null,
       victory: true,
       actions,
@@ -2194,14 +2556,133 @@ export const resolveEnemyTurn = (
     };
   }
 
+  if (getStacks(newPlayer, 'retain_block') === 0) {
+    newPlayer.block = 0;
+  }
+
+  addStatus(newPlayer, {
+    id: 'combat_round',
+    name: '战斗回合',
+    type: 'buff',
+    stacks: 1,
+    canStack: true,
+    description: '记录当前玩家回合数',
+    hidden: true,
+  });
+
   newPlayer.energy = getEffectiveMaxEnergy(newPlayer);
-  if (getStacks(newPlayer, 'yin_deficiency_passive') > 0) {
+  if (hasPassive(newPlayer, 'yin_deficiency_passive')) {
     newPlayer.energy += 1;
     log('[阴虚火旺] 触发：能量 +1');
+  }
+  if (hasPassive(newPlayer, 'yang_deficiency_passive')) {
+    addStatus(newPlayer, {
+      id: 'warm_yang',
+      name: '温阳',
+      type: 'buff',
+      stacks: 1,
+      canStack: true,
+      description: '达到3层时爆发群体伤害',
+    });
+    const warmStartCount = getStacks(newPlayer, 'warm_yang_start_count');
+    if (warmStartCount < 2) {
+      newPlayer.energy = Math.max(0, newPlayer.energy - 1);
+      log('[阳虚质] 启动缓慢：真气 -1');
+    }
+    addStatus(newPlayer, {
+      id: 'warm_yang_start_count',
+      name: '温阳启动',
+      type: 'buff',
+      stacks: 1,
+      canStack: true,
+      description: '记录阳虚质前期启动回合',
+    });
+    const warmYang = getStatus(newPlayer, 'warm_yang');
+    if (warmYang && warmYang.stacks >= 3) {
+      warmYang.stacks -= 3;
+      if (warmYang.stacks <= 0) removeStatus(newPlayer, 'warm_yang');
+      newEnemies.forEach(enemy => {
+        if (enemy.currentHp <= 0) return;
+        enemy.currentHp = Math.max(0, enemy.currentHp - 12);
+        log(`[阳虚质] 温阳爆发对 ${enemy.name} 造成 12 点伤害`);
+      });
+    }
   }
   if (getStacks(newPlayer, 'yin_energy') > 0 && getStacks(newPlayer, 'yin') > 0) {
     newPlayer.energy += 1;
     log('[玉竹生津] 触发：能量 +1');
+  }
+  if (hasRelic(newPlayer, 'equipment_bianzheng')) {
+    if (newPlayer.hp * 2 <= newPlayer.maxHp) {
+      const healed = applyHealToPlayer(newPlayer, 2);
+      log(`[辨证论治] 低血择治：恢复${healed}点生命`);
+    } else if (newPlayer.block <= 0) {
+      gainPlayerBlock(newPlayer, 3);
+      log('[辨证论治] 固护择治：获得3点格挡');
+    } else {
+      addStatus(newPlayer, {
+        id: 'temp_strength',
+        name: '临时力量',
+        type: 'buff',
+        stacks: 1,
+        canStack: true,
+        description: '回合结束时失去',
+        duration: 1,
+      });
+      log('[辨证论治] 攻势择治：获得1点临时力量');
+    }
+  }
+  if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 0) {
+    const healed = applyHealToPlayer(newPlayer, 2);
+    log(`[天人相应] 偶数回合调息：恢复${healed}点生命`);
+  }
+  if (hasRelic(newPlayer, 'equipment_qiji')) {
+    const beforeDebuffs = newPlayer.statusEffects.filter(status => status.type === 'debuff' && !isConstitutionPassive(status)).length;
+    removeDebuffs(newPlayer, 1);
+    const afterDebuffs = newPlayer.statusEffects.filter(status => status.type === 'debuff' && !isConstitutionPassive(status)).length;
+    if (afterDebuffs < beforeDebuffs) {
+      const healed = applyHealToPlayer(newPlayer, 1);
+      log(`[气机升降] 清除负面状态并恢复${healed}点生命`);
+    }
+  }
+  if (hasPassive(newPlayer, 'special_diathesis_passive')) {
+    const roll = Math.floor(Math.random() * 6);
+    switch (roll) {
+      case 1:
+        newPlayer.energy += 1;
+        log('[特禀质] 先天禀赋：真气 +1');
+        break;
+      case 2: {
+        const before = newPlayer.hand.length;
+        drawCardsForPlayer(newPlayer, 1);
+        if (newPlayer.hand.length > before) log('[特禀质] 先天禀赋：抽1张牌');
+        break;
+      }
+      case 3:
+        gainPlayerBlock(newPlayer, 5);
+        log('[特禀质] 先天禀赋：获得5点格挡');
+        break;
+      case 4: {
+        const healed = applyHealToPlayer(newPlayer, 4);
+        log(`[特禀质] 先天禀赋：恢复${healed}点生命`);
+        break;
+      }
+      case 5:
+        addStatus(newPlayer, {
+          id: 'temp_strength',
+          name: '临时力量',
+          type: 'buff',
+          stacks: 2,
+          canStack: true,
+          description: '回合结束时失去',
+          duration: 1,
+        });
+        log('[特禀质] 先天禀赋：获得2点临时力量');
+        break;
+      default:
+        log('[特禀质] 先天禀赋：本回合未触发');
+        break;
+    }
   }
 
   const maxEnergyDown = getStacks(newPlayer, 'max_energy_down');
@@ -2212,25 +2693,36 @@ export const resolveEnemyTurn = (
   }
 
   if (getStacks(newPlayer, 'stun') > 0) {
-    removeStatus(newPlayer, 'stun');
-    log('你被眩晕，跳过回合');
-    return {
-      player: newPlayer,
-      enemies: newEnemies,
-      combatTurn: 1,
-      turnFlags: {
-        playedAttack: false,
-        tookAttackDamage: false,
-        cardsPlayed: 0,
-      },
-      selectedEnemyId: aliveEnemies[0]?.id || null,
-      victory: false,
-      actions,
-    };
-  }
-
-  if (getStacks(newPlayer, 'retain_block') === 0) {
-    newPlayer.block = 0;
+    if (hasRelic(newPlayer, 'equipment_yinyang') && getStacks(newPlayer, 'equipment_yinyang_stun_immunity_used') === 0) {
+      removeStatus(newPlayer, 'stun');
+      addStatus(newPlayer, {
+        id: 'equipment_yinyang_stun_immunity_used',
+        name: '阴阳免疫已用',
+        type: 'buff',
+        stacks: 1,
+        canStack: false,
+        description: '本场战斗已免疫过一次眩晕',
+        hidden: true,
+      });
+      log('[阴阳学说] 阴阳调衡：免疫本场第一次眩晕');
+    } else {
+      removeStatus(newPlayer, 'stun');
+      log('你被眩晕，跳过回合');
+      return {
+        player: newPlayer,
+        enemies: newEnemies,
+        combatTurn: 1,
+        turnFlags: {
+          playedAttack: false,
+          playedSkill: false,
+          tookAttackDamage: false,
+          cardsPlayed: 0,
+        },
+        selectedEnemyId: aliveEnemies[0]?.id || null,
+        victory: false,
+        actions,
+      };
+    }
   }
 
   return {

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Hourglass, RefreshCw, ScrollText, Swords, Trash2 } from 'lucide-react';
+import { Hourglass, RefreshCw, Trash2 } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../utils/cn';
 import { Card } from './Card';
+import type { Card as CardType } from '../types';
+import { CARD_LIBRARY } from '../data/cards';
 import { CombatLog } from './CombatLog';
 import { Enemy } from './Enemy';
 import { Hand } from './Hand';
@@ -41,6 +43,7 @@ export const CombatView: React.FC = () => {
   } = useGameStore();
 
   const [turnBanner, setTurnBanner] = useState<{ token: number; label: string; hint: string } | null>(null);
+  const [longHoveredCard, setLongHoveredCard] = useState<CardType | null>(null);
   const [viewportTier, setViewportTier] = useState<CombatViewportTier>(() =>
     typeof window === 'undefined' ? 'regular' : getCombatViewportTier(window.innerHeight),
   );
@@ -103,6 +106,7 @@ export const CombatView: React.FC = () => {
   const contentKey = useMemo(() => `combat-act-${currentAct}`, [currentAct]);
   const enemyLayoutMode: EnemyLayoutMode =
     visibleEnemies.length >= 4 ? 'packed' : visibleEnemies.length >= 3 ? 'crowded' : 'default';
+  const visiblePlayerStatusEffects = useMemo(() => player.statusEffects.filter((effect) => !effect.hidden), [player.statusEffects]);
 
   return (
     <div
@@ -136,7 +140,7 @@ export const CombatView: React.FC = () => {
             initial="hidden"
             animate="visible"
             transition={{ delay: 0.06 }}
-            className="combat-view__sidebar grid min-h-0 xl:grid-rows-[auto_auto_minmax(0,1fr)_minmax(0,0.72fr)]"
+            className="combat-view__sidebar grid min-h-0 xl:grid-rows-[auto_auto_minmax(0,1fr)]"
           >
             <div className="combat-view__context ornate-panel">
               <div className="chapter-kicker">战斗章节</div>
@@ -174,9 +178,7 @@ export const CombatView: React.FC = () => {
               <PlayerStats />
             </motion.div>
 
-            <CombatLog className="h-full" />
-
-            {player.statusEffects.length > 0 ? (
+            {visiblePlayerStatusEffects.length > 0 ? (
               <PassiveEffects className="h-full" compact />
             ) : (
               <div className="combat-parchment-panel flex min-h-0 flex-col px-3 py-3 text-stone-100">
@@ -185,6 +187,27 @@ export const CombatView: React.FC = () => {
                 </div>
                 <div className="combat-parchment-inset flex flex-1 items-center justify-center px-4 py-4 text-center text-sm leading-6 text-stone-300">
                   当前没有持续生效的被动属性。
+                </div>
+              </div>
+            )}
+            {(player.relics ?? []).length > 0 && (
+              <div className="combat-parchment-panel flex min-h-0 flex-col overflow-hidden px-3 py-3">
+                <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
+                  <div className="text-[12px] uppercase tracking-[0.24em] text-stone-300">装备遗物</div>
+                </div>
+                <div className="ornate-scroll flex flex-col gap-1.5 overflow-y-auto pr-1">
+                  {(player.relics ?? []).map((relic) => {
+                    const card = CARD_LIBRARY[relic.id];
+                    if (!card) return null;
+                    return (
+                      <div key={relic.id} className="combat-parchment-inset flex items-center gap-2 px-2.5 py-1.5 text-stone-100">
+                        {card.image && (
+                          <img src={resolveAssetUrl(card.image)} alt="" className="h-7 w-5 shrink-0 rounded object-cover" />
+                        )}
+                        <div className="min-w-0 flex-1 text-[11px] leading-[1.35] text-stone-300/90">{card.description}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -198,7 +221,32 @@ export const CombatView: React.FC = () => {
             transition={{ delay: 0.08 }}
             className="combat-view__stage grid min-h-0 xl:grid-rows-[minmax(0,1fr)_auto]"
           >
-            <div className="combat-view__arena relative min-h-0 overflow-hidden rounded-[30px] border border-amber-500/15 bg-[linear-gradient(180deg,rgba(22,15,11,0.68),rgba(10,7,6,0.84))] shadow-[0_25px_50px_rgba(0,0,0,0.3)]">
+            <div className="flex min-h-0 gap-3">
+              <div className="combat-view__combat-log flex w-52 shrink-0 flex-col">
+                <CombatLog className="h-full" />
+              </div>
+              <div className="relative min-h-0 flex-1">
+                <AnimatePresence>
+                  {longHoveredCard && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.85 }}
+                      transition={{ duration: 0.2 }}
+                      className="pointer-events-none absolute right-[7rem] top-[calc(50%-10rem)] z-50"
+                    >
+                      <div className="scale-[1.15] rounded-[24px] border-2 border-amber-400/40 bg-[linear-gradient(180deg,rgba(30,20,14,0.96),rgba(16,10,7,0.97))] shadow-[0_22px_48px_rgba(0,0,0,0.40)] p-0">
+                        <Card
+                          card={longHoveredCard}
+                          interactive={false}
+                          hoverLift={false}
+                          layoutVariant="default"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="combat-view__arena relative min-h-0 flex-1 overflow-hidden rounded-[30px] border border-amber-500/15 bg-[linear-gradient(180deg,rgba(22,15,11,0.68),rgba(10,7,6,0.84))] shadow-[0_25px_50px_rgba(0,0,0,0.3)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,223,169,0.14),transparent_28%)]" />
               <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-amber-300/8 blur-3xl" />
               <div className="combat-view__arena-controls absolute right-4 top-4 z-20 flex items-center gap-3">
@@ -237,7 +285,7 @@ export const CombatView: React.FC = () => {
                 >
                   <div
                     className={cn(
-                      'combat-view__enemy-row flex flex-wrap items-end justify-center',
+                      'combat-view__enemy-row relative flex flex-wrap items-end justify-center',
                       enemyLayoutMode === 'crowded' && 'combat-view__enemy-row--crowded',
                       enemyLayoutMode === 'packed' && 'combat-view__enemy-row--packed',
                     )}
@@ -258,60 +306,36 @@ export const CombatView: React.FC = () => {
                 </div>
               </div>
             </div>
+              </div>
+            </div>
 
-            <div className="combat-view__hand-shell rounded-[28px] border border-amber-500/18 bg-[linear-gradient(180deg,rgba(27,18,13,0.92),rgba(13,9,7,0.94))] shadow-[0_18px_36px_rgba(0,0,0,0.3)]">
-              <div className="combat-view__hand-layout grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-                <div className="combat-view__hand-panel rounded-[24px] border border-amber-500/10 bg-[linear-gradient(180deg,rgba(36,24,17,0.82),rgba(16,11,8,0.88))] px-3 pb-2 pt-3 shadow-[inset_0_1px_0_rgba(255,244,220,0.05)]">
-                  <div className="mb-2 flex items-center justify-between px-2">
-                    <div className="flex items-center gap-2 text-[12px] uppercase tracking-[0.24em] text-amber-200/70">
-                      <ScrollText size={14} />
-                      手牌带
-                    </div>
-                    <div className="flex items-center gap-2 text-[12px] tracking-[0.16em] text-stone-400">
-                      <Swords size={12} />
-                      悬停 / 出牌 / 提交
-                    </div>
-                  </div>
-                  <div className="combat-view__hand-frame w-full">
-                    <Hand viewportTier={viewportTier} />
-                  </div>
+            <div className="relative px-4 pb-3 pt-2">
+              <div className="mx-auto flex max-w-3xl flex-col items-center gap-3">
+                <div className="combat-view__hand-frame w-full">
+                  <Hand viewportTier={viewportTier} onLongHoverCard={setLongHoveredCard} />
                 </div>
-
-                <motion.div
-                  className="combat-view__end-turn flex justify-end xl:pb-2"
-                  whileHover={combatTurn === 0 ? { y: -2, scale: 1.01 } : undefined}
-                  whileTap={combatTurn === 0 ? { y: 0, scale: 0.985 } : undefined}
+              </div>
+              <div className="absolute right-4 bottom-3 z-20">
+                <ActionButton
+                  variant={combatTurn === 1 ? 'ghost' : 'danger'}
+                  disabled={combatTurn === 1}
+                  className="min-w-[7rem] px-4 py-2 text-sm"
+                  onClick={() => { playSfx('confirm'); endTurn(); }}
                 >
-                  <div className="relative">
-                    {combatTurn === 0 ? (
-                      <motion.div
-                        className="pointer-events-none absolute inset-0 rounded-full bg-amber-300/12 blur-xl"
-                        animate={{ opacity: [0.55, 0.9, 0.55], scale: [0.96, 1.02, 0.96] }}
-                        transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                      />
-                    ) : null}
-                    <ActionButton
-                      variant={combatTurn === 1 ? 'ghost' : 'danger'}
-                      disabled={combatTurn === 1}
-                      className="relative min-w-[11rem] px-6 py-4 text-base"
-                      onClick={() => { playSfx('confirm'); endTurn(); }}
-                    >
-                      {combatTurn === 1 ? (
-                        <>
-                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                            <Hourglass size={18} />
-                          </motion.div>
-                          敌方行动中
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw size={18} />
-                          结束回合
-                        </>
-                      )}
-                    </ActionButton>
-                  </div>
-                </motion.div>
+                  {combatTurn === 1 ? (
+                    <>
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                        <Hourglass size={14} />
+                      </motion.div>
+                      敌方行动中
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={14} />
+                      结束回合
+                    </>
+                  )}
+                </ActionButton>
               </div>
             </div>
           </motion.div>

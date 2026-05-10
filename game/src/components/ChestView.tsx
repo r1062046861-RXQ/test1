@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
-import { CARD_LIBRARY } from '../data/cards';
+import { CARD_LIBRARY, isHerbCard } from '../data/cards';
 import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground } from '../utils/assets';
 import { playSfx } from '../services/audioService';
@@ -26,7 +26,7 @@ export const ChestView: React.FC = () => {
     addGold(gold);
     setGoldReward(gold);
 
-    const pool = Object.values(CARD_LIBRARY).filter((card) => !card.unplayable);
+    const pool = Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable);
     const picked: string[] = [];
     const copy = [...pool];
     while (picked.length < 3 && copy.length > 0) {

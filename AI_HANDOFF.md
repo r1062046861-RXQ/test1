@@ -1,6 +1,6 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-06  
+更新日期：2026-05-09
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
@@ -9,15 +9,15 @@
 
 这是一个中医题材 Web 端卡牌构筑游戏，玩法结构接近 roguelike deckbuilder：
 
-- 玩家选择体质后开始一局游戏。
+- 玩家选择 9 种体质之一后开始一局游戏。
 - 地图节点驱动流程：普通战斗、Boss、事件、药房、休息、奖励；精英和宝箱类型仍保留，但当前常规地图生成不产出精英或宝箱节点。
 - 战斗核心是手牌、真气、格挡、生命、状态、敌人意图和回合推进。
-- 地图为无限循环结构，每幕10层，没有正常胜利终点；`GamePhase` 仍保留 `victory` 类型。
-- Boss 和 Boss 前休憩在独立通道上，需在当前循环累计 3 场战斗胜利后解锁。
-- 敌人随层数增强的当前实装只应用了 HP：`ceil(baseHp * (1 + floor * 0.05))`。`getEnemyScaling()` 也返回 `damageBonus`，但普通开战流程尚未把它应用到敌人伤害。
+- 地图为无限循环结构，每幕 10 层，击败 Boss 后进入下一幕（上限 3 幕）；没有正常胜利终点；`GamePhase` 仍保留 `victory` 类型。
+- Boss 和 Boss 前休憩在独立通道上，需在当前循环累计 3 场战斗胜利后解锁。击败 Boss 后 `currentAct` 递增（上限 3），敌池、敌人行动次数和 BGM 随 Act 切换。
+- 敌人随层数增强的当前实装只应用 HP：`ceil(baseHp * (1 + floor * 0.05))`。`getEnemyScaling()` 也返回 `damageBonus`，但普通开战流程尚未把它应用到敌人伤害。
 - 当前运行端是 React + Vite Web 项目；规则和数据尽量集中在 `shared/`，这部分是未来迁移到 Unity 时最重要的源数据。
 
-当前项目不是纯 UI Demo，已经包含可运行战斗规则、敌人行为、图鉴、资源预加载、GitHub Pages/EdgeOne 部署脚本和浏览器自动化辅助 hook。
+当前项目不是纯 UI Demo，已经包含可运行战斗规则、敌人行为、图鉴、药方合成、装备被动、资源预加载、GitHub Pages/EdgeOne 部署脚本和浏览器自动化辅助 hook。
 
 ## 2. 快速启动
 
@@ -69,6 +69,7 @@ wechatgame/
     baseTypes.ts              # 游戏核心类型
     core/gameCore.ts          # 纯规则核心，未来迁移 Unity 的重点
     data/cards.ts             # 卡牌数据源
+    data/formulas.ts          # 药方蓝图数据源
     data/enemies.ts           # 敌人数据源
   game/
     src/
@@ -89,33 +90,36 @@ wechatgame/
 
 | 项目 | 当前数量 / 说明 |
 | --- | --- |
-| 卡牌总数 | 85 条记录：75 张玩家可获得牌 + 10 张敌方机制牌 |
-| 起始牌组 | 每个体质 15 张 |
+| 卡牌总数 | 109 条模板记录：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 |
+| 卡牌战斗类型 | attack 27，skill 46，power 36 |
+| 卡牌稀有度 | common 22，uncommon 31，rare 56 |
+| 卡牌费用 | 0 费 65，1 费 31，2 费 10，3 费 3 |
+| 起始牌组 | 9 种体质各 15 张 |
+| 药方蓝图 | 12 种正式蓝图，正常地图战斗胜利奖励 1 张真实蓝图 |
+| 药方牌 | 12 张，除合成台外无其他获取方法 |
+| 装备牌 | 11 张，普通/精英/首领胜利分别 10%/20%/50% 概率掉落，获得后全局被动 |
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
-| 体质 | 类型层 9 种；当前 UI 开放 3 种：平衡、阴虚、气虚，其余 6 种锁定/预留 |
+| 体质 | 9 种全部可选：平和质、阴虚质、气虚质、阳虚质、痰湿质、湿热质、血瘀质、气郁质、特禀质 |
 | 游戏阶段 | 12 个 `GamePhase`，含当前常规流程不会到达的 `victory` 保留类型 |
-| 运行时图片 | 165 个 |
-| 运行时图片总体积 | 156,756,730 bytes，约 149.49 MiB |
-| GIF | 20 个，143,921,159 bytes，约 137.25 MiB |
-| PNG | 141 个，12,547,329 bytes，约 11.97 MiB |
-| JPG | 2 个，282,515 bytes，约 0.27 MiB |
-| SVG | 2 个图片 SVG，5,727 bytes，约 0.01 MiB |
+| `public/assets` 总量 | 246 个文件，158,344,338 bytes，约 151.01 MiB |
 | 音频 | 27 个 MP3，60,708,003 bytes，约 57.90 MiB；不纳入图片 manifest |
-| `public/assets` 总体积 | 198 个文件，217,472,167 bytes，约 207.40 MiB |
 
-图片资源按目录统计：
+运行时资源按目录统计：
 
 | 目录 | 文件数 | 体积 |
 | --- | ---: | ---: |
-| `cards_enemy` | 65 | 148,649,005 bytes，约 141.76 MiB |
-| `cards_player` | 85 | 5,334,184 bytes，约 5.09 MiB |
-| `constitutions` | 9 | 932,678 bytes，约 0.89 MiB |
-| `author_qr` | 4 | 288,242 bytes，约 0.27 MiB |
-| assets 根目录背景/其他图 | 5 | 1,115,329 bytes，约 1.06 MiB |
-| `cards_special` | 3 | 444,726 bytes，约 0.42 MiB |
 | `audio` | 27 | 60,708,003 bytes，约 57.90 MiB |
+| `author_qr` | 4 | 288,242 bytes，约 0.27 MiB |
+| `cards_enemy` | 65 | 148,649,005 bytes，约 141.76 MiB |
+| `cards_equipment` | 11 | 1,184,704 bytes，约 1.13 MiB |
+| `cards_formula_placeholders` | 19 | 714,083 bytes，约 0.68 MiB |
+| `cards_herb_placeholders` | 1 | 36,388 bytes，约 0.03 MiB |
+| `cards_player` | 85 | 5,334,184 bytes，约 5.09 MiB |
+| `cards_replacement_placeholders` | 48 | 1,060,876 bytes，约 1.01 MiB |
+| `cards_special` | 4 | 447,076 bytes，约 0.43 MiB |
+| `constitutions` | 9 | 629,780 bytes，约 0.60 MiB |
 
-性能重点：加载慢主要来自敌方 GIF，20 个 GIF 占运行时图片体积约 91.8%。
+性能重点：加载慢主要来自敌方 GIF，20 个 GIF 占运行时资源图片体积的大头。
 
 ## 5. 核心类型
 
@@ -123,20 +127,22 @@ wechatgame/
 
 关键类型：
 
-- `Constitution = 'balanced' | 'yin_deficiency' | 'qi_deficiency' | 'blood_stasis' | 'phlegm_dampness' | 'fire_heat' | 'qi_stagnation' | 'jing_deficiency' | 'yang_deficiency'`
+- `Constitution = 'balanced' | 'yin_deficiency' | 'qi_deficiency' | 'yang_deficiency' | 'phlegm_dampness' | 'damp_heat' | 'blood_stasis' | 'qi_stagnation' | 'special_diathesis'`
 - `CardType = 'attack' | 'skill' | 'power'`
 - `CardRarity = 'common' | 'uncommon' | 'rare'`
 - `CardTarget = 'single_enemy' | 'all_enemies' | 'self' | 'random'`
+- `CardCategory = 'herb' | 'formula' | 'equipment' | 'enemy'`
 - `EnemyIntent.type = 'attack' | 'defend' | 'buff' | 'debuff' | 'special'`
 - `NodeType = 'combat' | 'elite' | 'boss' | 'event' | 'shop' | 'rest' | 'chest' | 'start'`
 - `GamePhase = 'intro' | 'start_menu' | 'card_codex' | 'map' | 'combat' | 'event' | 'shop' | 'rest' | 'chest' | 'reward' | 'game_over' | 'victory'`
 
 核心实体：
 
-- `Card`：卡牌 ID、名称、类型、稀有度、费用、描述、效果 ID、数值、目标、升级状态、图片等。
-- `StatusEffect`：状态 ID、名称、buff/debuff、层数、描述、是否可叠加、持续时间。
+- `Card`：卡牌 ID、名称、分类、战斗类型、稀有度、费用、描述、效果 ID、数值、目标、升级状态、图片、不可打出标记等。
+- `FormulaBlueprint`：蓝图 ID、药方牌 ID、完整素材 ID 列表、歌诀、组成、难度、出处等。
+- `StatusEffect`：状态 ID、名称、buff/debuff、层数、描述、是否可叠加、持续时间、不可驱散标记。
 - `Enemy`：敌人 ID、名称、生命、格挡、状态、意图、图片、poster、行为 ID、meta。
-- `Player`：生命、真气、格挡、牌堆、手牌、弃牌堆、消耗堆、体质、遗物、药水、金币。
+- `Player`：生命、真气、格挡、牌堆、手牌、弃牌堆、消耗堆、体质、装备/遗物、药水、金币、已获得卡牌、已录入蓝图等。
 - `MapNode` / `MapLayer`：地图节点和层级连接。
 
 ## 6. 游戏流程与页面
@@ -148,84 +154,66 @@ wechatgame/
 | 阶段 | 组件 | 作用 |
 | --- | --- | --- |
 | `intro` | `IntroView` | 开场页 |
-| `start_menu` | `StartMenu` | 主菜单、资源加载进度、开始入口 |
+| `start_menu` | `StartMenu` | 主菜单、资源加载进度、9 体质选择入口 |
 | `card_codex` | `CardCodexView` | 图鉴，包括卡牌/敌人/术语 |
 | `map` | `MapView` | 地图节点选择 |
 | `combat` | `CombatView` | 战斗主界面 |
-| `reward` | `RewardView` | 战斗奖励（3张卡牌每张可选✓/✗，+ 药方蓝图占位） |
+| `reward` | `RewardView` | 战斗奖励：3 张药材牌可选取/放弃，另展示本次装备掉落和真实药方蓝图奖励 |
 | `chest` | `ChestView` | 宝箱页存在；当前地图生成不产出宝箱节点 |
 | `rest` | `RestView` | 休息 |
-| `shop` | `ShopView` | 药房（购买/出售/合成·两步流程/分解占位） |
+| `shop` | `ShopView` | 药房（购买/出售/旧合成页保留） |
 | `event` | `EventView` | 事件占位页（当前只展示占位文案并继续前进） |
 | `game_over` | `App.tsx` 内联界面 | 失败结算 |
 | `victory` | 类型保留 | 当前无限地图没有正常胜利终点 |
 
-战斗相关组件：
-
-- `Card.tsx`：单张卡牌。
-- `Hand.tsx`：手牌区。
-- `Enemy.tsx`：敌人牌面、意图、血条、poster/GIF。
-- `PlayerStats.tsx`：玩家生命、格挡、真气等。
-- `PassiveEffects.tsx`：体质/被动展示。
-- `CombatLog.tsx`：战斗日志。
-- `CombatView.tsx`：战斗界面编排。
-
-全局壳：
-
-- `PageShell.tsx`：页面背景与基础布局。
-- `motionPresets.ts`：动效预设。
-- `game/src/index.css`：主要视觉、布局、响应式样式集中地。
+战斗外常驻 `SynthesisBench` 合成台入口在 `map / reward / shop / rest / event / chest` 显示，不在战斗、图鉴、开场和主菜单显示。合成台用于录入药方蓝图、查看材料拥有数量、选择具体药材实例并合成药方牌。
 
 ## 7. 体质系统
 
-体质由 `shared/baseTypes.ts` 的 `Constitution` 限定，局内初始化主要在 `game/src/store/gameStore.ts`。类型层已有 9 种体质；当前开始菜单只开放平衡/阴虚/气虚，其余 6 种在 UI 中标记为锁定/预留。
+体质由 `shared/baseTypes.ts` 的 `Constitution` 限定，局内初始化主要在 `game/src/store/gameStore.ts`。9 种体质当前全部可选，均有被动状态和 15 张起始牌组。
 
 当前语义：
 
-| ID | 中文语义 | 当前规则 |
+| ID | 中文语义 | 当前规则摘要 |
 | --- | --- | --- |
-| `balanced` | 平衡 / 平和 | 无额外被动，作为标准模式 |
-| `yin_deficiency` | 阴虚 | 回合开始额外获得真气；受伤额外 +1 |
-| `qi_deficiency` | 气虚 | 使用攻击牌时恢复 1 点生命 |
-| `blood_stasis` | 血瘀 | 类型和起始牌组已存在，当前 UI 锁定 |
-| `phlegm_dampness` | 痰湿 | 类型和起始牌组已存在，当前 UI 锁定 |
-| `fire_heat` | 火热 | 类型和起始牌组已存在，当前 UI 锁定 |
-| `qi_stagnation` | 气滞 | 类型和起始牌组已存在，当前 UI 锁定 |
-| `jing_deficiency` | 精虚 | 类型和起始牌组已存在，当前 UI 锁定 |
-| `yang_deficiency` | 阳虚 | 类型和起始牌组已存在，当前 UI 锁定 |
+| `balanced` | 平和质 | 攻击牌伤害、格挡获得、治疗效果各 +1 |
+| `yin_deficiency` | 阴虚质 | 获得滋阴额外 +1；玩家回合开始真气 +1；受到伤害 +1 |
+| `qi_deficiency` | 气虚质 | 攻击牌伤害 -1；格挡 +2；治疗 +1；每打出攻击牌恢复 1 生命 |
+| `yang_deficiency` | 阳虚质 | 回合开始得温阳；前 2 个玩家回合真气 -1；温阳 3 层触发群体伤害 |
+| `phlegm_dampness` | 痰湿质 | 技能牌给敌人叠痰湿禁锢，满层触发眩晕与虚弱 |
+| `damp_heat` | 湿热质 | 攻击牌叠热邪；每回合首张攻击牌额外影响全体；格挡收益 -2 |
+| `blood_stasis` | 血瘀质 | 攻击叠血瘀；攻击血瘀目标时伤害放大并穿透格挡；治疗和格挡减半 |
+| `qi_stagnation` | 气郁质 | 每回合抽牌 +1；首张技能额外抽牌；敌方回合首次受伤减免；攻防 -1 |
+| `special_diathesis` | 特禀质 | 玩家回合开始随机触发真气、抽牌、格挡、治疗、临时力量或无事发生 |
 
-注意：阴虚“受伤 +1”曾经出现过文案和规则漂移，后续修改时必须同时检查规则核心、体质选择界面和说明文案。
+当前每种体质的起始牌组均为 15 张，以 `STARTING_DECKS` 为准。`卡牌清单.xlsx` 的“九大体质初始卡牌”列按中文体质名反向标记了每张卡出现在哪些起始牌组。
 
-## 8. 卡牌系统
+## 8. 卡牌、药方与装备系统
 
-源文件：`shared/data/cards.ts`
+源文件：
+
+- `shared/data/cards.ts`
+- `shared/data/formulas.ts`
+- `shared/core/gameCore.ts`
 
 当前统计：
 
 | 维度 | 分布 |
 | --- | --- |
-| 类型 | attack 22，skill 39，power 24 |
-| 稀有度 | common 18，uncommon 27，rare 40 |
-| 费用 | 0 费 37，1 费 33，2 费 12，3 费 3 |
-| 目标 | self 55，single_enemy 20，all_enemies 10 |
-| 幕数标记 | act 1 有 4，act 2 有 43，act 3 有 14，未显式 act 有 24 |
+| 分类 | herb 76，formula 12，equipment 11，enemy 10 |
+| 战斗类型 | attack 27，skill 46，power 36 |
+| 稀有度 | common 22，uncommon 31，rare 56 |
+| 费用 | 0 费 65，1 费 31，2 费 10，3 费 3 |
+| 目标 | self 74，single_enemy 23，all_enemies 12 |
 
-当前每种体质的起始牌组均为 15 张。当前 UI 开放体质的起始牌组 ID（以 `STARTING_DECKS` 为准）：
+规则要点：
 
-- `balanced`：`shanzha, chuanxiong, mahuang, huanglian, baishao, chenpi, guizhi, yiyi, gancao, zusanli, xiaochaihu, danggui, dazao, sanqi, shengma`
-- `yin_deficiency`：`danshen, jinyinhua, qinggusan, lianqiao, longdan, maidong, shengdi, zhimu, shihu, yuzhu, xuanshen, baihe, biejia, shanyurou, liuwei`
-- `qi_deficiency`：`shanzha, chuanxiong, mahuang, huanglian, sanqi, xiaochaihu, huangqi, gancao, dangshen, shanyao, baizhu, dazao, fuzi, buzhongyiqi, fangfeng`
-
-卡牌通过 `effectId` 连接规则核心。常见效果方向：
-
-- 直接伤害、AOE 伤害、真实伤害、百分比伤害。
-- 获得格挡、按状态/手牌/阴液缩放格挡。
-- 抽牌、弃牌、费用变化、真气上限变化。
-- 治疗、复活、回合结束治疗。
-- 给敌人施加血瘀、寒邪、热邪、湿邪、虚弱、易伤、眩晕等。
-- 清除自身 debuff、清除敌方 buff、偷取 buff。
-- 阴液体系：获得阴液、消耗阴液、提高阴液上限、阴液转伤害/格挡/治疗。
-- 足三里体系：`zusanli` 可以叠加，每层让攻击牌回血 +1。
+- 药材牌是普通玩家可打出卡牌的主体。
+- 药方牌共有 12 张，只能通过合成台消耗完整配方药材实例后加入牌组。
+- 药方蓝图共有 12 种，正常地图战斗胜利每次奖励 1 张真实蓝图；重复蓝图录入不会重复污染进度。
+- 第一次成功合成某药方时，本局显示对应汤头歌诀；同一局再次合成不重复弹。
+- 装备牌共有 11 张，只通过战斗胜利掉落：普通 10%、精英 20%、首领 50%。装备获得后作为当前跑图全局被动，不进入手牌、牌组、商店、宝箱或普通奖励池。
+- 允许持有同模板多张卡，系统以运行时实例 ID 区分；模板数量上限保留为 10 张。
 
 不要只改卡牌文案。凡是修改卡牌能力，必须同时检查：
 
@@ -283,34 +271,21 @@ wechatgame/
 
 ## 10. 状态与资源
 
-核心状态 ID 来自 `shared/core/gameCore.ts`，当前扫描到 42 个状态/标记 ID：
-
-```text
-attack_buff, attack_stun_chance, attack_virtual_heat,
-block_echo, block_per_card, block_to_strength,
-blood_stasis, cold_evil, cost_reduction, cost_up, cost_up_next,
-dampness_evil, dexterity, diarrhea, double_block, draw_down,
-end_turn_heal, energy_drain, fire_growth, heat_evil,
-lung_dryness, max_energy_down, next_skill_bonus, no_block,
-no_yin_gain, pierce_all, pierce_block, reduce_next_damage,
-remove_block_end, retain_block, revive, strength, strength_decay,
-stun, temp_strength, virtual_heat, vulnerable, weak,
-yin, yin_cap, yin_energy, zusanli
-```
-
-重要资源概念：
+核心状态 ID 来自 `shared/core/gameCore.ts`。重要资源概念：
 
 - 生命：玩家和敌人都有，敌人 HP 降到 0 视为死亡。
 - 格挡：抵消伤害，多个规则会清空、转化或放大格挡。
 - 真气：玩家出牌费用资源，基础上限为 3。
 - 阴液：特殊资源，基础上限 `BASE_YIN_CAP = 5`。
 - 金币：`INITIAL_PLAYER.gold = 99`，商店和事件使用。
+- 装备/遗物：当前跑图全局被动，存放在 `player.relics`。
+- 药方蓝图：存放在 `player.knownFormulaBlueprintIds`，用于合成台解锁配方。
 
-## 11a. 地图结构与 Boss 通道（最近重构）
+## 11. 地图结构与 Boss 通道
 
-**`ACT_LENGTH = 10` 的无限循环**。`generateMap(12)` 初始实际生成14层；地图到达末端前通过 `generateMap(12, map.length)` 追加12层。
+**`ACT_LENGTH = 10` 的无限循环**。`generateMap(12)` 初始实际生成 14 层；地图到达末端前通过 `generateMap(12, map.length)` 追加 12 层。
 
-```
+```text
 绝对层 0: [start]                         单节点
 绝对层 1: [event]                         必然事件
 绝对层 2-5: [combat/shop/event] + col 3 Boss通道连接器（小圆点）
@@ -327,50 +302,13 @@ yin, yin_cap, yin_energy, zusanli
 |------|------|
 | **Boss独立通道** | col 3（最右列），从 event 节点直连，全程由灰色小圆点串联 |
 | **3胜解锁** | `combatWinsThisCycle >= 3` 才可进入 rest/boss 节点 |
-| **Boss后进入下一循环** | Boss 节点自身无子节点，完成后由 store 推进到下一轮循环 |
+| **Boss后进入下一幕** | Boss 节点自身无子节点，完成后 `currentAct++`（上限 3），重置地图进入下一幕 |
 | **主线3分支** | col 0-2 为主线，非保底时随机一个主线位置可能替换为 shop/event |
 | **药房/事件保底** | 连续4场战斗无药房/事件则强制出现 |
 | **主线特殊节点概率** | 非保底时为 25% 事件 / 30% 药房 / 45% 战斗 |
 | **本地图无宝箱** | `chest` 类型保留在类型系统但地图生成不产出宝箱节点 |
 
-**MapView 节点渲染**：
-- col 3 combat：灰色1.5px小圆点（不可点击）
-- rest/boss@col 3：正常图标 + 锁定状态（未达3胜时显示 🔒）
-- Boss 节点：`map-page__node-shell--boss` —— 4.2rem 大图标 + 橙色光晕
-- 其他节点：2.8rem 图标
-- 节点间距 `LAYER_SPACING = 110px`
-
-**敌池变化**：普通跑图当前在 `gameStore.ts` 中固定使用 `ENEMY_POOLS.act1`；Act 2/3 敌人主要存在于数据、图鉴和管理员挑战中。开战时只应用 HP 缩放：`ceil(baseHp * (1 + floor * 0.05))`；`damageBonus` 虽由 `getEnemyScaling()` 返回，但当前普通开战流程未把它应用到敌人伤害。
-
-## 11b. 战斗规则核心
-
-源文件：`shared/core/gameCore.ts`
-
-核心导出：
-
-- `INITIAL_PLAYER`：初始玩家模板，HP 80/80，真气 3/3，金币 99。
-- `INITIAL_TURN_FLAGS`：回合标记。
-- `BASE_YIN_CAP = 5`。
-- `applyCardUpgrade(card)`：卡牌升级。
-- `generateMap(layers, startOffset)`：生成地图层（初始14层，传0偏移；扩展段传 `map.length` 偏移以保证循环连续性）。
-- `generateMapSegment(totalLayers, startLayerIndex)`：内部实际生成函数。
-- `generateLayerTypes(absoluteLayer, nodeCount, combatSinceShop, combatSinceEvent)`：按10层循环生成每层节点类型，col 3 为Boss独立通道。
-- `getBossUnlockWinsRequired()`：返回3——需3场战斗胜利解锁Boss通道。
-- `getEnemyScaling(floor)`：返回 `hpMultiplier: 1 + floor * 0.05` 和 `damageBonus: Math.floor(floor * 0.03)`；当前 `gameStore.ts` 只用 `hpMultiplier` 计算敌人 HP。
-- `resolveCardPlay(state, cardId, targetId, log)`：结算玩家出牌。
-- `resolvePlayerEndTurn(state, log)`：玩家结束回合处理。
-- `resolveEnemyTurn(state, log)`：敌方回合处理。
-
-规则核心承担：
-
-- 伤害、格挡、治疗、抽牌、弃牌、消耗牌。
-- 卡牌效果 `effectId` 到实际规则的分发。
-- 状态添加、叠加、持续时间、衰减、清除。
-- 敌人特殊行为和意图推进。
-- Boss 阶段逻辑。
-- 召唤单位逻辑。
-
-迁移或重构时，优先保证 `shared/core/gameCore.ts` 保持纯规则层，不直接依赖 DOM、React 或浏览器 API。
+普通跑图当前在 `gameStore.ts` 中按 `state.currentAct` 动态选择 `ENEMY_POOLS.act1/act2/act3`；击败 Boss 后 `currentAct++`（上限 3），重置地图进入下一幕。开战时只应用 HP 缩放：`ceil(baseHp * (1 + floor * 0.05))`；`damageBonus` 虽由 `getEnemyScaling()` 返回，但当前普通开战流程未把它应用到敌人伤害。
 
 ## 12. Store 与持久化
 
@@ -381,13 +319,13 @@ yin, yin_cap, yin_energy, zusanli
 - Zustand 全局状态。
 - `persist` 本地持久化。
 - 存储 key：`wuxing-yidao-storage`。
-- 当前持久化 version：9。
+- 当前持久化 version：14。
 - 创建新局、选择体质、进入地图节点、启动战斗。
 - 连接 UI 操作和 `shared/core/gameCore.ts` 规则函数。
-- 管理奖励、商店、休息、事件等非战斗流程。
+- 管理奖励、装备掉落、药方蓝图掉落、合成台、商店、休息、事件等流程。
 - 管理敌方行动动画调度和测试用时间推进。
-- `combatWinsThisCycle`：当前循环内战斗胜利次数（达3解锁Boss通道）。
-- 地图到达末端前自动扩展12层（`generateMap(12, map.length)`）。
+- `combatWinsThisCycle`：当前循环内战斗胜利次数（达 3 解锁 Boss 通道）。
+- 地图到达末端前自动扩展 12 层（`generateMap(12, map.length)`）。
 - `EventView` 当前是占位继续前进；`ChestView` 存在，但当前地图生成不产出 `chest` 节点。
 
 重要动作：
@@ -400,9 +338,13 @@ yin, yin_cap, yin_energy, zusanli
 - `completeCombat` / `completeNonCombat`
 - `addCardToDeck` / `removeCardFromDeck` / `sellCardFromDeck`
 - `combineCards(cardIds, targetCardId)`
+- `recordFormulaBlueprint(blueprintId)`
+- `craftFormulaFromBlueprint(blueprintId, ingredientInstanceIds)`
+- `clearPendingEquipmentReward`
+- `clearPendingFormulaBlueprintReward`
 - `advanceTime`
 
-注意：`startCombat(nodeId)` 在 store 中实际承担"进入地图节点"的分发职责，节点可能不是战斗，也可能进入商店、休息、事件或宝箱；但当前地图生成不会产出宝箱节点。Boss 节点在 `combatWinsThisCycle < 3` 时被拒绝进入。
+注意：`startCombat(nodeId)` 在 store 中实际承担“进入地图节点”的分发职责，节点可能不是战斗，也可能进入商店、休息、事件或宝箱；但当前地图生成不会产出宝箱节点。Boss 节点在 `combatWinsThisCycle < 3` 时被拒绝进入。
 
 ## 13. 图鉴与管理员入口
 
@@ -410,7 +352,7 @@ yin, yin_cap, yin_energy, zusanli
 
 功能：
 
-- 卡牌图鉴。
+- 卡牌图鉴，按药材牌、药方牌、装备牌展示。
 - 敌人图鉴。
 - 术语/机制说明。
 - 管理员敌人挑战入口使用图鉴元数据过滤。
@@ -441,30 +383,13 @@ yin, yin_cap, yin_energy, zusanli
 - `game/src/utils/progressiveAssets.ts`
 - `game/src/hooks/useProgressiveAssetSource.ts`
 
-当前资源 manifest 只覆盖运行时图片预加载资源，分三阶段：
-
-| 阶段 | 文件数 | 体积 | 说明 |
-| --- | ---: | ---: | --- |
-| `critical` | 4 | 1,007,090 bytes，约 0.96 MiB | 主菜单首屏和体质图 |
-| `static` | 141 | 11,828,481 bytes，约 11.28 MiB | 非 GIF 静态图 |
-| `gif` | 20 | 143,921,159 bytes，约 137.25 MiB | 敌人动图 |
-
-图片 manifest 合计 165 个图片，156,756,730 bytes，约 149.49 MiB。`game/public/assets` 目录还包含 27 个 MP3，60,708,003 bytes，约 57.90 MiB；完整 `public/assets` 总量约 207.40 MiB，音频不纳入图片 manifest。
-
-加载行为：
-
-- App 启动后调用 `ensureRuntimeAssetLoadingStarted()`。
-- 阶段顺序固定为 `critical -> static -> gif`。
-- 并发配置：critical 4，static 4，gif 2。
-- 主菜单显示加载进度、当前速度和“无需等待全部资源加载完成”的提示。
-- 战斗/图鉴中的图片走 poster/fallback，再渐进切换到 GIF。
-- `preloadImageAsset` 和全局加载队列共享缓存，避免同 URL 重复下载。
+当前资源 manifest 只覆盖运行时图片预加载资源，分三阶段：`critical -> static -> gif`。音频不纳入图片 manifest。
 
 资源变更注意：
 
 - 改动运行时图片后执行 `cd game && npm run assets:manifest`。
 - 敌方 GIF 目标：600x800，单个运行时 GIF 小于等于 8,000,000 bytes。
-- GIF 原始素材目录 `gif/` 不是运行时目录，不应自动删除。
+- 根目录原始素材已经整理到 `未使用/`，不是运行时目录，不应自动删除。
 
 ## 15. 测试
 
@@ -487,12 +412,14 @@ npm test -- --run
 npm run build
 ```
 
-当前验证（2026-05-06）：`npm test -- --run` 为 6 个测试文件、32 个测试用例通过；`npm run build` 通过。构建时 Vite 会提示主 JS chunk 约 502.69 kB，略高于默认 500 kB 建议线。
+当前验证（2026-05-09）：`npm test -- --run` 为 6 个测试文件、69 个测试用例通过；`npm run build` 通过。构建时 Vite 会提示主 JS chunk 约 545 kB，略高于默认 500 kB 建议线。
 
 测试重点：
 
 - 卡牌规则：伤害、格挡、治疗、抽牌、状态、特殊卡。
-- 体质规则：阴虚受伤 +1、气虚攻击回血等。
+- 药方系统：完整配方校验、合成消耗、歌诀显示、药方牌战斗效果。
+- 装备系统：掉落概率、装备不进手牌、11 种装备被动。
+- 体质规则：9 种体质被动。
 - Boss 行为：肝火炽盛、脾虚湿困、五行失调等。
 - 召唤限制：同屏存活敌人最多 2 个。
 - Store 回归：出牌后 HP 变化必须正确落入 Zustand 状态。
@@ -514,19 +441,16 @@ npm run build
 - `shared/` 是规则和数据核心，`game/` 是 Web 表现层。不要把规则直接写死到 React 组件里。
 - `game/src/index.css` 很大，UI 调整前应先搜索已有 class，避免重复造样式系统。
 - 敌方 GIF 是最大性能风险。新增动图前必须压缩并更新 manifest。
-- `npm run build` 当前通过，但主 JS chunk 约 502.69 kB，后续做功能增长时需要留意拆包或按需加载。
+- `npm run build` 当前通过，但主 JS chunk 约 545 kB，后续做功能增长时需要留意拆包或按需加载。
 - `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；GIF 与 poster 当前是主链路，不要误删 fallback。
-- `progress.md` 是历史工作记录，当前已有本地修改，不应回滚或删除。
-- 根目录素材文件夹大多是原始素材或导入来源，不应删除。
+- 根目录 `未使用/` 保存原始素材、历史记录和导入来源，不应删除。
 - **Git 网络**：中国大陆可能对 GitHub HTTPS 做 SNI 干扰（TLS 通过但 HTTP 被 RST）。当前已配置 SSH：`git@github.com:r1062046861-RXQ/test1.git`，密钥 `~/.ssh/id_ed25519`。
-- `shopRemovalCost` 和 `combatWinsThisCycle` 均已加入 persist partialize，勿遗漏。
-- `combineCards(cardIds, targetCardId)` 签名已改为两参数，需传目标卡牌 ID。
 
 ## 18. 后续 AI 修改流程建议
 
 修改规则时：
 
-1. 先读 `shared/baseTypes.ts`、`shared/data/cards.ts`、`shared/data/enemies.ts`、`shared/core/gameCore.ts`。
+1. 先读 `shared/baseTypes.ts`、`shared/data/cards.ts`、`shared/data/formulas.ts`、`shared/data/enemies.ts`、`shared/core/gameCore.ts`。
 2. 找到对应 `effectId`、`behavior` 或状态 ID。
 3. 改核心规则。
 4. 改数据文案。
@@ -555,7 +479,7 @@ npm run build
 | Web 当前层 | Unity 对应方向 |
 | --- | --- |
 | `shared/baseTypes.ts` | C# 数据结构、ScriptableObject schema 或纯 C# model |
-| `shared/data/cards.ts`、`shared/data/enemies.ts` | ScriptableObject、JSON、CSV 或 Addressables 数据表 |
+| `shared/data/cards.ts`、`shared/data/formulas.ts`、`shared/data/enemies.ts` | ScriptableObject、JSON、CSV 或 Addressables 数据表 |
 | `shared/core/gameCore.ts` | 纯 C# 战斗规则服务 / BattleResolver |
 | `game/src/store/gameStore.ts` | Unity GameManager、RunState、BattleState、SaveService |
 | React components | Unity UI Toolkit / uGUI 页面、Prefab |
@@ -580,47 +504,37 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 ## 20. 当前安全清理原则
 
-可删除：
+可清理的通常是生成物或临时物：
 
 - `.playwright-cli/`
 - `tmp/`
 - `__pycache__/`
 - `game/dist/`
-- 根目录 `tmp_actions*.json`
-- 根目录 `tmp_gif_actions.json`
-- 根目录 `tmp_github_pages_docs.*`
-- `output/` 中旧浏览器截图、临时验收目录、过期日志
+- 根目录临时 JSON、截图、过期日志
 
 不应自动删除：
 
-- `gif/`
-- `动图zip/`
-- `图片2/`
-- `图片3/`
-- `boss/`
-- `ai卡牌/`
-- `体质选择/`
-- `替换素材/`
-- 二维码图片
-- 导入脚本
-- `progress.md`
+- `未使用/` 中的原始素材、历史记录和导入来源
+- `game/public/assets/`
 - `game/node_modules/`
+- 根目录启动测试文件 `open-web-game.*`
 
-原因：这些文件虽然很多是未跟踪文件，但大多是素材源、导入来源、历史记录或本地开发依赖。误删会增加后续返工成本。
+## 21. 最近重大变更
 
-## 21. 最近重大变更（2026-04-30 ~ 2026-05-06）
-
-| 变更 | 文件 | 说明 |
-|------|------|------|
-| 地图无限循环 | `gameCore.ts` | `ACT_LENGTH=10`，4列布局，col 0-2主线+col 3 Boss独立通道 |
-| Boss 独立通道 | `gameCore.ts` `MapView.tsx` | 从 event 直连，3胜解锁；本轮 Boss 节点自身无子节点，完成后进入下一轮循环 |
-| 3 胜解锁 Boss | `gameStore.ts` | `combatWinsThisCycle` 状态，`getBossUnlockWinsRequired()=3` |
-| 敌人缩放 | `gameCore.ts` `gameStore.ts` | `getEnemyScaling(floor)` 返回线性 HP 倍率和 `damageBonus`；当前普通开战流程只应用 HP 缩放 |
-| 敌池统一 | `gameStore.ts` | 普通跑图固定使用 `ENEMY_POOLS.act1`；Act 2/3 敌人主要用于数据、图鉴和管理员挑战 |
-| 药房合成两步 | `ShopView.tsx` `gameStore.ts` | 先选3张材料，再选1张目标（从 `obtainedCardIds` 中选） |
-| 奖励每张可选 | `RewardView.tsx` | 3 张卡牌每张 ✓/✗ + 蓝图占位 |
-| 地图扩展 | `gameStore.ts` | `generateMap(12, map.length)` 到达末端前追加12层 |
-| 节点图标缩小 | `index.css` `MapView.tsx` | 普通 2.8rem，Boss 4.2rem，间距 110px |
-| 图例删除 | `MapView.tsx` | 右侧图例面板已移除 |
-| SSH Git | `~/.ssh` | 因 HTTPS 被干扰，改用 `git@github.com:r1062046861-RXQ/test1.git` |
-| persist v9 | `gameStore.ts` | 新增 `combatWinsThisCycle` 持久化字段 |
+| 变更 | 说明 |
+|------|------|
+| Act 2/3 正式开放 | 击败当前幕 Boss 后 `currentAct++`（上限 3），敌池/敌人行动次数/BGM 随 Act 切换 |
+| 药方牌图片替换 | 12 张药方牌全部替换为真实 450×600 PNG（43–75 KB） |
+| 新药材牌图片替换 | 24 张药材牌全部替换为真实 450×600 PNG（21–62 KB） |
+| 黄芩图片替换 | `huangqin` 从 SVG 占位替换为真实 450×600 PNG（36 KB） |
+| 芦根卡片删除 | `lugen` 卡牌及银翘散蓝图中对应材料已移除（109 张总模板） |
+| 零 SVG 占位图 | 全库 109 张卡牌均使用真实 PNG/webp 图片 |
+| 九大体质全部可选 | 9 种体质均有图片、被动和 15 张起始牌组 |
+| 卡牌分类扩展 | 新增药材牌、药方牌、装备牌、敌方机制牌分类 |
+| 药方蓝图正式接入 | 12 种蓝图，胜利奖励真实蓝图，合成台按完整配方合成药方牌 |
+| 药方牌正式可打出 | 12 张药方牌有真实战斗效果和图鉴信息 |
+| 装备牌系统 | 11 张装备牌，战斗胜利概率掉落，获得后全局被动生效 |
+| 同模板多实例 | 允许同名卡多张共存，按运行时实例 ID 操作，模板上限 10 张 |
+| 地图无限循环 + 多幕 | `ACT_LENGTH=10`，4列布局，col 0-2主线 + col 3 Boss 独立通道 |
+| Boss 独立通道 | 从 event 直连，3胜解锁；Boss 后 `currentAct++` 进入下一幕 |
+| 敌人缩放 | 普通开战流程只应用 HP 缩放，尚未应用 `damageBonus` |

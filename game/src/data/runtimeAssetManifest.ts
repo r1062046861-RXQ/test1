@@ -11,6 +11,26 @@ export type RuntimeAssetManifestEntry = {
 
 export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
+    "path": "/assets/background_main_menu.png",
+    "bytes": 81846,
+    "stage": "critical"
+  },
+  {
+    "path": "/assets/constitutions/balanced.webp",
+    "bytes": 42414,
+    "stage": "critical"
+  },
+  {
+    "path": "/assets/constitutions/qi_deficiency.webp",
+    "bytes": 62658,
+    "stage": "critical"
+  },
+  {
+    "path": "/assets/constitutions/yin_deficiency.webp",
+    "bytes": 52800,
+    "stage": "critical"
+  },
+  {
     "path": "/assets/author_qr/ren-xuanqi-placeholder.svg",
     "bytes": 2950,
     "stage": "static"
@@ -31,26 +51,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/background_combat_act1.png",
-    "bytes": 348718,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_combat_act2.png",
-    "bytes": 367700,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_combat_act3.png",
-    "bytes": 308520,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_main_menu.png",
-    "bytes": 81846,
-    "stage": "critical"
-  },
-  {
     "path": "/assets/background_map.png",
     "bytes": 8545,
     "stage": "static"
@@ -59,11 +59,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/100-poster.png",
     "bytes": 146869,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/100.gif",
-    "bytes": 7490346,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/100.png",
@@ -76,11 +71,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/101.gif",
-    "bytes": 7500045,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/101.png",
     "bytes": 66065,
     "stage": "static"
@@ -89,11 +79,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/102-poster.png",
     "bytes": 159885,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/102.gif",
-    "bytes": 6571275,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/102.png",
@@ -106,11 +91,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/103.gif",
-    "bytes": 7464473,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/103.png",
     "bytes": 96680,
     "stage": "static"
@@ -119,11 +99,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/104-poster.png",
     "bytes": 160588,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/104.gif",
-    "bytes": 7104281,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/76.png",
@@ -146,11 +121,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/79.gif",
-    "bytes": 6211648,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/79.png",
     "bytes": 82734,
     "stage": "static"
@@ -159,11 +129,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/80-poster.png",
     "bytes": 113281,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/80.gif",
-    "bytes": 7030623,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/80.png",
@@ -186,11 +151,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/83.gif",
-    "bytes": 7732330,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/83.png",
     "bytes": 90921,
     "stage": "static"
@@ -199,11 +159,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/84-poster.png",
     "bytes": 148584,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/84.gif",
-    "bytes": 7909742,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/84.png",
@@ -221,11 +176,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/89.gif",
-    "bytes": 6477528,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/89.png",
     "bytes": 99687,
     "stage": "static"
@@ -234,11 +184,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/90-poster.png",
     "bytes": 139206,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/90.gif",
-    "bytes": 6338620,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/90.png",
@@ -251,11 +196,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/91.gif",
-    "bytes": 5509004,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/91.png",
     "bytes": 86023,
     "stage": "static"
@@ -264,11 +204,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/92-poster.png",
     "bytes": 190516,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/92.gif",
-    "bytes": 7609041,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/92.png",
@@ -281,11 +216,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/93.gif",
-    "bytes": 7296541,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/93.png",
     "bytes": 74927,
     "stage": "static"
@@ -294,11 +224,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/94-poster.png",
     "bytes": 145456,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/94.gif",
-    "bytes": 7595132,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/94.png",
@@ -311,11 +236,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/95.gif",
-    "bytes": 7565553,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/95.png",
     "bytes": 127450,
     "stage": "static"
@@ -324,11 +244,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/96-poster.png",
     "bytes": 139865,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/96.gif",
-    "bytes": 7723379,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/96.png",
@@ -341,11 +256,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/97.gif",
-    "bytes": 7487919,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/97.png",
     "bytes": 122609,
     "stage": "static"
@@ -354,11 +264,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/98-poster.png",
     "bytes": 125010,
     "stage": "static"
-  },
-  {
-    "path": "/assets/cards_enemy/98.gif",
-    "bytes": 7792533,
-    "stage": "gif"
   },
   {
     "path": "/assets/cards_enemy/98.png",
@@ -371,13 +276,163 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/99.gif",
-    "bytes": 7511146,
-    "stage": "gif"
-  },
-  {
     "path": "/assets/cards_enemy/99.png",
     "bytes": 103079,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/bianzheng.webp",
+    "bytes": 98072,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/jingluo.webp",
+    "bytes": 176220,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/qiji.webp",
+    "bytes": 153420,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/qixue_jinye.webp",
+    "bytes": 48596,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/tianren.webp",
+    "bytes": 116312,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/yinyang.webp",
+    "bytes": 73134,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/zangxiang.webp",
+    "bytes": 201884,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/zhengti.webp",
+    "bytes": 54808,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/zhengxie.webp",
+    "bytes": 39370,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/zhiweibing.webp",
+    "bytes": 91188,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_equipment/ziwuliuzhu.webp",
+    "bytes": 131700,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/banxia_houpu_tang.png",
+    "bytes": 53159,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/banxia_houpu_tang.svg",
+    "bytes": 1409,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/gegen_tang.png",
+    "bytes": 57115,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/gegen_tang.svg",
+    "bytes": 1407,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/jiaotai_wan.png",
+    "bytes": 56975,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/jiaotai_wan.svg",
+    "bytes": 1408,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/lizhong_wan.png",
+    "bytes": 60204,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/lizhong_wan.svg",
+    "bytes": 1408,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/mahuang_tang.png",
+    "bytes": 45077,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/maxing_shigan_tang.png",
+    "bytes": 68129,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/maxing_shigan_tang.svg",
+    "bytes": 1410,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/sijunzi_tang.png",
+    "bytes": 56473,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/suanzaoren_tang.png",
+    "bytes": 76440,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/suanzaoren_tang.svg",
+    "bytes": 1407,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/xiaochaihu_tang.png",
+    "bytes": 44157,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/xiaoqinglong_tang.png",
+    "bytes": 76404,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/xiaoqinglong_tang.svg",
+    "bytes": 1409,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/yinqiao_san.png",
+    "bytes": 52506,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_formula_placeholders/zhenwu_tang.png",
+    "bytes": 57586,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_herb_placeholders/huangqin.png",
+    "bytes": 36388,
     "stage": "static"
   },
   {
@@ -806,6 +861,246 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
+    "path": "/assets/cards_replacement_placeholders/angong.png",
+    "bytes": 44699,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/angong.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/banxia.png",
+    "bytes": 33823,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/banxia.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/baohe.png",
+    "bytes": 36778,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/baohe.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/buzhongyiqi.png",
+    "bytes": 50928,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/buzhongyiqi.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/chuanxiongcha.png",
+    "bytes": 33053,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/chuanxiongcha.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/dachengqi.png",
+    "bytes": 42968,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/dachengqi.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/danshen.png",
+    "bytes": 32940,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/danshen.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/guipi.png",
+    "bytes": 26924,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/guipi.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/huanglianjiedu.png",
+    "bytes": 52165,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/huanglianjiedu.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/huoxiang.png",
+    "bytes": 46372,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/huoxiang.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/jinkui.png",
+    "bytes": 60011,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/jinkui.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/liuwei.png",
+    "bytes": 63564,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/liuwei.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/longdan.png",
+    "bytes": 40682,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/longdan.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/mahuangtang.png",
+    "bytes": 42168,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/mahuangtang.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/qinggusan.png",
+    "bytes": 56258,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/qinggusan.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/qingying.png",
+    "bytes": 27711,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/qingying.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/sijunzi.png",
+    "bytes": 42590,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/sijunzi.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/wumei.png",
+    "bytes": 48646,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/wumei.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xiaochaihu.png",
+    "bytes": 43076,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xiaochaihu.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xiaoyao.png",
+    "bytes": 21356,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xiaoyao.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xuefu.png",
+    "bytes": 35923,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/xuefu.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/yinqiao.png",
+    "bytes": 31540,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/yinqiao.svg",
+    "bytes": 1816,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/yupingfeng.png",
+    "bytes": 53938,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/yupingfeng.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/zhenwu.png",
+    "bytes": 49209,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_replacement_placeholders/zhenwu.svg",
+    "bytes": 1814,
+    "stage": "static"
+  },
+  {
     "path": "/assets/cards_special/86.png",
     "bytes": 124450,
     "stage": "static"
@@ -821,20 +1116,155 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/constitutions/balanced.png",
-    "bytes": 295263,
-    "stage": "critical"
+    "path": "/assets/cards_special/formula_placeholder.svg",
+    "bytes": 2350,
+    "stage": "static"
   },
   {
-    "path": "/assets/constitutions/qi_deficiency.png",
-    "bytes": 312807,
-    "stage": "critical"
+    "path": "/assets/constitutions/blood_stasis.webp",
+    "bytes": 63208,
+    "stage": "static"
   },
   {
-    "path": "/assets/constitutions/yin_deficiency.png",
-    "bytes": 317174,
-    "stage": "critical"
+    "path": "/assets/constitutions/damp_heat.webp",
+    "bytes": 116864,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitutions/phlegm_dampness.webp",
+    "bytes": 68668,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitutions/qi_stagnation.webp",
+    "bytes": 51690,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitutions/special_diathesis.webp",
+    "bytes": 103954,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitutions/yang_deficiency.webp",
+    "bytes": 67524,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_combat_act1.png",
+    "bytes": 348718,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_combat_act2.png",
+    "bytes": 367700,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_combat_act3.png",
+    "bytes": 308520,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/cards_enemy/100.gif",
+    "bytes": 7490346,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/101.gif",
+    "bytes": 7500045,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/102.gif",
+    "bytes": 6571275,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/103.gif",
+    "bytes": 7464473,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/104.gif",
+    "bytes": 7104281,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/79.gif",
+    "bytes": 6211648,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/80.gif",
+    "bytes": 7030623,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/83.gif",
+    "bytes": 7732330,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/84.gif",
+    "bytes": 7909742,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/89.gif",
+    "bytes": 6477528,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/90.gif",
+    "bytes": 6338620,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/91.gif",
+    "bytes": 5509004,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/92.gif",
+    "bytes": 7609041,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/93.gif",
+    "bytes": 7296541,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/94.gif",
+    "bytes": 7595132,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/95.gif",
+    "bytes": 7565553,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/96.gif",
+    "bytes": 7723379,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/97.gif",
+    "bytes": 7487919,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/98.gif",
+    "bytes": 7792533,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/cards_enemy/99.gif",
+    "bytes": 7511146,
+    "stage": "gif"
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 156756730;
+export const TOTAL_RUNTIME_ASSET_BYTES = 159459667;

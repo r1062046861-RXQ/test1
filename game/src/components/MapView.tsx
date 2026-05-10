@@ -178,7 +178,7 @@ export const MapView: React.FC = () => {
                     const isConnector = isNodeCol3 && node.type === 'combat';
 
                     const isBoss = node.type === 'boss';
-                    const isBossLane = isNodeCol3 && (node.type === 'boss' || node.type === 'rest');
+                    const isBossLane = isNodeCol3 && node.type === 'boss';
                     const bossLocked = isBossLane && combatWinsThisCycle < requiredWins;
                     const isAvailable = node.status === 'available' && !bossLocked;
                     const isCompleted = node.status === 'completed';

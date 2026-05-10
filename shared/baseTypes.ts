@@ -1,12 +1,23 @@
-export type Constitution = 'balanced' | 'yin_deficiency' | 'qi_deficiency' | 'blood_stasis' | 'phlegm_dampness' | 'fire_heat' | 'qi_stagnation' | 'jing_deficiency' | 'yang_deficiency';
+export type Constitution =
+  | 'balanced'
+  | 'yin_deficiency'
+  | 'qi_deficiency'
+  | 'yang_deficiency'
+  | 'phlegm_dampness'
+  | 'damp_heat'
+  | 'blood_stasis'
+  | 'qi_stagnation'
+  | 'special_diathesis';
 
 export type CardType = 'attack' | 'skill' | 'power';
 export type CardRarity = 'common' | 'uncommon' | 'rare';
 export type CardTarget = 'single_enemy' | 'all_enemies' | 'self' | 'random';
+export type CardCategory = 'herb' | 'formula' | 'equipment' | 'enemy';
 
 export interface Card {
   id: string;
   name: string;
+  category?: CardCategory;
   type: CardType;
   rarity: CardRarity;
   cost: number;
@@ -23,6 +34,22 @@ export interface Card {
   act?: number;
 }
 
+export type FormulaBlueprintStatus = 'recipe_pending' | 'ready';
+export type FormulaDifficulty = '极简' | '简单' | '中等' | '偏难';
+
+export interface FormulaBlueprint {
+  id: string;
+  name: string;
+  formulaCardId: string;
+  ingredientCardIds: string[];
+  status: FormulaBlueprintStatus;
+  description: string;
+  difficulty: FormulaDifficulty;
+  fullCompositionText: string;
+  poem: string;
+  classicSource?: string;
+}
+
 export type StatusType = 'buff' | 'debuff';
 
 export interface StatusEffect {
@@ -34,6 +61,8 @@ export interface StatusEffect {
   canStack: boolean;
   duration?: number;
   sourceId?: string;
+  dispelImmune?: boolean;
+  hidden?: boolean;
 }
 
 export interface EnemyIntent {
@@ -89,6 +118,7 @@ export interface Player {
   gold: number;
   obtainedCardIds: string[];
   obtainedEnemyTemplateIds: string[];
+  knownFormulaBlueprintIds: string[];
 }
 
 export type NodeType = 'combat' | 'elite' | 'boss' | 'event' | 'shop' | 'rest' | 'chest' | 'start';

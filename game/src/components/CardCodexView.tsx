@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, ScrollText, ShieldAlert, X } from 'lucide-react';
-import type { Card as CardData, CardRarity, CardTarget, CardType, Enemy } from '../types';
+import { BookOpen, ScrollText, ShieldAlert, Wrench, X } from 'lucide-react';
+import type { Card as CardData, CardCategory, CardRarity, CardTarget, CardType, Enemy } from '../types';
 import { Card } from './Card';
 import { useGameStore } from '../store/gameStore';
-import { CARD_LIBRARY } from '../data/cards';
+import { CARD_LIBRARY, getCardCategory } from '../data/cards';
+import { FORMULA_BLUEPRINT_BY_CARD_ID } from '../data/formulas';
 import { ENEMIES } from '../data/enemies';
 import {
   ENEMY_ACT_LABELS,
@@ -60,13 +61,21 @@ const TYPE_LABELS_WITH_COUNT: Record<CardType, string> = {
   power: '能力牌',
 };
 
+const CARD_CATEGORY_LABELS: Record<CardCategory, string> = {
+  herb: '药材牌',
+  formula: '药方牌',
+  equipment: '装备牌',
+  enemy: '敌方牌',
+};
+
 const SECTION_HINTS: Record<CodexSectionKey, string> = {
-  cards: '按攻击/技能/能力三类分组浏览，共收录全部玩家可获卡牌。',
+  cards: '按药材、药方、装备分组浏览，共收录全部玩家可获卡牌。',
   enemies: '连续浏览巡诊途中会遇到的证候与敌势。',
   glossary: '汇总核心状态、资源与规则，方便对照理解关键概念。',
 };
 
 const TYPE_ORDER: CardType[] = ['attack', 'skill', 'power'];
+const CARD_CATEGORY_ORDER: CardCategory[] = ['herb', 'formula', 'equipment'];
 const RARITY_ORDER: CardRarity[] = ['common', 'uncommon', 'rare'];
 const ENEMY_TIER_ORDER: EnemyTier[] = ['common', 'elite', 'boss'];
 const GLOSSARY_ORDER: GlossaryCategory[] = ['resource', 'buff', 'debuff', 'mechanic'];
@@ -86,11 +95,12 @@ const badgeVariantByTier: Record<EnemyTier, 'slate' | 'crimson' | 'amber'> = {
 
 const rarityRank = (rarity: CardRarity) => RARITY_ORDER.indexOf(rarity);
 const typeRank = (type: CardType) => TYPE_ORDER.indexOf(type);
+const categoryRank = (card: CardData) => CARD_CATEGORY_ORDER.indexOf(getCardCategory(card));
 
 const getCardAct = (card: CardData): 1 | 2 | 3 => (card.act === 2 || card.act === 3 ? card.act : 1);
 const getEnemyAct = (enemy: Enemy): 1 | 2 | 3 => ENEMY_CODEX_DETAILS[enemy.id]?.act ?? 1;
 const getEnemyTier = (enemy: Enemy): EnemyTier => ENEMY_CODEX_DETAILS[enemy.id]?.tier ?? 'common';
-const isEnemyAbilityCard = (card: CardData) => card.effectId === 'status_enemy';
+const isEnemyAbilityCard = (card: CardData) => getCardCategory(card) === 'enemy';
 
 const formatIntent = (enemy: Enemy): string => enemy.intent.description;
 
@@ -276,6 +286,8 @@ export const CardCodexView: React.FC = () => {
   const allCards = useMemo(
     () =>
       Object.values(CARD_LIBRARY).sort((left, right) => {
+        const categoryDelta = categoryRank(left) - categoryRank(right);
+        if (categoryDelta !== 0) return categoryDelta;
         const actDelta = getCardAct(left) - getCardAct(right);
         if (actDelta !== 0) return actDelta;
         const rarityDelta = rarityRank(left.rarity) - rarityRank(right.rarity);
@@ -288,6 +300,9 @@ export const CardCodexView: React.FC = () => {
   );
 
   const playerCards = useMemo(() => allCards.filter((card) => !isEnemyAbilityCard(card)), [allCards]);
+  const herbCards = useMemo(() => playerCards.filter((card) => getCardCategory(card) === 'herb'), [playerCards]);
+  const formulaCards = useMemo(() => playerCards.filter((card) => getCardCategory(card) === 'formula'), [playerCards]);
+  const equipmentCards = useMemo(() => playerCards.filter((card) => getCardCategory(card) === 'equipment'), [playerCards]);
   const allEnemies = useMemo(
     () =>
       Object.values(ENEMIES).sort((left, right) => {
@@ -340,6 +355,9 @@ export const CardCodexView: React.FC = () => {
       layout: 'single-page-grid',
       sectionCounts: {
         cards: playerCards.length,
+        herbCards: herbCards.length,
+        formulaCards: formulaCards.length,
+        equipmentCards: equipmentCards.length,
         enemies: allEnemies.length,
         enemyCards: 0,
         glossary: allGlossaryEntries.length,
@@ -353,7 +371,7 @@ export const CardCodexView: React.FC = () => {
     return () => {
       delete (window as Window & { __cardCodexState?: unknown }).__cardCodexState;
     };
-  }, [activeEntry, playerCards.length, allEnemies.length, allGlossaryEntries.length, modalOpen]);
+  }, [activeEntry, playerCards.length, herbCards.length, formulaCards.length, equipmentCards.length, allEnemies.length, allGlossaryEntries.length, modalOpen]);
 
   const openEntry = (kind: NonNullable<ActiveEntry>['kind'], id: string) => {
     setActiveEntry({ kind, id });
@@ -367,30 +385,60 @@ export const CardCodexView: React.FC = () => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const renderCardDetail = (card: CardData) => (
-    <div className="codex-modal__content">
-      <div className="codex-modal__hero">
-        <div className="codex-modal__card-preview">
-          <div className="origin-top scale-[0.92]">
-            <Card card={card} interactive={false} hoverLift={false} />
+  const getCardCategoryBadgeVariant = (card: CardData): 'amber' | 'emerald' | 'slate' => {
+    const category = getCardCategory(card);
+    if (category === 'formula') return 'amber';
+    if (category === 'equipment') return 'slate';
+    return 'emerald';
+  };
+
+  const renderCardDetail = (card: CardData) => {
+    const formulaBlueprint = getCardCategory(card) === 'formula' ? FORMULA_BLUEPRINT_BY_CARD_ID[card.id] : null;
+
+    return (
+      <div className="codex-modal__content">
+        <div className="codex-modal__hero">
+          <div className="codex-modal__card-preview">
+            <div className="origin-top scale-[0.92]">
+              <Card card={card} interactive={false} hoverLift={false} />
+            </div>
           </div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="amber">{card.cost} 费</Badge>
-            <Badge variant="slate">{CARD_TYPE_LABELS[card.type]}</Badge>
-            <Badge variant="slate">{CARD_RARITY_LABELS[card.rarity]}</Badge>
-            <Badge variant="blue">{CARD_TARGET_LABELS[card.target]}</Badge>
-            {card.exhaust ? <Badge variant="crimson">消耗</Badge> : null}
-            {card.unplayable ? <Badge variant="slate">无法直接打出</Badge> : null}
-            {card.upgraded ? <Badge variant="amber">已升级</Badge> : null}
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="amber">{card.cost} 费</Badge>
+              <Badge variant={getCardCategoryBadgeVariant(card)}>
+                {CARD_CATEGORY_LABELS[getCardCategory(card)]}
+              </Badge>
+              <Badge variant="slate">{CARD_TYPE_LABELS[card.type]}</Badge>
+              <Badge variant="slate">{CARD_RARITY_LABELS[card.rarity]}</Badge>
+              <Badge variant="blue">{CARD_TARGET_LABELS[card.target]}</Badge>
+              {card.exhaust ? <Badge variant="crimson">消耗</Badge> : null}
+              {card.unplayable ? <Badge variant="slate">无法直接打出</Badge> : null}
+              {card.upgraded ? <Badge variant="amber">已升级</Badge> : null}
+            </div>
+            <DetailBlock title="效果说明">{card.description}</DetailBlock>
+            <DetailBlock title="中医说明">{card.tcmNote}</DetailBlock>
+            {formulaBlueprint ? (
+              <>
+                <DetailBlock title="药方蓝图">
+                  <div className="space-y-2">
+                    <div>完整组成：{formulaBlueprint.fullCompositionText}</div>
+                    <div>
+                      简易程度：{formulaBlueprint.difficulty}
+                      {formulaBlueprint.classicSource ? ` / 出处：${formulaBlueprint.classicSource}` : ''}
+                    </div>
+                  </div>
+                </DetailBlock>
+                <DetailBlock title="汤头歌诀">
+                  <div className="whitespace-pre-line">{formulaBlueprint.poem}</div>
+                </DetailBlock>
+              </>
+            ) : null}
           </div>
-          <DetailBlock title="效果说明">{card.description}</DetailBlock>
-          <DetailBlock title="中医说明">{card.tcmNote}</DetailBlock>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderEnemyDetail = (enemy: Enemy) => {
     const meta = ENEMY_CODEX_DETAILS[enemy.id];
@@ -558,6 +606,8 @@ export const CardCodexView: React.FC = () => {
       actions={
         <>
           <Badge variant="blue">{playerCards.length} 张玩家卡</Badge>
+          <Badge variant="amber">{formulaCards.length} 张药方牌</Badge>
+          <Badge variant="slate">{equipmentCards.length} 张装备牌</Badge>
           <Badge variant="crimson">{allEnemies.length} 个敌人</Badge>
           <Badge variant="emerald">{allGlossaryEntries.length} 条术语</Badge>
           <ActionButton variant="secondary" onClick={() => setPhase('start_menu')}>
@@ -618,29 +668,74 @@ export const CardCodexView: React.FC = () => {
               </div>
 
               <div className="mt-6 space-y-6">
-                {TYPE_ORDER.map((type) => {
-                  const typedCards = playerCards.filter((card) => card.type === type);
-                  if (typedCards.length === 0) return null;
+                <section className="space-y-4">
+                  <div className="codex-section__subgroup">
+                    <div className="text-sm font-semibold text-amber-100">{CARD_CATEGORY_LABELS.herb}</div>
+                    <Badge variant="slate">{herbCards.length} 张</Badge>
+                  </div>
+                  <div className="space-y-5">
+                    {TYPE_ORDER.map((type) => {
+                      const typedCards = herbCards.filter((card) => card.type === type);
+                      if (typedCards.length === 0) return null;
 
-                  return (
-                    <section key={type} className="space-y-4">
-                      <div className="codex-section__subgroup">
-                        <div className="text-sm font-semibold text-amber-100">{TYPE_LABELS_WITH_COUNT[type]}</div>
-                        <Badge variant="slate">{typedCards.length} 张</Badge>
-                      </div>
-                      <div className="codex-grid codex-grid--cards">
-                        {typedCards.map((card) => (
-                          <CodexCardTile
-                            key={card.id}
-                            card={card}
-                            acquired={obtainedIds.includes(card.id)}
-                            onClick={() => openEntry('card', card.id)}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
+                      return (
+                        <div key={type} className="space-y-3">
+                          <div className="codex-section__type-row">
+                            <span>{TYPE_LABELS_WITH_COUNT[type]}</span>
+                            <Badge variant="slate">{typedCards.length} 张</Badge>
+                          </div>
+                          <div className="codex-grid codex-grid--cards">
+                            {typedCards.map((card) => (
+                              <CodexCardTile
+                                key={card.id}
+                                card={card}
+                                acquired={obtainedIds.includes(card.id)}
+                                onClick={() => openEntry('card', card.id)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="codex-section__subgroup codex-section__subgroup--formula">
+                    <div className="text-sm font-semibold text-amber-100">{CARD_CATEGORY_LABELS.formula}</div>
+                    <Badge variant="amber">{formulaCards.length} 张</Badge>
+                  </div>
+                  <div className="codex-grid codex-grid--cards">
+                    {formulaCards.map((card) => (
+                      <CodexCardTile
+                        key={card.id}
+                        card={card}
+                        acquired
+                        onClick={() => openEntry('card', card.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="codex-section__subgroup codex-section__subgroup--equipment">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-100">
+                      <Wrench size={16} />
+                      {CARD_CATEGORY_LABELS.equipment}
+                    </div>
+                    <Badge variant="slate">{equipmentCards.length} 张</Badge>
+                  </div>
+                  <div className="codex-grid codex-grid--cards">
+                    {equipmentCards.map((card) => (
+                      <CodexCardTile
+                        key={card.id}
+                        card={card}
+                        acquired={obtainedIds.includes(card.id)}
+                        onClick={() => openEntry('card', card.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
               </div>
             </Panel>
           </motion.section>

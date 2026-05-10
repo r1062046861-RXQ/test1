@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useGameStore } from './store/gameStore';
 import { StartMenu } from './components/StartMenu';
 import { IntroView } from './components/IntroView';
@@ -10,8 +10,24 @@ import { ShopView } from './components/ShopView';
 import { EventView } from './components/EventView';
 import { ChestView } from './components/ChestView';
 import { CardCodexView } from './components/CardCodexView';
+import { SynthesisBench } from './components/SynthesisBench';
 import { ensureRuntimeAssetLoadingStarted } from './hooks/useRuntimeAssetLoadingProgress';
 import { useBgmAutoSwitch } from './hooks/useAudio';
+
+const CanvasProbe = () => (
+  <canvas
+    id="playwright-canvas"
+    className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
+  />
+);
+
+const GameSurface = ({ children, synthesisBench = false }: { children: ReactNode; synthesisBench?: boolean }) => (
+  <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
+    <CanvasProbe />
+    {children}
+    {synthesisBench ? <SynthesisBench /> : null}
+  </div>
+);
 
 function App() {
   const { phase, setPhase, fontSize } = useGameStore();
@@ -106,121 +122,81 @@ function App() {
 
   if (phase === 'intro') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <IntroView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'start_menu') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <StartMenu />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'map') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface synthesisBench>
             <MapView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'card_codex') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <CardCodexView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'combat') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <CombatView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'reward') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <RewardView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'chest') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <ChestView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'rest') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <RestView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'shop') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <ShopView />
-        </div>
+        </GameSurface>
     );
   }
 
   if (phase === 'event') {
     return (
-        <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
-            <canvas
-              id="playwright-canvas"
-              className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
+        <GameSurface>
             <EventView />
-        </div>
+        </GameSurface>
     );
   }
 

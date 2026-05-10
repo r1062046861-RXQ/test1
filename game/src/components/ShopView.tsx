@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CARD_LIBRARY } from '../data/cards';
+import { CARD_LIBRARY, isHerbCard } from '../data/cards';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { ActionButton, Badge, Panel, SectionTitle } from './ui/PageShell';
@@ -36,7 +36,7 @@ export const ShopView: React.FC = () => {
   const [sellCount, setSellCount] = useState(0);
 
   const cardPool = useMemo(
-    () => Object.values(CARD_LIBRARY).filter((card) => !card.unplayable),
+    () => Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable),
     [],
   );
 
@@ -86,7 +86,7 @@ export const ShopView: React.FC = () => {
     const ids = player.obtainedCardIds ?? [];
     return ids.filter(cid => {
       const count = player.deck.filter(c => c.id === cid || c.name === CARD_LIBRARY[cid]?.name).length;
-      return count < 10 && CARD_LIBRARY[cid];
+      return count < 10 && CARD_LIBRARY[cid] && isHerbCard(CARD_LIBRARY[cid]) && !CARD_LIBRARY[cid].unplayable;
     });
   }, [player.obtainedCardIds, player.deck]);
 
@@ -103,8 +103,8 @@ export const ShopView: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="chapter-kicker">药房</div>
-            <h2 className="text-3xl font-bold text-amber-50 mt-1">药房</h2>
-            <p className="text-sm text-stone-300 mt-1">买卖药材，合成新方。</p>
+            <h2 className="text-3xl font-bold text-amber-900 mt-1">药房</h2>
+            <p className="text-sm text-stone-600 mt-1">买卖药材，合成新方。</p>
           </div>
           <div className="flex items-center gap-3">
             {msg && <Badge variant="amber">{msg}</Badge>}
@@ -121,8 +121,8 @@ export const ShopView: React.FC = () => {
               onClick={() => handleTabChange(tab)}
               className={`rounded-full px-5 py-2 text-sm font-semibold tracking-[0.14em] transition ${
                 activeTab === tab
-                  ? 'bg-amber-500/20 border border-amber-400/40 text-amber-100'
-                  : 'border border-stone-700/40 text-stone-400 hover:text-stone-200'
+                  ? 'bg-amber-500/20 border border-amber-400/40 text-amber-800'
+                  : 'border border-stone-300/40 text-stone-600 hover:text-stone-800'
               }`}
             >
               {TAB_LABELS[tab]}
@@ -171,7 +171,7 @@ export const ShopView: React.FC = () => {
           <div>
             <SectionTitle title="出售药材" hint={`点击牌组中的牌出售换金（本间剩余${MAX_SELL_PER_VISIT - sellCount}次）`} />
             {player.deck.length === 0 ? (
-              <p className="text-stone-400 mt-4">牌组为空，无可出售的牌。</p>
+              <p className="text-stone-500 mt-4">牌组为空，无可出售的牌。</p>
             ) : (
               <div className="grid grid-cols-4 gap-4 mt-3 max-h-[55vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
                 {player.deck.map((card) => (
@@ -201,7 +201,7 @@ export const ShopView: React.FC = () => {
               hint={combineStep === 'sacrifice' ? '选择3张牌作为合成材料' : '从已获取的牌中选择1张作为合成结果'}
             />
             {player.deck.length < 3 ? (
-              <p className="text-stone-400 mt-4">牌组不足3张，无法合成。</p>
+              <p className="text-stone-500 mt-4">牌组不足3张，无法合成。</p>
             ) : combineStep === 'sacrifice' ? (
               <>
                 <div className="grid grid-cols-4 gap-4 mt-3 max-h-[40vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
@@ -273,7 +273,7 @@ export const ShopView: React.FC = () => {
         {activeTab === 'decompose' && (
           <div>
             <SectionTitle title="分解药材" hint="此功能尚未开放" />
-            <p className="text-stone-400 mt-4">分解功能正在筹备中，敬请期待。</p>
+            <p className="text-stone-500 mt-4">分解功能正在筹备中，敬请期待。</p>
           </div>
         )}
       </Panel>

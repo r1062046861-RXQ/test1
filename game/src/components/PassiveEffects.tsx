@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../utils/cn';
+import { resolveAssetUrl } from '../utils/assets';
 
 interface PassiveEffectsProps {
   className?: string;
@@ -20,16 +21,34 @@ const STATUS_NOTICE_LIFETIME_MS = 1180;
 const createStatusStackMap = (statusEffects: ReturnType<typeof useGameStore.getState>['player']['statusEffects']) =>
   new Map(statusEffects.map((status) => [status.id, status.stacks]));
 
+const PASSIVE_THUMB_MAP: Record<string, string> = {
+  'balanced_passive': '/assets/constitutions/balanced.webp',
+  'yin_deficiency_passive': '/assets/constitutions/yin_deficiency.webp',
+  'qi_deficiency_passive': '/assets/constitutions/qi_deficiency.webp',
+  'yang_deficiency_passive': '/assets/constitutions/yang_deficiency.webp',
+  'phlegm_dampness_passive': '/assets/constitutions/phlegm_dampness.webp',
+  'damp_heat_passive': '/assets/constitutions/damp_heat.webp',
+  'blood_stasis_passive': '/assets/constitutions/blood_stasis.webp',
+  'qi_stagnation_passive': '/assets/constitutions/qi_stagnation.webp',
+  'special_diathesis_passive': '/assets/constitutions/special_diathesis.webp',
+};
+
+const getPassiveThumb = (statusId: string) => {
+  const path = PASSIVE_THUMB_MAP[statusId];
+  return path ? resolveAssetUrl(path) : null;
+};
+
 export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compact = false }) => {
   const { player } = useGameStore();
   const [statusNotices, setStatusNotices] = useState<StatusNotice[]>([]);
   const [highlightedStatusIds, setHighlightedStatusIds] = useState<string[]>([]);
-  const prevStatusMapRef = useRef(createStatusStackMap(player.statusEffects));
+  const visibleStatusEffects = useMemo(() => player.statusEffects.filter((effect) => !effect.hidden), [player.statusEffects]);
+  const prevStatusMapRef = useRef(createStatusStackMap(visibleStatusEffects));
 
   useEffect(() => {
     const previousStacks = prevStatusMapRef.current;
-    const nextStacks = createStatusStackMap(player.statusEffects);
-    const addedOrRaised = player.statusEffects.filter((status) => {
+    const nextStacks = createStatusStackMap(visibleStatusEffects);
+    const addedOrRaised = visibleStatusEffects.filter((status) => {
       const previous = previousStacks.get(status.id);
       return previous === undefined || status.stacks > previous;
     });
@@ -56,11 +75,11 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
     }, STATUS_NOTICE_LIFETIME_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [player.statusEffects]);
+  }, [visibleStatusEffects]);
 
   const highlightedStatusSet = useMemo(() => new Set(highlightedStatusIds), [highlightedStatusIds]);
 
-  if (player.statusEffects.length === 0) return null;
+  if (visibleStatusEffects.length === 0) return null;
 
   return (
     <div className={cn('combat-parchment-panel relative flex min-h-0 flex-col overflow-hidden px-3 py-3', className)}>
@@ -99,8 +118,9 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
           compact && 'combat-passives-grid--compact',
         )}
       >
-        {player.statusEffects.map((effect) => {
+        {visibleStatusEffects.map((effect) => {
           const highlighted = highlightedStatusSet.has(effect.id);
+          const thumbSrc = getPassiveThumb(effect.id);
           return (
             <motion.div
               key={effect.id}
@@ -116,17 +136,25 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
               )}
             >
               <div className="flex items-start gap-2">
-                <div
-                  className={cn(
-                    'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[12px] font-bold text-white transition-all duration-200',
-                    effect.type === 'buff'
-                      ? 'bg-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.18)]'
-                      : 'bg-red-700 shadow-[0_8px_16px_rgba(239,68,68,0.18)]',
-                    highlighted && 'scale-110 ring-2 ring-white/20',
-                  )}
-                >
-                  {effect.name[0]}
-                </div>
+                {thumbSrc ? (
+                  <img
+                    src={thumbSrc}
+                    alt=""
+                    className="mt-0.5 h-7 w-5 shrink-0 rounded object-cover"
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[12px] font-bold text-white transition-all duration-200',
+                      effect.type === 'buff'
+                        ? 'bg-emerald-700 shadow-[0_8px_16px_rgba(16,185,129,0.18)]'
+                        : 'bg-red-700 shadow-[0_8px_16px_rgba(239,68,68,0.18)]',
+                      highlighted && 'scale-110 ring-2 ring-white/20',
+                    )}
+                  >
+                    {effect.name[0]}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="combat-passives-grid__title-row">
                     <div className="font-bold text-stone-50">
@@ -138,7 +166,7 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
                   <div
                     className={cn(
                       'combat-passives-grid__description mt-1 text-stone-300/90',
-                      compact ? 'text-[11px] leading-5' : 'text-sm leading-5',
+                      compact ? 'text-[11px] leading-[1.35]' : 'text-sm leading-5',
                     )}
                   >
                     {effect.description}

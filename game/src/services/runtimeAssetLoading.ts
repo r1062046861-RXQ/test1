@@ -40,8 +40,6 @@ type StageLoadConfig = {
   parallelCount: number;
 };
 
-const STAGE_ORDER: RuntimeAssetStage[] = ['critical', 'static', 'gif'];
-
 const STAGE_LOAD_CONFIG: Record<RuntimeAssetStage, StageLoadConfig> = {
   critical: { fetchPriority: 'high', parallelCount: 4 },
   static: { fetchPriority: 'low', parallelCount: 4 },
@@ -53,7 +51,7 @@ const SPEED_WINDOW_MS = 3000;
 const SPEED_TICK_MS = 250;
 
 const getInitialStage = (manifest: RuntimeAssetManifestEntry[]): RuntimeAssetLoadingStage => {
-  const firstEntry = manifest.find((entry) => STAGE_ORDER.includes(entry.stage));
+  const firstEntry = manifest.find((entry) => PRELOAD_STAGES.includes(entry.stage));
   return firstEntry?.stage ?? 'done';
 };
 
@@ -69,23 +67,28 @@ const shallowEqualProgress = (left: AssetLoadingProgress, right: AssetLoadingPro
   left.currentStage === right.currentStage &&
   left.speedBytesPerSecond === right.speedBytesPerSecond;
 
+const PRELOAD_STAGES: RuntimeAssetStage[] = ['critical', 'static'];
+
+const FILTER_PRELOAD = (manifest: RuntimeAssetManifestEntry[]) =>
+  manifest.filter((entry) => PRELOAD_STAGES.includes(entry.stage));
+
 export const createRuntimeAssetLoadingController = ({
   manifest,
-  totalBytes = manifest.reduce((sum, entry) => sum + entry.bytes, 0),
+  totalBytes = FILTER_PRELOAD(manifest).reduce((sum, entry) => sum + entry.bytes, 0),
   preloadAsset = preloadImageAsset,
   hideDelayMs = HIDE_DELAY_MS,
   speedWindowMs = SPEED_WINDOW_MS,
   speedTickMs = SPEED_TICK_MS,
 }: RuntimeAssetLoadingControllerOptions) => {
-  const stageEntries = STAGE_ORDER.reduce<Record<RuntimeAssetStage, RuntimeAssetManifestEntry[]>>(
+  const preloadManifest = FILTER_PRELOAD(manifest);
+  const stageEntries = PRELOAD_STAGES.reduce<Record<string, RuntimeAssetManifestEntry[]>>(
     (groups, stage) => {
-      groups[stage] = manifest.filter((entry) => entry.stage === stage);
+      groups[stage] = preloadManifest.filter((entry) => entry.stage === stage);
       return groups;
     },
     {
       critical: [],
       static: [],
-      gif: [],
     },
   );
 
@@ -93,10 +96,10 @@ export const createRuntimeAssetLoadingController = ({
     loadedBytes: 0,
     totalBytes,
     loadedCount: 0,
-    totalCount: manifest.length,
-    finished: manifest.length === 0,
-    visible: manifest.length > 0,
-    currentStage: getInitialStage(manifest),
+    totalCount: preloadManifest.length,
+    finished: preloadManifest.length === 0,
+    visible: preloadManifest.length > 0,
+    currentStage: getInitialStage(preloadManifest),
     speedBytesPerSecond: 0,
   };
 
@@ -256,7 +259,7 @@ export const createRuntimeAssetLoadingController = ({
 
     startSpeedTicker();
     startPromise = (async () => {
-      for (const stage of STAGE_ORDER) {
+      for (const stage of PRELOAD_STAGES) {
         const entries = stageEntries[stage];
         if (entries.length === 0) {
           continue;

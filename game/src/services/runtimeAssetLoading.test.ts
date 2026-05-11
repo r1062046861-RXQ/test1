@@ -22,7 +22,7 @@ describe('runtimeAssetLoadingController', () => {
     vi.restoreAllMocks();
   });
 
-  it('loads manifest entries in critical -> static -> gif order', async () => {
+  it('loads manifest entries in critical -> static order (skips gif)', async () => {
     const order: string[] = [];
     const controller = createRuntimeAssetLoadingController({
       manifest,
@@ -40,7 +40,6 @@ describe('runtimeAssetLoadingController', () => {
     expect(order).toEqual([
       '/assets/background_main_menu.png',
       '/assets/cards_player/1.png',
-      '/assets/cards_enemy/91.gif',
     ]);
   });
 
@@ -72,7 +71,6 @@ describe('runtimeAssetLoadingController', () => {
     expect(visited).toEqual([
       '/assets/background_main_menu.png',
       '/assets/cards_player/1.png',
-      '/assets/cards_enemy/91.gif',
     ]);
     expect(snapshots.length).toBeGreaterThanOrEqual(0);
   });

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
-import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
+import { ActionButton, Badge, PageShell, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground } from '../utils/assets';
 
 type RestMode = 'idle' | 'remove' | 'done';
@@ -61,13 +61,13 @@ export const RestView: React.FC = () => {
       footer={footer}
       style={{
         backgroundImage:
-          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_rest.png')}`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
     >
       <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Panel className="min-h-0 px-5 py-5">
+        <div className="min-h-0 px-5 py-5">
           <SectionTitle
             title={
               mode === 'remove'
@@ -83,8 +83,8 @@ export const RestView: React.FC = () => {
           {mode === 'idle' && (
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <button onClick={handleRest} className="inset-panel px-6 py-6 text-left transition hover:-translate-y-1">
-                <div className="text-3xl font-bold text-amber-50">调息</div>
-                <div className="mt-3 text-lg text-emerald-200">恢复 {healAmount} 点生命</div>
+                <div className="text-3xl font-bold text-stone-100">调息</div>
+                <div className="mt-3 text-lg text-emerald-300">恢复 {healAmount} 点生命</div>
                 <p className="mt-3 text-sm leading-7 text-stone-300">血线危险时优先稳住状态。</p>
               </button>
               <button
@@ -92,8 +92,8 @@ export const RestView: React.FC = () => {
                 disabled={!canPurify}
                 className="inset-panel px-6 py-6 text-left transition hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                <div className="text-3xl font-bold text-amber-50">净牌</div>
-                <div className="mt-3 text-lg text-amber-200">连续移除 2 张牌</div>
+                <div className="text-3xl font-bold text-stone-100">净牌</div>
+                <div className="mt-3 text-lg text-stone-300">连续移除 2 张牌</div>
                 <p className="mt-3 text-sm leading-7 text-stone-300">
                   {canPurify ? '去掉冗余与过渡牌，让牌组更紧凑。' : '至少需要 2 张牌才可执行净牌。'}
                 </p>
@@ -134,15 +134,15 @@ export const RestView: React.FC = () => {
           {mode === 'done' && result && (
             <div className="mt-5 inset-panel px-5 py-5 text-base leading-8 text-stone-200">{result}</div>
           )}
-        </Panel>
+        </div>
 
-        <Panel className="px-5 py-5">
+        <div className="px-5 py-5">
           <SectionTitle title="休憩提示" />
           <div className="space-y-3 text-sm leading-7 text-stone-300">
             <p>血线紧张先调息，路线已稳再净去多余卡牌。</p>
             <p>进精英或首领前，休憩通常是最后一次整队机会。</p>
           </div>
-        </Panel>
+        </div>
       </div>
     </PageShell>
   );

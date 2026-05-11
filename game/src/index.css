@@ -29,7 +29,7 @@ body,
 body {
   margin: 0;
   padding: 0;
-  font-family: "KaiTi", "SimKai", "STKaiti", serif;
+  font-family: "SimSun", "Songti SC", "STSong", "Noto Serif CJK SC", serif;
   background:
     radial-gradient(circle at top, rgba(255, 232, 177, 0.15), transparent 34%),
     linear-gradient(180deg, #2a1c14 0%, #18110d 100%);
@@ -208,14 +208,14 @@ textarea {
   .page-shell--combat .inset-panel,
   .combat-view .ornate-panel,
   .combat-view .inset-panel {
-    color: #f2e5cf;
+    color: #d5d0c8;
     background:
-      linear-gradient(180deg, rgba(48, 35, 26, 0.94), rgba(23, 16, 12, 0.94));
+      linear-gradient(180deg, rgba(28, 26, 34, 0.94), rgba(14, 12, 18, 0.94));
     box-shadow:
-      inset 0 1px 0 rgba(255, 243, 215, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
       inset 0 -1px 0 rgba(0, 0, 0, 0.2),
       var(--shadow-strong);
-    border-color: rgba(201, 154, 73, 0.28);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   .page-shell--immersive .ornate-panel,
@@ -376,7 +376,7 @@ textarea {
   .page-shell--combat .ornate-button--primary,
   .page-shell--immersive .ornate-button--primary,
   .combat-view .ornate-button--primary {
-    @apply border-amber-400/30 bg-gradient-to-b from-amber-200 to-amber-500 text-stone-950;
+    @apply border-stone-400/30 bg-gradient-to-b from-stone-300 to-stone-600 text-stone-50;
   }
 
   .page-shell--combat .ornate-button--secondary,
@@ -455,14 +455,14 @@ textarea {
   }
 
   .combat-parchment-inset {
-    @apply rounded-[20px] border text-stone-100;
-    border-color: rgba(236, 201, 139, 0.12);
-    background:
-      linear-gradient(180deg, rgba(17, 23, 35, 0.78), rgba(9, 13, 22, 0.82));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 241, 206, 0.06),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
+  @apply rounded-[20px] border text-stone-100;
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(17, 23, 35, 0.78), rgba(9, 13, 22, 0.82));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
 
   .combat-passives-grid {
     display: grid;
@@ -2132,9 +2132,9 @@ textarea {
   --combat-arena-pad-bottom: clamp(4.5rem, 10vh, 6.5rem);
   --combat-hand-shell-pad: 16px;
   --combat-hand-panel-min: 12rem;
-  --combat-hand-height: clamp(10.5rem, 22vh, 13rem);
-  --combat-hand-card-width: 10.5rem;
-  --combat-hand-card-height: 15rem;
+  --combat-hand-height: clamp(14rem, 28vh, 19rem);
+  --combat-hand-card-width: 12.5rem;
+  --combat-hand-card-height: 18rem;
   --combat-enemy-width: 17.4rem;
   --combat-enemy-info-width: 13.8rem;
   --combat-enemy-rail-width: 5.35rem;
@@ -2159,8 +2159,8 @@ textarea {
   --combat-arena-pad-bottom: clamp(4.75rem, 10vh, 6.1rem);
   --combat-hand-shell-pad: 14px;
   --combat-hand-panel-min: 11.5rem;
-  --combat-hand-card-width: 9.5rem;
-  --combat-hand-card-height: 13.5rem;
+  --combat-hand-card-width: 11.5rem;
+  --combat-hand-card-height: 16.5rem;
   --combat-enemy-width: 15.6rem;
   --combat-enemy-info-width: 12.8rem;
   --combat-enemy-rail-width: 5rem;
@@ -2188,8 +2188,8 @@ textarea {
   --combat-arena-pad-bottom: 5.1rem;
   --combat-hand-shell-pad: 12px;
   --combat-hand-panel-min: 11rem;
-  --combat-hand-card-width: 8.75rem;
-  --combat-hand-card-height: 12rem;
+  --combat-hand-card-width: 10.5rem;
+  --combat-hand-card-height: 15rem;
   --combat-enemy-width: 13.4rem;
   --combat-enemy-info-width: 12rem;
   --combat-enemy-rail-width: 4.7rem;
@@ -2304,6 +2304,8 @@ textarea {
 
 .combat-hand__card {
   will-change: transform;
+  overflow: hidden;
+  border-radius: 22px;
 }
 
 .combat-card--hand {
@@ -2333,7 +2335,7 @@ textarea {
   overflow: hidden;
   border-radius: inherit;
   background:
-    radial-gradient(circle at top, rgba(255, 223, 167, 0.18), transparent 42%),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 42%),
     linear-gradient(180deg, rgba(18, 19, 24, 0.92), rgba(9, 11, 16, 0.94));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -2395,13 +2397,13 @@ textarea {
   position: absolute;
   inset: 8px;
   border-radius: inherit;
-  border: 1px solid rgba(241, 204, 126, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .combat-card__edge-glow {
   inset: -14%;
-  background: linear-gradient(112deg, transparent 22%, rgba(255, 246, 222, 0.22) 50%, transparent 76%);
-  opacity: 0.4;
+  background: linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.08) 50%, transparent 76%);
+  opacity: 0.35;
   transform: translateX(-58%) rotate(8deg);
   mix-blend-mode: screen;
 }
@@ -2421,7 +2423,7 @@ textarea {
 
 .combat-card__focus-halo {
   inset: -8%;
-  background: radial-gradient(circle at 50% 22%, rgba(252, 211, 77, 0.22), transparent 44%);
+  background: radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.1), transparent 44%);
 }
 
 .combat-card__fallback {
@@ -2620,22 +2622,22 @@ textarea {
 .combat-card--formula .combat-card__description,
 .combat-card--formula .combat-card__note,
 .combat-card--formula .combat-card__meta-badge {
-  border-color: rgba(255, 229, 139, 0.28);
-  background: rgba(74, 42, 4, 0.7);
-  color: #fff2bb;
-  text-shadow: 0 1px 0 rgba(35, 18, 0, 0.48);
+  border-color: rgba(180, 140, 80, 0.28);
+  background: rgba(255, 240, 180, 0.65);
+  color: #3b2206;
+  text-shadow: none;
 }
 
 .combat-card--formula .combat-card__category-tag {
-  border-color: rgba(255, 237, 170, 0.34);
-  background: rgba(255, 222, 110, 0.18);
-  color: #fff4c4;
+  border-color: rgba(180, 140, 80, 0.34);
+  background: rgba(200, 160, 80, 0.18);
+  color: #4a2a06;
 }
 
 .combat-card--formula .combat-card__title,
 .combat-card--formula .combat-card__description-copy,
 .combat-card--formula .combat-card__note {
-  color: #fff2bb;
+  color: #3b2206;
 }
 
 .combat-card--equipment {
@@ -4027,6 +4029,31 @@ textarea {
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32);
 }
 
+.hand-overview-button {
+  position: fixed;
+  right: 18px;
+  bottom: 72px;
+  z-index: 58;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(180, 200, 210, 0.42);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at top left, rgba(180, 210, 235, 0.22), transparent 38%),
+    linear-gradient(180deg, rgba(24, 42, 58, 0.92), rgba(12, 18, 26, 0.94));
+  padding: 0.72rem 0.86rem;
+  color: #cde4f0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32);
+}
+
+.hand-overview-button:hover {
+  border-color: rgba(180, 210, 230, 0.62);
+  transform: translateY(-1px);
+}
+
 .synthesis-bench-button:hover {
   border-color: rgba(255, 228, 139, 0.62);
   transform: translateY(-1px);
@@ -4099,8 +4126,8 @@ textarea {
   display: grid;
   min-height: 0;
   grid-template-columns: minmax(230px, 0.82fr) minmax(0, 1.5fr);
-  gap: 14px;
-  padding: 1rem;
+  gap: 18px;
+  padding: 1.25rem;
 }
 
 .synthesis-bench__sidebar,
@@ -4327,6 +4354,17 @@ textarea {
   border-color: rgba(245, 196, 74, 0.3);
 }
 
+.synthesis-bench__deck-card--highlight {
+  border-color: rgba(245, 196, 74, 0.58);
+  box-shadow: 0 0 12px rgba(245, 196, 74, 0.18), inset 0 0 8px rgba(245, 196, 74, 0.08);
+  background: rgba(82, 52, 10, 0.18);
+}
+
+.synthesis-bench__deck-card--highlight:hover {
+  border-color: rgba(245, 196, 74, 0.7);
+  box-shadow: 0 0 18px rgba(245, 196, 74, 0.26), inset 0 0 10px rgba(245, 196, 74, 0.12);
+}
+
 .synthesis-bench__deck-card--selected {
   border-color: rgba(74, 222, 128, 0.42);
   background: rgba(20, 83, 45, 0.28);
@@ -4378,6 +4416,102 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: auto;
+}
+
+.poem-reveal {
+  position: relative;
+  display: flex;
+  width: min(460px, calc(100vw - 36px));
+  max-height: min(560px, calc(100vh - 48px));
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  overflow-y: auto;
+  border: 1px solid rgba(245, 196, 74, 0.32);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 226, 151, 0.12), transparent 40%),
+    linear-gradient(180deg, rgba(32, 24, 16, 0.98), rgba(14, 10, 7, 0.99));
+  padding: 2rem 2rem 1.5rem;
+  color: #f6ecd8;
+  box-shadow:
+    0 32px 72px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(245, 196, 74, 0.08);
+  perspective: 600px;
+}
+
+.poem-reveal__sparkle {
+  position: absolute;
+  pointer-events: none;
+}
+
+.poem-reveal__sparkle--top {
+  top: 0.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.poem-reveal__sparkle--bottom {
+  bottom: 0.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.poem-reveal__seal {
+  margin-bottom: 1rem;
+}
+
+.poem-reveal__seal-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(245, 196, 74, 0.36);
+  border-radius: 999px;
+  background: rgba(245, 196, 74, 0.1);
+  padding: 0.4rem 1rem;
+  color: #fde68a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.poem-reveal__title {
+  color: #fff1d7;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+
+.poem-reveal__divider {
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 196, 74, 0.5), transparent);
+  margin-bottom: 1.2rem;
+}
+
+.poem-reveal__lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.poem-reveal__line {
+  color: #ffe4a8;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.7;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.poem-reveal__footer {
+  margin-top: 0.3rem;
 }
 
 @media (max-width: 760px) {

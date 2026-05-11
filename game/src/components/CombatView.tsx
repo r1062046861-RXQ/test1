@@ -95,7 +95,6 @@ export const CombatView: React.FC = () => {
 
   const playerShakeDuration = playerImpactCue?.kind === 'block' ? 0.13 : 0.17;
   const turnLabel = combatTurn === 0 ? '我方回合' : '敌方回合';
-  const turnHint = combatTurn === 0 ? '选择卡牌并规划回合。' : '观察敌方出手与受击反馈。';
   const enemyCountLabel = `敌人 ${enemies.length}`;
   const visibleEnemies = useMemo(() => enemies.filter((enemy) => enemy.currentHp > 0), [enemies]);
   const activeSelectedEnemyId =
@@ -116,8 +115,8 @@ export const CombatView: React.FC = () => {
       )}
       style={{ backgroundImage: `url("${backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,13,9,0.24),rgba(14,10,7,0.78))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,rgba(255,227,171,0.18),transparent_24%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,6,3,0.55),rgba(4,2,1,0.92))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,rgba(255,255,255,0.06),transparent_24%)]" />
       <div className="page-shell__grain" />
 
       <AnimatePresence>
@@ -142,24 +141,20 @@ export const CombatView: React.FC = () => {
             transition={{ delay: 0.06 }}
             className="combat-view__sidebar grid min-h-0 xl:grid-rows-[auto_auto_minmax(0,1fr)]"
           >
-            <div className="combat-view__context ornate-panel">
-              <div className="chapter-kicker">战斗章节</div>
+            <div className="combat-view__context">
               <div className="combat-view__title-row mt-2 flex flex-wrap items-center gap-2">
-                <h2 className="combat-view__title text-3xl font-bold text-amber-50">战斗</h2>
-                <Badge variant={combatTurn === 0 ? 'amber' : 'crimson'}>{turnLabel}</Badge>
+                <h2 className="combat-view__title text-3xl font-bold text-stone-100">战斗</h2>
+                <Badge variant={combatTurn === 0 ? 'blue' : 'crimson'}>{turnLabel}</Badge>
                 <Badge variant="slate">第 {currentAct} 幕</Badge>
                 {bossKills > 0 && (
-                  <Badge variant="amber">已斩首领 {bossKills}</Badge>
+                  <Badge variant="blue">已斩首领 {bossKills}</Badge>
                 )}
               </div>
-              <p className="combat-view__hint mt-1 text-sm text-stone-300">
-                  {turnHint}
-                  {bossKills > 0 && (
-                    <span className="ml-2 text-amber-300/80">
-                      · 手牌上限{8 + Math.min(bossKills, 2)} · 补牌{3 + Math.min(bossKills, 2)}/回合
-                    </span>
-                  )}
+              {bossKills > 0 && (
+                <p className="combat-view__hint mt-1 text-sm text-stone-400">
+                  手牌上限{8 + Math.min(bossKills, 2)} · 补牌{3 + Math.min(bossKills, 2)}/回合
                 </p>
+              )}
             </div>
 
             <motion.div animate={playerShake} transition={{ duration: playerShakeDuration, ease: 'easeOut' }} className="relative">
@@ -181,7 +176,7 @@ export const CombatView: React.FC = () => {
             {visiblePlayerStatusEffects.length > 0 ? (
               <PassiveEffects className="h-full" compact />
             ) : (
-              <div className="combat-parchment-panel flex min-h-0 flex-col px-3 py-3 text-stone-100">
+              <div className="flex min-h-0 flex-col px-3 py-3 text-stone-100">
                 <div className="mb-2 border-b border-white/10 pb-2 text-[12px] uppercase tracking-[0.24em] text-stone-300">
                   被动属性
                 </div>
@@ -191,7 +186,7 @@ export const CombatView: React.FC = () => {
               </div>
             )}
             {(player.relics ?? []).length > 0 && (
-              <div className="combat-parchment-panel flex min-h-0 flex-col overflow-hidden px-3 py-3">
+              <div className="flex min-h-0 flex-col overflow-hidden px-3 py-3">
                 <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
                   <div className="text-[12px] uppercase tracking-[0.24em] text-stone-300">装备遗物</div>
                 </div>
@@ -235,7 +230,7 @@ export const CombatView: React.FC = () => {
                       transition={{ duration: 0.2 }}
                       className="pointer-events-none absolute right-[7rem] top-[calc(50%-10rem)] z-50"
                     >
-                      <div className="scale-[1.15] rounded-[24px] border-2 border-amber-400/40 bg-[linear-gradient(180deg,rgba(30,20,14,0.96),rgba(16,10,7,0.97))] shadow-[0_22px_48px_rgba(0,0,0,0.40)] p-0">
+                      <div className="scale-[1.15] rounded-[24px] border-2 border-stone-400/25 bg-[linear-gradient(180deg,rgba(22,20,28,0.96),rgba(14,12,18,0.97))] shadow-[0_22px_48px_rgba(0,0,0,0.40)] p-0">
                         <Card
                           card={longHoveredCard}
                           interactive={false}
@@ -246,9 +241,9 @@ export const CombatView: React.FC = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <div className="combat-view__arena relative min-h-0 flex-1 overflow-hidden rounded-[30px] border border-amber-500/15 bg-[linear-gradient(180deg,rgba(22,15,11,0.68),rgba(10,7,6,0.84))] shadow-[0_25px_50px_rgba(0,0,0,0.3)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,223,169,0.14),transparent_28%)]" />
-              <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-amber-300/8 blur-3xl" />
+                <div className="combat-view__arena relative min-h-0 flex-1 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.06),transparent_28%)]" />
+            <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-stone-400/6 blur-3xl" />
               <div className="combat-view__arena-controls absolute right-4 top-4 z-20 flex items-center gap-3">
                 <Badge variant="slate">敌 {visibleEnemies.length}</Badge>
                 <ActionButton variant="secondary" onClick={() => setPhase('map')}>
@@ -266,9 +261,9 @@ export const CombatView: React.FC = () => {
                     exit="exit"
                     className="combat-view__turn-banner pointer-events-none absolute left-1/2 top-3 z-30 w-[min(26rem,calc(100%-2rem))] -translate-x-1/2"
                   >
-                    <div className="rounded-full border border-amber-300/25 bg-[linear-gradient(180deg,rgba(52,36,24,0.96),rgba(24,17,13,0.94))] px-5 py-2.5 text-center shadow-[0_16px_30px_rgba(0,0,0,0.28)]">
-                      <div className="text-[12px] uppercase tracking-[0.28em] text-amber-300/80">回合提示</div>
-                      <div className="mt-1 text-lg font-bold tracking-[0.18em] text-amber-50">{turnBanner.label}</div>
+                    <div className="rounded-full border border-stone-400/20 bg-[linear-gradient(180deg,rgba(20,18,24,0.96),rgba(12,10,14,0.94))] px-5 py-2.5 text-center shadow-[0_16px_30px_rgba(0,0,0,0.28)]">
+                      <div className="text-[12px] uppercase tracking-[0.28em] text-stone-400">回合提示</div>
+                      <div className="mt-1 text-lg font-bold tracking-[0.18em] text-stone-100">{turnBanner.label}</div>
                       <div className="mt-1 text-[12px] tracking-[0.14em] text-stone-300">{turnBanner.hint}</div>
                     </div>
                   </motion.div>

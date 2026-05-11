@@ -74,7 +74,7 @@ describe('Game Store', () => {
     expect(newState.playerImpactCue).toBeNull();
   });
 
-  it('creates valid 15-card starting decks for all nine constitutions', () => {
+  it('creates valid 15-card starting decks for all constitutions', () => {
     const constitutionIds = [
       'balanced',
       'yin_deficiency',
@@ -85,6 +85,7 @@ describe('Game Store', () => {
       'blood_stasis',
       'qi_stagnation',
       'special_diathesis',
+      'admin',
     ];
 
     expect(Object.keys(STARTING_DECKS).sort()).toEqual([...constitutionIds].sort());

@@ -92,7 +92,7 @@ const getFloatingBadgeTone = (variant: FloatingTextVariant) => {
 };
 
 export const PlayerStats: React.FC = () => {
-  const { player, getHandLimit, getDrawPerTurn } = useGameStore();
+  const { player, getHandLimit, getDrawPerTurn, currentAct } = useGameStore();
   const prevHpRef = useRef(player.hp);
   const prevBlockRef = useRef(player.block);
   const prevEnergyRef = useRef(player.energy);
@@ -279,15 +279,39 @@ export const PlayerStats: React.FC = () => {
     </AnimatePresence>
   );
 
+  const actTheme = React.useMemo(() => {
+    if (currentAct === 2) return {
+      border: 'border-rose-500/20',
+      textLight: 'text-rose-300/75',
+      textBright: 'text-rose-200',
+      badge: 'border-rose-500/20 bg-rose-500/10 text-rose-100',
+      stat: 'border-rose-500/20 bg-rose-500/8 text-rose-200/80',
+    };
+    if (currentAct === 3) return {
+      border: 'border-violet-500/20',
+      textLight: 'text-violet-300/75',
+      textBright: 'text-violet-200',
+      badge: 'border-violet-500/20 bg-violet-500/10 text-violet-100',
+      stat: 'border-violet-500/20 bg-violet-500/8 text-violet-200/80',
+    };
+    return {
+      border: 'border-sky-500/20',
+      textLight: 'text-sky-300/75',
+      textBright: 'text-sky-200',
+      badge: 'border-sky-500/20 bg-sky-500/10 text-sky-100',
+      stat: 'border-sky-500/20 bg-sky-500/8 text-sky-200/80',
+    };
+  }, [currentAct]);
+
   return (
-    <div className="relative w-[21rem] rounded-[26px] border border-amber-500/20 bg-[linear-gradient(180deg,rgba(42,30,22,0.94),rgba(18,12,9,0.96))] px-4 py-4 text-stone-100 shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
+    <div className={`relative w-[21rem] rounded-[26px] border ${actTheme.border} bg-[linear-gradient(180deg,rgba(28,28,34,0.94),rgba(14,13,18,0.96))] px-4 py-4 text-stone-100 shadow-[0_18px_40px_rgba(0,0,0,0.35)]`}>
       <div className="pointer-events-none absolute inset-0 rounded-[26px] border border-white/5" />
       <div className="mb-3 flex items-start justify-between gap-4">
         <div>
-          <div className="text-[12px] tracking-[0.28em] text-amber-300/75">巡诊者</div>
-          <div className="mt-1 text-2xl font-bold text-amber-50">巡诊者</div>
+          <div className={`text-[12px] tracking-[0.28em] ${actTheme.textLight}`}>巡诊者</div>
+          <div className={`mt-1 text-2xl font-bold ${actTheme.textBright}`}>巡诊者</div>
         </div>
-        <div className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs tracking-[0.2em] text-amber-100">
+        <div className={`rounded-full border ${actTheme.badge} px-3 py-1 text-xs tracking-[0.2em]`}>
           回合资源
         </div>
       </div>
@@ -384,7 +408,7 @@ export const PlayerStats: React.FC = () => {
         <div className="rounded-full border border-white/8 bg-white/5 px-3 py-2">抽牌堆 {player.drawPile.length}</div>
       </div>
       <div className="mt-2 flex gap-2 text-xs tracking-[0.14em]">
-        <div className="flex-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-center text-amber-200/80">
+        <div className={`flex-1 rounded-full border ${actTheme.stat} px-3 py-2 text-center`}>
           手牌 {player.hand.length}/{getHandLimit()}
         </div>
         <div className="flex-1 rounded-full border border-sky-500/20 bg-sky-500/8 px-3 py-2 text-center text-sky-200/80">

@@ -99,6 +99,15 @@ const CONSTITUTIONS: ConstitutionOption[] = [
       accent: 'from-slate-100 to-gray-50 border-slate-700/30',
       image: '/assets/constitutions/special_diathesis.webp',
     },
+    {
+      id: 'admin',
+      title: '管理员体质',
+      subtitle: '全卡测试型',
+      passive: '全解锁',
+      detail: '开局获得所有药材、药方蓝图、装备。仅用于合成台测试。',
+      accent: 'from-purple-100 to-pink-50 border-purple-700/30',
+      image: '/assets/constitutions/balanced.webp',
+    },
   ];
 
 const AUTHOR_CONTACTS = [
@@ -562,6 +571,33 @@ export const StartMenu: React.FC = () => {
               </div>
 
               <div className="ornate-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+                <div className="immersive-modal__panel px-4 py-4">
+                  <div className="mb-3 text-sm font-bold tracking-[0.14em] text-amber-200/80">选择章节</div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <ActionButton
+                      variant="primary"
+                      className="justify-center px-5 py-4"
+                      onClick={() => { startGame('admin', 1); closeAdminPanel(); }}
+                    >
+                      第一幕 · 风寒初起
+                    </ActionButton>
+                    <ActionButton
+                      variant="primary"
+                      className="justify-center px-5 py-4"
+                      onClick={() => { startGame('admin', 2); closeAdminPanel(); }}
+                    >
+                      第二幕 · 邪热入里
+                    </ActionButton>
+                    <ActionButton
+                      variant="primary"
+                      className="justify-center px-5 py-4"
+                      onClick={() => { startGame('admin', 3); closeAdminPanel(); }}
+                    >
+                      第三幕 · 五行失衡
+                    </ActionButton>
+                  </div>
+                </div>
+
                 <div className="grid gap-3 md:grid-cols-2">
                   <ActionButton
                     id="admin-combat-btn"

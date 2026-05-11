@@ -65,6 +65,7 @@ export const RewardView: React.FC = () => {
 
   useEffect(() => {
     setBlueprintMessage('');
+    if (blueprintRecorded) setBlueprintTaken(true);
   }, [pendingFormulaBlueprintId]);
 
   const acceptBlueprint = () => {

@@ -12,7 +12,7 @@ export type RuntimeAssetManifestEntry = {
 export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
     "path": "/assets/background_main_menu.png",
-    "bytes": 81846,
+    "bytes": 184108,
     "stage": "critical"
   },
   {
@@ -51,8 +51,38 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
+    "path": "/assets/background_map_act1.png",
+    "bytes": 194750,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_map_act2.png",
+    "bytes": 197952,
+    "stage": "static"
+  },
+  {
     "path": "/assets/background_map.png",
     "bytes": 8545,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_rest.png",
+    "bytes": 189650,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_shop.png",
+    "bytes": 199205,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/bg_synthesis_1.png",
+    "bytes": 203055,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/bg_synthesis_2.png",
+    "bytes": 161350,
     "stage": "static"
   },
   {
@@ -342,7 +372,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/banxia_houpu_tang.svg",
-    "bytes": 1409,
+    "bytes": 1433,
     "stage": "static"
   },
   {
@@ -352,7 +382,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/gegen_tang.svg",
-    "bytes": 1407,
+    "bytes": 1431,
     "stage": "static"
   },
   {
@@ -362,7 +392,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/jiaotai_wan.svg",
-    "bytes": 1408,
+    "bytes": 1432,
     "stage": "static"
   },
   {
@@ -372,7 +402,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/lizhong_wan.svg",
-    "bytes": 1408,
+    "bytes": 1432,
     "stage": "static"
   },
   {
@@ -387,7 +417,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/maxing_shigan_tang.svg",
-    "bytes": 1410,
+    "bytes": 1434,
     "stage": "static"
   },
   {
@@ -402,7 +432,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/suanzaoren_tang.svg",
-    "bytes": 1407,
+    "bytes": 1431,
     "stage": "static"
   },
   {
@@ -417,7 +447,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/cards_formula_placeholders/xiaoqinglong_tang.svg",
-    "bytes": 1409,
+    "bytes": 1433,
     "stage": "static"
   },
   {
@@ -1101,23 +1131,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_special/86.png",
-    "bytes": 124450,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_special/87.png",
-    "bytes": 158451,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_special/88.png",
-    "bytes": 161825,
-    "stage": "static"
-  },
-  {
     "path": "/assets/cards_special/formula_placeholder.svg",
-    "bytes": 2350,
+    "bytes": 2389,
     "stage": "static"
   },
   {
@@ -1152,17 +1167,17 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/background_combat_act1.png",
-    "bytes": 348718,
+    "bytes": 202508,
     "stage": "static"
   },
   {
     "path": "/assets/background_combat_act2.png",
-    "bytes": 367700,
+    "bytes": 187332,
     "stage": "static"
   },
   {
     "path": "/assets/background_combat_act3.png",
-    "bytes": 308520,
+    "bytes": 199369,
     "stage": "static"
   },
   {
@@ -1267,4 +1282,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 159459667;
+export const TOTAL_RUNTIME_ASSET_BYTES = 159827643;

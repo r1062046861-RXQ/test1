@@ -1,6 +1,6 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-09
+更新日期：2026-05-14
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
@@ -91,35 +91,36 @@ wechatgame/
 | 项目 | 当前数量 / 说明 |
 | --- | --- |
 | 卡牌总数 | 109 条模板记录：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 |
-| 卡牌战斗类型 | attack 27，skill 46，power 36 |
-| 卡牌稀有度 | common 22，uncommon 31，rare 56 |
-| 卡牌费用 | 0 费 65，1 费 31，2 费 10，3 费 3 |
-| 起始牌组 | 9 种体质各 15 张 |
-| 药方蓝图 | 12 种正式蓝图，正常地图战斗胜利奖励 1 张真实蓝图 |
+| 起始牌组 | 9 种体质各 15 张，管理员体质约 88 张（全部药材+药方） |
+| 药方蓝图 | 12 种正式蓝图，合成台按配方合成，可重复合成无上限 |
 | 药方牌 | 12 张，除合成台外无其他获取方法 |
 | 装备牌 | 11 张，普通/精英/首领胜利分别 10%/20%/50% 概率掉落，获得后全局被动 |
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
-| 体质 | 9 种全部可选：平和质、阴虚质、气虚质、阳虚质、痰湿质、湿热质、血瘀质、气郁质、特禀质 |
-| 游戏阶段 | 12 个 `GamePhase`，含当前常规流程不会到达的 `victory` 保留类型 |
-| `public/assets` 总量 | 246 个文件，158,344,338 bytes，约 151.01 MiB |
-| 音频 | 27 个 MP3，60,708,003 bytes，约 57.90 MiB；不纳入图片 manifest |
+| 体质 | 9 种 + 管理员体质（`?admin` 开启） |
+| 语音/音频 | BGM 10 首 + 环境音 5 个 + SFX 12 个，已压缩至 96kbps/64kbps |
+| `public/assets` 总量 | 254 个文件，约 152 MB（图片+音频） |
 
 运行时资源按目录统计：
 
 | 目录 | 文件数 | 体积 |
 | --- | ---: | ---: |
-| `audio` | 27 | 60,708,003 bytes，约 57.90 MiB |
-| `author_qr` | 4 | 288,242 bytes，约 0.27 MiB |
-| `cards_enemy` | 65 | 148,649,005 bytes，约 141.76 MiB |
-| `cards_equipment` | 11 | 1,184,704 bytes，约 1.13 MiB |
-| `cards_formula_placeholders` | 19 | 714,083 bytes，约 0.68 MiB |
-| `cards_herb_placeholders` | 1 | 36,388 bytes，约 0.03 MiB |
-| `cards_player` | 85 | 5,334,184 bytes，约 5.09 MiB |
-| `cards_replacement_placeholders` | 48 | 1,060,876 bytes，约 1.01 MiB |
-| `cards_special` | 4 | 447,076 bytes，约 0.43 MiB |
-| `constitutions` | 9 | 629,780 bytes，约 0.60 MiB |
+| `audio` | 27 | 约 28 MB（BGM 96kbps/环境音 64kbps 压缩后） |
+| `author_qr` | 4 | 约 0.3 MB |
+| `cards_enemy` | 65 | 约 142 MB |
+| `cards_equipment` | 11 | 约 1.1 MB |
+| `cards_formula_placeholders` | 19 | 约 0.7 MB |
+| `cards_herb_placeholders` | 1 | 约 0.04 MB |
+| `cards_player` | 85 | 约 5.3 MB |
+| `cards_replacement_placeholders` | 48 | 约 1.1 MB |
+| `cards_special` | 1 | 约 0.04 MB（已删除 3 张无用卡图） |
+| `constitutions` | 9 | 约 0.6 MB |
+| 根目录背景图 | 10 | 约 1.9 MB（已压缩至 200KB 内） |
 
-性能重点：加载慢主要来自敌方 GIF，20 个 GIF 占运行时资源图片体积的大头。
+新增背景资源（均已压缩至 200KB 内）：
+- `background_map_act1.png` / `background_map_act2.png`：路径选择分幕背景
+- `background_rest.png`：休憩场景背景
+- `background_shop.png`：药房场景背景
+- `bg_synthesis_1.png` / `bg_synthesis_2.png`：合成台双图随机展示
 
 ## 5. 核心类型
 
@@ -538,3 +539,17 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | 地图无限循环 + 多幕 | `ACT_LENGTH=10`，4列布局，col 0-2主线 + col 3 Boss 独立通道 |
 | Boss 独立通道 | 从 event 直连，3胜解锁；Boss 后 `currentAct++` 进入下一幕 |
 | 敌人缩放 | 普通开战流程只应用 HP 缩放，尚未应用 `damageBonus` |
+| 管理员章节选择 | `startGame('admin', actNum)` 可直接从 Act 1/2/3 开始管理员体质 |
+| 管理员初始牌组扩充 | 管理员体质含全部药材牌（76张）+ 药方牌（12张）入初始牌组 |
+| 管理员全图鉴 | 管理员体质 `obtainedCardIds` 含所有药材+药方+装备，图鉴全部点亮 |
+| 背景图全面换新 | 战斗/地图/休憩/药房/合成台使用新艺术图，每张压缩至200KB内 |
+| 音频全面压缩 | 所有 BGM 重编码为 96kbps，环境音 64kbps 单声道，总体积减半（59MB→29MB） |
+| 字体修复 | `font-family` 从 KaiTi 改为 SimSun/Songti SC，修复 macOS 字体问题 |
+| 战斗UI去琥珀色 | 所有战斗界面暗黄色替换为冷灰/幕次主题色 |
+| 巡诊者面板分幕配色 | PlayerStats 按 Act 切换 sky(1)/rose(2)/violet(3) 主题 |
+| 战斗去框 | Arena 大框、敌人框、MapView/RestView/ShopView 的 ornate-panel 全部移除 |
+| 汤头歌诀动画 | 药方合成成功后全屏弹出卷轴动画，逐行展示歌诀 |
+| 手牌总览按钮 | MapView 右下角新增按钮，查看当前所有手牌及数量（含卡图缩略图） |
+| 药方合成无上限 | 同一药方牌可重复合成，不受 `MAX_CARD_COPIES` 限制 |
+| 蓝图药材高亮 | 合成台中当前蓝图所需药材显示金色高亮边框 |
+| `_templateId` 精确匹配 | 卡牌运行时实例携带模板ID，修复合成时药材匹配不准确的问题 |

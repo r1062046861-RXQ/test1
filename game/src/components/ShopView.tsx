@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CARD_LIBRARY, isHerbCard } from '../data/cards';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
-import { ActionButton, Badge, Panel, SectionTitle } from './ui/PageShell';
+import { ActionButton, Badge, SectionTitle } from './ui/PageShell';
+import { resolveAssetBackground } from '../utils/assets';
 
 type TabKey = 'buy' | 'sell' | 'combine' | 'decompose';
 
@@ -98,17 +99,17 @@ export const ShopView: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-full items-start justify-center p-4">
-      <Panel className="max-w-5xl mx-auto px-5 py-5 w-full">
+    <div className="page-shell--immersive flex min-h-full items-start justify-center p-4" style={{ backgroundImage: `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), ${resolveAssetBackground('/assets/background_shop.png')}`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="max-w-5xl mx-auto px-5 py-5 w-full">
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="chapter-kicker">药房</div>
-            <h2 className="text-3xl font-bold text-amber-900 mt-1">药房</h2>
-            <p className="text-sm text-stone-600 mt-1">买卖药材，合成新方。</p>
+            <h2 className="text-3xl font-bold text-stone-100 mt-1">药房</h2>
+            <p className="text-sm text-stone-300 mt-1">买卖药材，合成新方。</p>
           </div>
           <div className="flex items-center gap-3">
-            {msg && <Badge variant="amber">{msg}</Badge>}
-            <Badge variant="amber">{player.gold} 金币</Badge>
+            {msg && <Badge variant="slate">{msg}</Badge>}
+            <Badge variant="slate">{player.gold} 金币</Badge>
             <ActionButton variant="secondary" onClick={() => completeNonCombat()}>继续下一层</ActionButton>
           </div>
         </div>
@@ -121,8 +122,8 @@ export const ShopView: React.FC = () => {
               onClick={() => handleTabChange(tab)}
               className={`rounded-full px-5 py-2 text-sm font-semibold tracking-[0.14em] transition ${
                 activeTab === tab
-                  ? 'bg-amber-500/20 border border-amber-400/40 text-amber-800'
-                  : 'border border-stone-300/40 text-stone-600 hover:text-stone-800'
+                  ? 'bg-stone-500/20 border border-stone-400/40 text-stone-100'
+                  : 'border border-stone-400/20 text-stone-300 hover:text-stone-100'
               }`}
             >
               {TAB_LABELS[tab]}
@@ -171,7 +172,7 @@ export const ShopView: React.FC = () => {
           <div>
             <SectionTitle title="出售药材" hint={`点击牌组中的牌出售换金（本间剩余${MAX_SELL_PER_VISIT - sellCount}次）`} />
             {player.deck.length === 0 ? (
-              <p className="text-stone-500 mt-4">牌组为空，无可出售的牌。</p>
+              <p className="text-stone-300 mt-4">牌组为空，无可出售的牌。</p>
             ) : (
               <div className="grid grid-cols-4 gap-4 mt-3 max-h-[55vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
                 {player.deck.map((card) => (
@@ -201,7 +202,7 @@ export const ShopView: React.FC = () => {
               hint={combineStep === 'sacrifice' ? '选择3张牌作为合成材料' : '从已获取的牌中选择1张作为合成结果'}
             />
             {player.deck.length < 3 ? (
-              <p className="text-stone-500 mt-4">牌组不足3张，无法合成。</p>
+              <p className="text-stone-300 mt-4">牌组不足3张，无法合成。</p>
             ) : combineStep === 'sacrifice' ? (
               <>
                 <div className="grid grid-cols-4 gap-4 mt-3 max-h-[40vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
@@ -215,7 +216,7 @@ export const ShopView: React.FC = () => {
                           if (sel) setCombineSelected(combineSelected.filter(id => id !== card.id));
                           else if (combineSelected.length < 3) setCombineSelected([...combineSelected, card.id]);
                         }}
-                        className={`relative transition ${sel ? 'ring-4 ring-amber-400 rounded-[22px] scale-105' : 'opacity-70 hover:opacity-100'}`}
+                        className={`relative transition ${sel ? 'ring-4 ring-stone-400 rounded-[22px] scale-105' : 'opacity-70 hover:opacity-100'}`}
                       >
                         <Card card={card} interactive={false} hoverLift={false} />
                       </button>
@@ -273,10 +274,10 @@ export const ShopView: React.FC = () => {
         {activeTab === 'decompose' && (
           <div>
             <SectionTitle title="分解药材" hint="此功能尚未开放" />
-            <p className="text-stone-500 mt-4">分解功能正在筹备中，敬请期待。</p>
+            <p className="text-stone-300 mt-4">分解功能正在筹备中，敬请期待。</p>
           </div>
         )}
-      </Panel>
+      </div>
     </div>
   );
 };

@@ -15,3 +15,5 @@ game-mini/node_modules/
 
 *.log
 未使用/
+open-web-game.cmd
+open-web-game.ps1

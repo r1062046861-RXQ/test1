@@ -17,9 +17,9 @@ export const CombatLog: React.FC<CombatLogProps> = ({ className, compact = false
   }, [combatLog]);
 
   return (
-    <div className={cn('combat-parchment-panel flex min-h-0 flex-col overflow-hidden px-3 py-3', className)}>
+    <div className={cn('flex min-h-0 flex-col overflow-hidden px-3 py-3', className)}>
       <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
-        <ScrollText size={16} className="text-amber-300" />
+        <ScrollText size={16} className="text-stone-400" />
         <div className="text-[12px] uppercase tracking-[0.24em] text-stone-300">战斗记录</div>
       </div>
       <div className={cn('ornate-scroll min-h-0 flex-1 overflow-y-auto pr-1', compact ? 'text-[12px] leading-5' : 'text-sm leading-6')}>

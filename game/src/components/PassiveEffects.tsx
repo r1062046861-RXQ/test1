@@ -82,7 +82,7 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
   if (visibleStatusEffects.length === 0) return null;
 
   return (
-    <div className={cn('combat-parchment-panel relative flex min-h-0 flex-col overflow-hidden px-3 py-3', className)}>
+    <div className={cn('relative flex min-h-0 flex-col overflow-hidden px-3 py-3', className)}>
       <AnimatePresence>
         {statusNotices.map((notice, index) => (
           <motion.div
@@ -108,7 +108,7 @@ export const PassiveEffects: React.FC<PassiveEffectsProps> = ({ className, compa
       </AnimatePresence>
 
       <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
-        <Sparkles size={16} className="text-amber-300" />
+        <Sparkles size={16} className="text-stone-400" />
         <div className="text-[12px] uppercase tracking-[0.24em] text-stone-300">被动效果</div>
       </div>
 

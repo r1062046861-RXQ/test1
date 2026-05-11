@@ -1,11 +1,14 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Beaker, ScrollText, X } from 'lucide-react';
+import { Beaker, ScrollText, Sparkles, X } from 'lucide-react';
 import type { Card as CardData } from '../types';
 import { CARD_LIBRARY, countCardsByTemplate, getCardCategory, getTemplateCardId } from '../data/cards';
 import { FORMULA_BLUEPRINTS } from '../data/formulas';
 import { useGameStore, type CraftFormulaResult } from '../store/gameStore';
 import { ActionButton, Badge, Panel } from './ui/PageShell';
+import { resolveAssetBackground } from '../utils/assets';
+
+const SYNTHESIS_BG_IMAGES = ['/assets/bg_synthesis_1.png', '/assets/bg_synthesis_2.png'];
 
 const EMPTY_RESULT: CraftFormulaResult = {
   ok: false,
@@ -14,12 +17,13 @@ const EMPTY_RESULT: CraftFormulaResult = {
 
 export const SynthesisBench: React.FC = () => {
   const player = useGameStore((state) => state.player);
-  const recordFormulaBlueprint = useGameStore((state) => state.recordFormulaBlueprint);
   const craftFormulaFromBlueprint = useGameStore((state) => state.craftFormulaFromBlueprint);
   const [open, setOpen] = React.useState(false);
   const [activeBlueprintId, setActiveBlueprintId] = React.useState(FORMULA_BLUEPRINTS[0]?.id ?? '');
   const [result, setResult] = React.useState<CraftFormulaResult>(EMPTY_RESULT);
   const [selectedIngredientIds, setSelectedIngredientIds] = React.useState<string[]>([]);
+  const [poemOverlay, setPoemOverlay] = React.useState<string | null>(null);
+  const [synthesisBgIndex] = React.useState(() => Math.floor(Math.random() * SYNTHESIS_BG_IMAGES.length));
   const dialogTitleId = React.useId();
 
   const activeBlueprint = FORMULA_BLUEPRINTS.find((blueprint) => blueprint.id === activeBlueprintId) ?? FORMULA_BLUEPRINTS[0];
@@ -63,17 +67,15 @@ export const SynthesisBench: React.FC = () => {
     setResult(EMPTY_RESULT);
   }, [activeBlueprintId]);
 
-  const handleRecord = () => {
-    if (!activeBlueprint) return;
-    setResult(recordFormulaBlueprint(activeBlueprint.id));
-  };
-
   const handleCraft = () => {
     if (!activeBlueprint) return;
     const nextResult = craftFormulaFromBlueprint(activeBlueprint.id, selectedIngredientIds);
     setResult(nextResult);
     if (nextResult.ok) {
       setSelectedIngredientIds([]);
+      if (nextResult.showPoem && nextResult.poem) {
+        setPoemOverlay(nextResult.poem);
+      }
     }
   };
 
@@ -109,6 +111,7 @@ export const SynthesisBench: React.FC = () => {
         {open ? (
           <motion.div
             className="synthesis-bench-backdrop"
+            style={{ backgroundImage: `${resolveAssetBackground(SYNTHESIS_BG_IMAGES[synthesisBgIndex])}, radial-gradient(circle at top, rgba(255,225,148,0.16), transparent 32%), linear-gradient(180deg, rgba(5,8,14,0.78), rgba(5,8,14,0.78))`, backgroundSize: 'cover, auto, auto', backgroundPosition: 'center', backgroundBlendMode: 'normal, normal, normal' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -139,7 +142,7 @@ export const SynthesisBench: React.FC = () => {
               </div>
 
               <div className="synthesis-bench__body ornate-scroll">
-                <Panel inset className="synthesis-bench__sidebar">
+                <Panel inset className="synthesis-bench__sidebar p-3">
                   <div className="synthesis-bench__section-title">蓝图目录</div>
                   <div className="synthesis-bench__blueprint-list">
                     {FORMULA_BLUEPRINTS.map((blueprint, index) => {
@@ -161,7 +164,7 @@ export const SynthesisBench: React.FC = () => {
                   </div>
                 </Panel>
 
-                <Panel inset className="synthesis-bench__detail">
+                <Panel inset className="synthesis-bench__detail p-3 gap-3">
                   {activeBlueprint ? (
                     <>
                       <div className="synthesis-bench__detail-head">
@@ -232,6 +235,7 @@ export const SynthesisBench: React.FC = () => {
                                   isSelected ? 'synthesis-bench__deck-card--selected' : '',
                                   required > 0 ? 'synthesis-bench__deck-card--needed' : '',
                                   missing > 0 && required > 0 ? 'synthesis-bench__deck-card--short' : '',
+                                  required > 0 ? 'synthesis-bench__deck-card--highlight' : '',
                                 ].filter(Boolean).join(' ')}
                                 onClick={() => { if (cardInstance && canSelect) toggleIngredient(cardInstance.id); }}
                               >
@@ -258,6 +262,15 @@ export const SynthesisBench: React.FC = () => {
                         </div>
                       ) : null}
 
+                      {result.showPoem && result.poem ? (
+                        <div className="synthesis-bench__poem">
+                          <div className="synthesis-bench__section-title">汤头歌诀</div>
+                          {result.poem.split('\n').map((line) => (
+                            <div key={line}>{line}</div>
+                          ))}
+                        </div>
+                      ) : null}
+
                       <div className="synthesis-bench__deck-note">
                         已选择 {selectedIngredientIds.length}/{requiredIngredientIds.length} 张药材牌。合成成功会消耗所选药材实例，并把药方牌加入当前牌组。
                       </div>
@@ -267,9 +280,6 @@ export const SynthesisBench: React.FC = () => {
                       </div>
 
                       <div className="synthesis-bench__actions">
-                        <ActionButton variant="primary" onClick={handleRecord}>
-                          录入药方蓝图
-                        </ActionButton>
                         <ActionButton variant="secondary" onClick={handleCraft} disabled={!known || !selectedMatchesRecipe}>
                           合成药方牌
                         </ActionButton>
@@ -278,6 +288,99 @@ export const SynthesisBench: React.FC = () => {
                   ) : null}
                 </Panel>
               </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {poemOverlay ? (
+          <motion.div
+            className="synthesis-bench-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            onClick={() => setPoemOverlay(null)}
+          >
+            <motion.div
+              className="poem-reveal"
+              initial={{ opacity: 0, scale: 0.88, rotateX: 8 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.92, rotateX: 4 }}
+              transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <motion.div
+                className="poem-reveal__sparkle poem-reveal__sparkle--top"
+                initial={{ opacity: 0, y: -14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.32, duration: 0.5 }}
+              >
+                <Sparkles size={24} className="text-amber-300/60" />
+              </motion.div>
+
+              <motion.div
+                className="poem-reveal__seal"
+                initial={{ opacity: 0, scale: 0.4 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.16, duration: 0.55, ease: 'easeOut' }}
+              >
+                <div className="poem-reveal__seal-inner">
+                  <ScrollText size={22} />
+                  <span>汤头歌诀</span>
+                </div>
+              </motion.div>
+
+              <motion.h3
+                className="poem-reveal__title"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28, duration: 0.4 }}
+              >
+                {activeBlueprint?.name ?? '药方蓝图'}
+              </motion.h3>
+
+              <motion.div
+                className="poem-reveal__divider"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              />
+
+              <motion.div className="poem-reveal__lines">
+                {poemOverlay.split('\n').map((line, index) => (
+                  <motion.div
+                    key={index}
+                    className="poem-reveal__line"
+                    initial={{ opacity: 0, x: -18 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.13, duration: 0.42 }}
+                  >
+                    {line}
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              <motion.div
+                className="poem-reveal__footer"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 + poemOverlay.split('\n').length * 0.13 + 0.25, duration: 0.35 }}
+              >
+                <ActionButton variant="primary" onClick={() => setPoemOverlay(null)}>
+                  确 认
+                </ActionButton>
+              </motion.div>
+
+              <motion.div
+                className="poem-reveal__sparkle poem-reveal__sparkle--bottom"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.32, duration: 0.5 }}
+              >
+                <Sparkles size={24} className="text-amber-300/60" />
+              </motion.div>
             </motion.div>
           </motion.div>
         ) : null}

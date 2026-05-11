@@ -28,7 +28,7 @@ export interface GameState {
   volume: number;
   shopRemovalCost: number;
 
-  startGame: (constitution?: Constitution) => void;
+  startGame: (constitution?: Constitution, currentAct?: number) => void;
   endTurn: () => void;
   playCard: (cardId: string, targetId?: string) => void;
   selectNode: (nodeId: string) => void;

@@ -1,11 +1,13 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { BedSingle, Crown, Lock, ScrollText, ShieldAlert, Skull, ShoppingBag } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BedSingle, Crown, Lock, ScrollText, ShieldAlert, Skull, ShoppingBag, ClipboardList, X } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { getBossUnlockWinsRequired } from '../../../shared/core/gameCore';
 import type { NodeType } from '../types';
-import { ActionButton, Badge, PageShell, Panel, SectionTitle } from './ui/PageShell';
-import { resolveAssetBackground } from '../utils/assets';
+import type { Card as CardData } from '../types';
+import { CARD_LIBRARY, countCardsByTemplate } from '../data/cards';
+import { ActionButton, Badge, PageShell, SectionTitle } from './ui/PageShell';
+import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
 const ACT_TITLES = {
   1: '第一幕 · 风寒初起',
@@ -26,6 +28,86 @@ const NODE_META: Record<NodeType, { label: string; hint: string; icon: React.Rea
 
 const LAYER_SPACING = 110;
 const NODE_CENTER_OFFSET = 22;
+
+const HandOverview: React.FC<{ deck: CardData[] }> = ({ deck }) => {
+  const [open, setOpen] = React.useState(false);
+  const templateCounts = React.useMemo(() => countCardsByTemplate(deck), [deck]);
+  const sorted = React.useMemo(
+    () => Object.entries(templateCounts).sort(([, a], [, b]) => b.count - a.count),
+    [templateCounts],
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        className="hand-overview-button"
+        aria-label="查看手牌"
+        onClick={() => setOpen(true)}
+      >
+        <ClipboardList size={18} />
+        <span>{deck.length} 牌</span>
+      </button>
+
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            className="synthesis-bench-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onClick={() => setOpen(false)}
+          >
+            <motion.div
+              className="synthesis-bench"
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.99 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(event) => event.stopPropagation()}
+              style={{ maxWidth: '680px', maxHeight: 'min(600px, calc(100vh - 36px))' }}
+            >
+              <div className="synthesis-bench__header">
+                <div className="min-w-0">
+                  <div className="chapter-kicker">巡诊行囊</div>
+                  <h2 className="synthesis-bench__title">手牌一览</h2>
+                </div>
+                <button type="button" className="synthesis-bench__close" aria-label="关闭" onClick={() => setOpen(false)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="ornate-scroll p-4" style={{ overflowY: 'auto', flex: 1 }}>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+                  {sorted.map(([templateId, count]) => {
+                    const card = CARD_LIBRARY[templateId];
+                    if (!card) return null;
+                    return (
+                      <div key={templateId} className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-[rgba(255,255,255,0.04)] px-3 py-2">
+                        {card.image && (
+                          <img src={resolveAssetUrl(card.image)} alt="" className="h-12 w-8 shrink-0 rounded-md object-cover" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-amber-100 truncate">{card.name}</div>
+                          <div className="text-xs text-stone-400">×{count.count}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {sorted.length === 0 && (
+                  <div className="py-12 text-center text-stone-400">牌组为空</div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </>
+  );
+};
 
 export const MapView: React.FC = () => {
   const { map, startCombat, currentFloor, currentAct, player, setPhase, combatWinsThisCycle = 0 } = useGameStore();
@@ -91,7 +173,7 @@ export const MapView: React.FC = () => {
         actions={<ActionButton onClick={() => setPhase('start_menu')}>返回主菜单</ActionButton>}
       >
         <div className="flex h-full items-center justify-center">
-          <Panel className="px-8 py-10 text-center text-lg text-stone-700">请先从开始菜单发起新的巡诊。</Panel>
+          <div className="px-8 py-10 text-center text-lg text-stone-300">请先从开始菜单发起新的巡诊。</div>
         </div>
       </PageShell>
     );
@@ -108,14 +190,14 @@ export const MapView: React.FC = () => {
       kicker="巡诊卷轴"
       style={{
         backgroundImage:
-          `linear-gradient(180deg, rgba(8,11,18,0.4), rgba(6,8,14,0.84)), radial-gradient(circle at top, rgba(255,223,167,0.16), transparent 28%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
+          `linear-gradient(180deg, rgba(8,11,18,0.4), rgba(6,8,14,0.84)), radial-gradient(circle at top, rgba(255,223,167,0.16), transparent 28%), ${resolveAssetBackground(currentAct === 1 ? '/assets/background_map_act1.png' : currentAct === 2 ? '/assets/background_map_act2.png' : '/assets/background_main_menu.png')}`,
         backgroundSize: 'cover',
         backgroundPosition: 'center 28%',
       }}
       actions={<ActionButton onClick={() => setPhase('start_menu')}>返回主菜单</ActionButton>}
       contentClassName="map-page__layout"
     >
-      <Panel className="map-page__aside map-page__aside--left px-5 py-5 md:px-6">
+      <div className="map-page__aside--left px-5 py-5 md:px-6">
         <div className="map-page__aside-kicker">当前幕次</div>
         <h2 className="map-page__act-title">{ACT_TITLES[currentAct as 1 | 2 | 3] ?? ACT_TITLES[1]}</h2>
         <p className="map-page__aside-copy">沿高亮节点推进，首领前尽量留住血线与关键牌。</p>
@@ -129,9 +211,9 @@ export const MapView: React.FC = () => {
           <div className="map-page__note-title">路线提示</div>
           <div className="map-page__note-copy">优先看下一层的可达节点，再决定补牌、休憩还是绕路。</div>
         </div>
-      </Panel>
+      </div>
 
-      <Panel className="map-page__stage relative min-h-0 overflow-hidden px-4 py-4 md:px-5 md:py-5">
+      <div className="map-page__stage relative min-h-0 overflow-hidden px-4 py-4 md:px-5 md:py-5">
         <div className="relative z-10 flex h-full min-h-0 flex-col">
           <SectionTitle title="当前路径" hint="进入页面会自动对齐当前可推进层。" />
           <div
@@ -238,16 +320,19 @@ export const MapView: React.FC = () => {
             </div>
           </div>
         </div>
-      </Panel>
+      </div>
 
       <div className="map-page__aside-stack">
-        <Panel className="map-page__aside px-5 py-5 md:px-6">
+        <div className="map-page__aside px-5 py-5 md:px-6">
           <SectionTitle title="首领进度" hint={`击败 ${combatWinsThisCycle}/${requiredWins} 次解锁首领`} />
-          <div className="mt-3 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-200">
+          <div className="mt-3 rounded-full border border-stone-400/20 bg-stone-400/10 px-4 py-2 text-center text-sm text-stone-200">
             {combatWinsThisCycle >= requiredWins ? '首领已解锁' : `还需 ${requiredWins - combatWinsThisCycle} 场战斗`}
           </div>
-        </Panel>
+        </div>
       </div>
+
+      <HandOverview deck={player.deck} />
+
     </PageShell>
   );
 };

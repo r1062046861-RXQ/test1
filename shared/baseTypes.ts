@@ -7,7 +7,8 @@ export type Constitution =
   | 'damp_heat'
   | 'blood_stasis'
   | 'qi_stagnation'
-  | 'special_diathesis';
+  | 'special_diathesis'
+  | 'admin';
 
 export type CardType = 'attack' | 'skill' | 'power';
 export type CardRarity = 'common' | 'uncommon' | 'rare';
@@ -32,6 +33,7 @@ export interface Card {
   exhaust?: boolean;
   image?: string;
   act?: number;
+  _templateId?: string;
 }
 
 export type FormulaBlueprintStatus = 'recipe_pending' | 'ready';

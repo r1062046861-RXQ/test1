@@ -223,6 +223,7 @@ const EQUIPMENT_DRAW_PER_TURN_CAP = 6;
 const createCardInstance = (cardId: string): Card => ({
   ...CARD_LIBRARY[cardId],
   id: createRuntimeId(),
+  _templateId: cardId,
 });
 
 const createEquipmentRelic = (cardId: string) => {
@@ -289,7 +290,8 @@ const normalizeConstitution = (constitution: unknown): Constitution => {
     constitution === 'damp_heat' ||
     constitution === 'blood_stasis' ||
     constitution === 'qi_stagnation' ||
-    constitution === 'special_diathesis'
+    constitution === 'special_diathesis' ||
+    constitution === 'admin'
   ) {
     return constitution;
   }
@@ -392,6 +394,17 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       type: 'buff',
       stacks: 1,
       description: '每个玩家回合开始随机触发一种先天禀赋。',
+      canStack: false,
+      dispelImmune: true,
+    },
+  ],
+  admin: [
+    {
+      id: 'admin_passive',
+      name: '管理员体质',
+      type: 'buff',
+      stacks: 1,
+      description: '开局获得所有卡牌、蓝图、装备。仅用于测试合成台。',
       canStack: false,
       dispelImmune: true,
     },
@@ -503,10 +516,22 @@ const isAdminEnemyChallengeNode = (nodeId: string | null) =>
 
 const buildStartingPlayer = (constitution: Constitution) => {
   const normalizedConstitution = normalizeConstitution(constitution);
-  const deckIds = STARTING_DECKS[normalizedConstitution] || STARTING_DECKS.balanced;
-  const deck = deckIds.map(createCardInstance);
   const statusEffects: StatusEffect[] = CONSTITUTION_PASSIVES[normalizedConstitution].map(status => ({ ...status }));
 
+  if (normalizedConstitution === 'admin') {
+    const allHerbIds = Object.keys(CARD_LIBRARY).filter((id) => isHerbCard(CARD_LIBRARY[id]));
+    const allFormulaIds = Object.keys(CARD_LIBRARY).filter((id) => isFormulaCard(CARD_LIBRARY[id]));
+    const deck = [...allHerbIds.map(createCardInstance), ...allFormulaIds.map(createCardInstance)];
+    return {
+      ...INITIAL_PLAYER,
+      deck,
+      constitution: normalizedConstitution,
+      statusEffects,
+    };
+  }
+
+  const deckIds = STARTING_DECKS[normalizedConstitution] || STARTING_DECKS.balanced;
+  const deck = deckIds.map(createCardInstance);
   return {
     ...INITIAL_PLAYER,
     deck,
@@ -677,23 +702,37 @@ export const useGameStore = create<GameStore>()(
       pendingFormulaBlueprintId: null,
       shownFormulaPoemIds: [],
 
-        startGame: (constitution: Constitution = 'balanced') => {
+        startGame: (constitution: Constitution = 'balanced', currentAct = 1) => {
           cancelAllScheduledTasks();
           const normalizedConstitution = normalizeConstitution(constitution);
-          const newRunState = buildNewRunState(normalizedConstitution);
-        set({
-          ...newRunState,
-          player: {
-            ...newRunState.player,
-            obtainedCardIds: [],
-            obtainedEnemyTemplateIds: [],
-            knownFormulaBlueprintIds: [],
-          },
-          pendingEquipmentRewardId: null,
-          pendingFormulaBlueprintId: null,
-          shownFormulaPoemIds: [],
-        });
-      },
+          const newRunState = buildNewRunState(normalizedConstitution, currentAct);
+          const isAdmin = normalizedConstitution === 'admin';
+          set({
+            ...newRunState,
+            player: {
+              ...newRunState.player,
+              obtainedCardIds: isAdmin
+                ? Object.keys(CARD_LIBRARY).filter((id) => {
+                    const c = CARD_LIBRARY[id];
+                    return c && (isHerbCard(c) || isFormulaCard(c) || c.category === 'equipment');
+                  })
+                : [],
+              obtainedEnemyTemplateIds: [],
+              knownFormulaBlueprintIds: isAdmin
+                ? FORMULA_BLUEPRINTS.map((bp) => bp.id)
+                : [],
+              relics: isAdmin
+                ? EQUIPMENT_CARD_IDS.map((id) => {
+                    const c = CARD_LIBRARY[id];
+                    return { id, name: c?.name ?? id, description: c?.description ?? '', effectId: c?.effectId ?? '' };
+                  })
+                : [],
+            },
+            pendingEquipmentRewardId: null,
+            pendingFormulaBlueprintId: null,
+            shownFormulaPoemIds: [],
+          });
+        },
 
       setFontSize: (size) => set({ fontSize: size }),
 
@@ -1177,10 +1216,6 @@ export const useGameStore = create<GameStore>()(
         const targetTemplate = CARD_LIBRARY[blueprint.formulaCardId];
         if (!targetTemplate || !isFormulaCard(targetTemplate)) {
           return { ok: false, reason: 'target_unavailable', message: '该药方牌尚未配置。' };
-        }
-        const alreadyHas = countCardCopies(state.player.deck, blueprint.formulaCardId);
-        if (alreadyHas >= MAX_CARD_COPIES) {
-          return { ok: false, reason: 'copy_limit', message: '该药方牌已达到牌组数量上限。' };
         }
 
         const shownPoems = state.shownFormulaPoemIds ?? [];

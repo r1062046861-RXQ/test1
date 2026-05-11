@@ -816,22 +816,6 @@ export const CARD_LIBRARY: Record<string, Card> = {
     upgraded: false,
     act: 2
   },
-  'guizhitang': {
-    id: 'guizhitang',
-    name: '桂枝汤',
-    image: '/assets/cards_player/37.png',
-    type: 'skill',
-    rarity: 'uncommon',
-    cost: 2,
-    description: '恢复8点生命，获得5点格挡。',
-    tcmNote: '桂枝汤，解肌发表，调和营卫。',
-    effectId: 'heal_block',
-    effectValue: 8,
-    secondaryValue: 5,
-    target: 'self',
-    upgraded: false,
-    act: 2
-  },
   'aiye': {
     id: 'aiye',
     name: '艾叶温经',
@@ -1903,12 +1887,17 @@ export const STARTING_DECKS: Record<string, string[]> = {
   qi_stagnation: [
     'chenpi', 'zhishi', 'xiaoyao', 'baohe', 'chuanxiong',
     'baishao', 'hegu', 'suanzaoren', 'shenmen', 'tuina',
-    'guasha', 'xiaochaihu', 'zexie', 'guizhitang', 'dazao'
+    'guasha', 'xiaochaihu', 'zexie', 'sijunzi', 'dazao'
   ],
   special_diathesis: [
     'bianshi', 'wumei', 'zhusha', 'angong', 'baohe',
     'chuanxiongcha', 'aijiu', 'zusanli', 'shenmen', 'zouguan',
     'hegu', 'suanzaoren', 'xiaoyao', 'guipi', 'tuina'
+  ],
+  admin: [
+    'yinqiao', 'longdan', 'jinyinhua', 'lianqiao', 'gancao',
+    'huangqi', 'dangshen', 'baizhu', 'shanyao', 'chenpi',
+    'shanzha', 'chuanxiong', 'mahuang', 'huanglian', 'baishao'
   ],
 };
 
@@ -1922,6 +1911,7 @@ export interface CardTemplateCount {
 }
 
 export const getTemplateCardId = (card: Card) => {
+  if (card._templateId && CARD_LIBRARY[card._templateId]) return card._templateId;
   if (CARD_LIBRARY[card.id]) return card.id;
   return Object.entries(CARD_LIBRARY).find(([, template]) => template.name === card.name)?.[0] ?? null;
 };

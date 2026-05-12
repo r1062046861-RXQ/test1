@@ -41,6 +41,7 @@ export const EventView: React.FC = () => {
   const handleConfirm = () => {
     if (selectedIndex === null) return;
     handleEventChoice(currentEvent.id, selectedIndex);
+    completeNonCombat();
   };
 
   const option = selectedIndex !== null ? currentEvent.options[selectedIndex] : null;

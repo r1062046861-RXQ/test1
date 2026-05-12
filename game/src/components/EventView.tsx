@@ -2,6 +2,42 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { resolveAssetBackground } from '../utils/assets';
+import { CARD_LIBRARY } from '../data/cards';
+
+const formatEffect = (e: { type: string; value?: number; count?: number; cardId?: string; equipmentId?: string; relicId?: string; rarity?: string; cardType?: string }): string | null => {
+  const n = e.value ?? 0;
+  switch (e.type) {
+    case 'heal':
+      if (n >= 999) return '回复全部生命';
+      return `回复 ${n} 生命`;
+    case 'damage':
+      return `受到 ${n} 点伤害`;
+    case 'maxHpChange':
+      return n > 0 ? `生命上限 +${n}` : `生命上限 ${n}`;
+    case 'goldChange':
+      return n > 0 ? `获得 ${n} 金币` : `失去 ${-n} 金币`;
+    case 'shopPriceChange':
+      return `商店价格 ${n > 0 ? '+' + n + '%' : n + '%'}`;
+    case 'addCard': {
+      const c = e.cardId ? CARD_LIBRARY[e.cardId] : null;
+      return c ? `获得卡牌「${c.name}」` : '获得卡牌';
+    }
+    case 'addRelic':
+    case 'addEquipment': {
+      const c = e.relicId || e.equipmentId ? CARD_LIBRARY[e.relicId ?? e.equipmentId ?? ''] : null;
+      return c ? `获得装备「${c.name}」` : '获得装备';
+    }
+    case 'removeCard':
+      return `遗忘 ${e.count ?? 1} 张牌`;
+    case 'randomCard': {
+      const rar = e.rarity === 'rare' ? '稀有' : '普通';
+      const tp = e.cardType === 'attack' ? '攻击' : e.cardType === 'skill' ? '技能' : '';
+      return `获得随机${rar}${tp}药材卡`;
+    }
+    default:
+      return null;
+  }
+};
 
 export const EventView: React.FC = () => {
   const { player, currentEvent, eventChosenIndex, handleEventChoice, clearCurrentEvent, completeNonCombat } = useGameStore();
@@ -33,7 +69,7 @@ export const EventView: React.FC = () => {
     );
   }
 
-  const confirmed = eventChosenIndex !== null;
+  const confirmed = eventChosenIndex != null;
 
   const handleSelect = (index: number) => {
     if (confirmed) return;
@@ -50,9 +86,12 @@ export const EventView: React.FC = () => {
     completeNonCombat();
   };
 
-  const chosenOption = confirmed
-    ? currentEvent.options[eventChosenIndex!]
+  const chosenOption = confirmed && eventChosenIndex !== undefined
+    ? currentEvent.options[eventChosenIndex]
     : null;
+  const effectLines = chosenOption
+    ? chosenOption.effects.map(formatEffect).filter(Boolean) as string[]
+    : [];
 
   return (
     <div className="flex min-h-full items-start justify-center p-4" style={{ backgroundImage: `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), ${resolveAssetBackground('/assets/background_main_menu.png')}`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -104,8 +143,17 @@ export const EventView: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-4"
+              className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-4 space-y-3"
             >
+              {effectLines.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {effectLines.map((line, i) => (
+                    <span key={i} className="inline-block rounded-full border border-amber-500/30 bg-amber-600/15 px-3 py-0.5 text-xs font-semibold text-amber-100">
+                      {line}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-sm leading-7 text-amber-100 whitespace-pre-line">{chosenOption.description}</p>
             </motion.div>
           )}

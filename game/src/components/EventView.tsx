@@ -6,6 +6,7 @@ import { resolveAssetBackground } from '../utils/assets';
 export const EventView: React.FC = () => {
   const { player, currentEvent, handleEventChoice, completeNonCombat } = useGameStore();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
 
   if (!currentEvent) {
     return (
@@ -34,17 +35,23 @@ export const EventView: React.FC = () => {
   }
 
   const handleSelect = (index: number) => {
-    if (selectedIndex !== null) return;
+    if (confirmed) return;
     setSelectedIndex(index);
   };
 
   const handleConfirm = () => {
-    if (selectedIndex === null) return;
+    if (selectedIndex === null || confirmed) return;
     handleEventChoice(currentEvent.id, selectedIndex);
+    setConfirmed(true);
+  };
+
+  const handleContinue = () => {
     completeNonCombat();
   };
 
   const option = selectedIndex !== null ? currentEvent.options[selectedIndex] : null;
+  const showConsequence = confirmed && option;
+  const isSelectDisabled = confirmed;
 
   return (
     <div className="flex min-h-full items-start justify-center p-4" style={{ backgroundImage: `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), ${resolveAssetBackground('/assets/background_main_menu.png')}`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -69,17 +76,16 @@ export const EventView: React.FC = () => {
         <div className="space-y-3">
           {currentEvent.options.map((opt, i) => {
             const isSelected = selectedIndex === i;
-            const isOtherSelected = selectedIndex !== null && selectedIndex !== i;
             return (
               <button
                 key={i}
                 type="button"
-                disabled={selectedIndex !== null}
+                disabled={isSelectDisabled}
                 onClick={() => handleSelect(i)}
                 className={`w-full text-left rounded-2xl border px-5 py-4 transition-all duration-200 ${
                   isSelected
                     ? 'border-amber-400/60 bg-amber-400/15 ring-1 ring-amber-400/30'
-                    : isOtherSelected
+                    : isSelectDisabled
                       ? 'border-amber-600/20 bg-amber-700/10 opacity-40'
                       : 'border-amber-600/20 bg-amber-700/10 hover:border-amber-400/40 hover:bg-amber-500/15'
                 }`}
@@ -91,7 +97,7 @@ export const EventView: React.FC = () => {
         </div>
 
         <AnimatePresence>
-          {option && (
+          {showConsequence && option && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -105,18 +111,28 @@ export const EventView: React.FC = () => {
         </AnimatePresence>
 
         <div className="mt-5 flex justify-center">
-          <button
-            type="button"
-            disabled={selectedIndex === null}
-            onClick={handleConfirm}
-            className={`rounded-full px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
-              selectedIndex === null
-                ? 'border border-amber-600/20 bg-amber-700/10 text-amber-100/30 cursor-not-allowed'
-                : 'border border-amber-400/40 bg-amber-400/15 text-amber-50 hover:bg-amber-400/25 active:scale-[0.97]'
-            }`}
-          >
-            确认选择
-          </button>
+          {confirmed ? (
+            <button
+              type="button"
+              onClick={handleContinue}
+              className="rounded-full border border-amber-400/40 bg-amber-400/15 px-6 py-2.5 text-sm font-bold text-amber-50 hover:bg-amber-400/25 active:scale-[0.97] transition-all duration-200"
+            >
+              继续
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={selectedIndex === null}
+              onClick={handleConfirm}
+              className={`rounded-full px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
+                selectedIndex === null
+                  ? 'border border-amber-600/20 bg-amber-700/10 text-amber-100/30 cursor-not-allowed'
+                  : 'border border-amber-400/40 bg-amber-400/15 text-amber-50 hover:bg-amber-400/25 active:scale-[0.97]'
+              }`}
+            >
+              确认选择
+            </button>
+          )}
         </div>
       </div>
     </div>

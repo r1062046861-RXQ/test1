@@ -89,6 +89,9 @@ const hasPassive = (entity: { statusEffects: StatusEffect[] }, id: string) =>
 const hasRelic = (player: Player, id: string) =>
   player.relics?.some(relic => relic.id === id) ?? false;
 
+const countRelic = (player: Player, id: string): number =>
+  player.relics?.filter(relic => relic.id === id).length ?? 0;
+
 const getCombatRound = (player: Player) =>
   getStacks(player, 'combat_round') || 1;
 
@@ -103,7 +106,7 @@ const gainPlayerBlock = (player: Player, amount: number) => {
 
 const takePlayerHpDamage = (player: Player, amount: number) => {
   if (amount <= 0) return 0;
-  const finalDamage = hasRelic(player, 'equipment_zhengti') ? Math.max(0, amount - 1) : amount;
+  const finalDamage = hasRelic(player, 'equipment_zhengti') ? Math.max(0, amount - countRelic(player, 'equipment_zhengti')) : amount;
   if (finalDamage <= 0) return 0;
   player.hp = Math.max(0, player.hp - finalDamage);
   return finalDamage;
@@ -122,7 +125,7 @@ const applyHealToPlayer = (player: Player, amount: number) => {
     heal += 1;
   }
   if (hasRelic(player, 'equipment_zhengti')) {
-    heal += 1;
+    heal += countRelic(player, 'equipment_zhengti');
   }
   if (hasPassive(player, 'blood_stasis_passive')) {
     heal = Math.floor(heal * 0.5);
@@ -406,7 +409,7 @@ const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinc
   if (isCombatLayer) {
     // cols 0-2 = main content, col 3 = boss lane connector (combat)
     const forceShop = combatSinceShop >= 4;
-    const forceEvent = combatSinceEvent >= 4;
+    const forceEvent = combatSinceEvent >= 2;
     let specialType: NodeType = 'combat';
     if (forceShop && forceEvent) {
       specialType = Math.random() < 0.5 ? 'shop' : 'event';
@@ -416,7 +419,7 @@ const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinc
       specialType = 'event';
     } else {
       const roll = Math.random();
-      if (roll < 0.25) specialType = 'event';
+      if (roll < 0.35) specialType = 'event';
       else if (roll < 0.55) specialType = 'shop';
     }
     const specialIdx = Math.floor(Math.random() * 3);
@@ -573,7 +576,7 @@ export const resolveCardPlay = (
       blockGain = Math.floor(blockGain * 0.5);
     }
     if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 >= newPlayer.maxHp) {
-      blockGain += 1;
+      blockGain += countRelic(newPlayer, 'equipment_yinyang');
     }
     blockGain += getStacks(newPlayer, 'equipment_zhengqi');
     const totalGain = getStacks(newPlayer, 'block_echo') > 0 ? blockGain * 2 : blockGain;
@@ -705,10 +708,10 @@ export const resolveCardPlay = (
       dmg -= 1;
     }
     if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
-      dmg += 1;
+      dmg += countRelic(newPlayer, 'equipment_yinyang');
     }
     if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
-      dmg += 1;
+      dmg += countRelic(newPlayer, 'equipment_tianren');
     }
     if (getStacks(newPlayer, 'attack_buff') > 0) {
       dmg += 3;
@@ -747,10 +750,10 @@ export const resolveCardPlay = (
         dmg -= 1;
       }
       if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
-        dmg += 1;
+        dmg += countRelic(newPlayer, 'equipment_yinyang');
       }
       if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
-        dmg += 1;
+        dmg += countRelic(newPlayer, 'equipment_tianren');
       }
       const dealt = applyDamageToEnemy(enemy, dmg, options);
       if (dealt > 0) {
@@ -905,8 +908,8 @@ export const resolveCardPlay = (
         if (hasPassive(newPlayer, 'balanced_passive')) dmg += 1;
         if (hasPassive(newPlayer, 'qi_deficiency_passive')) dmg -= 1;
         if (hasPassive(newPlayer, 'qi_stagnation_passive')) dmg -= 1;
-        if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) dmg += 1;
-        if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) dmg += 1;
+        if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) dmg += countRelic(newPlayer, 'equipment_yinyang');
+        if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) dmg += countRelic(newPlayer, 'equipment_tianren');
         const dealt = applyDamageToEnemy(enemy, dmg);
         if (dealt > 0) log(`小青龙汤对 ${enemy.name} 造成了 ${dealt} 点伤害`);
       });
@@ -1550,7 +1553,7 @@ export const resolveCardPlay = (
     log('[气郁质] 气机流转：额外抽1张牌');
   }
   if (card.type === 'skill' && hasRelic(newPlayer, 'equipment_jingluo') && !state.turnFlags.playedSkill) {
-    gainPlayerBlock(newPlayer, 2);
+    gainPlayerBlock(newPlayer, 2 * countRelic(newPlayer, 'equipment_jingluo'));
     log('[经络学说] 经络通行：获得2点格挡');
   }
   if (card.type === 'attack' && targetEnemy && getStacks(newPlayer, 'attack_stun_chance') > 0) {
@@ -2633,7 +2636,7 @@ export const resolveEnemyTurn = (
     }
   }
   if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 0) {
-    const healed = applyHealToPlayer(newPlayer, 2);
+    const healed = applyHealToPlayer(newPlayer, 2 * countRelic(newPlayer, 'equipment_tianren'));
     log(`[天人相应] 偶数回合调息：恢复${healed}点生命`);
   }
   if (hasRelic(newPlayer, 'equipment_qiji')) {

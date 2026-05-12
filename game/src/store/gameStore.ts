@@ -17,6 +17,8 @@ import { FORMULA_BLUEPRINTS, FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
 import { countCardCopies, getCardCategory, getTemplateCardId, isFormulaCard, isHerbCard } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
+import { MAINLINE_EVENT, SIDE_EVENTS } from '../../../shared/data/events';
+import type { GameEvent } from '../../../shared/data/events';
 import { createRuntimeId } from '../utils/id';
 import { primeProgressiveAsset } from '../utils/progressiveAssets';
 import {
@@ -49,6 +51,21 @@ interface GameStore extends GameState {
   pendingEquipmentRewardId: string | null;
   pendingFormulaBlueprintId: string | null;
   shownFormulaPoemIds: string[];
+  eventLog?: string[];
+  eventMarkers?: Record<string, string>;
+  shopPriceMultiplier?: number;
+  currentEvent?: {
+    id: string;
+    title: string;
+    description: string;
+    clearMarkerOnTrigger?: string;
+    options: Array<{
+      label: string;
+      description: string;
+      setMarker?: string;
+      effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number }>;
+    }>;
+  } | null;
   setFontSize: (size: number) => void;
   setBgmVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
@@ -80,6 +97,9 @@ interface GameStore extends GameState {
   clearPendingEquipmentReward: () => void;
   clearPendingFormulaBlueprintReward: () => void;
   getObtainedCardIds: () => string[];
+  handleEventChoice: (eventId: string, optionIndex: number) => void;
+  getCurrentEvent: () => { id: string; title: string; description: string; options: Array<{ label: string; description: string; effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number }> }> } | null;
+  getShopPriceMultiplier: () => number;
 }
 
 export interface CraftFormulaResult {
@@ -239,18 +259,22 @@ const createEquipmentRelic = (cardId: string) => {
 const hasEquipment = (player: GameStore['player'], cardId: string) =>
   player.relics?.some(relic => relic.id === cardId) ?? false;
 
+const countEquipment = (player: GameStore['player'], cardId: string): number =>
+  player.relics?.filter(relic => relic.id === cardId).length ?? 0;
+
 const applyEquipmentBlock = (player: GameStore['player'], amount: number) => {
   const nextPlayer = { ...player };
   nextPlayer.block += amount;
-  if (hasEquipment(nextPlayer, 'equipment_qixue_jinye')) {
-    nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp + Math.min(2, Math.floor(amount / 5)));
+  const qixueCount = countEquipment(nextPlayer, 'equipment_qixue_jinye');
+  if (qixueCount > 0) {
+    nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp + Math.min(2 * qixueCount, Math.floor(amount / 5)));
   }
   return nextPlayer;
 };
 
 const getPlayerHealAmount = (player: GameStore['player'], amount: number) => {
   if (amount <= 0) return 0;
-  return amount + (hasEquipment(player, 'equipment_zhengti') ? 1 : 0);
+  return amount + countEquipment(player, 'equipment_zhengti');
 };
 
 const getEquipmentDropChance = (nodeType: MapNode['type'] | undefined) => {
@@ -260,13 +284,26 @@ const getEquipmentDropChance = (nodeType: MapNode['type'] | undefined) => {
   return 0;
 };
 
-const rollEquipmentReward = (player: GameStore['player'], nodeType: MapNode['type'] | undefined) => {
+const rollEquipmentReward = (nodeType: MapNode['type'] | undefined) => {
   const chance = getEquipmentDropChance(nodeType);
   if (chance <= 0 || Math.random() >= chance) return null;
 
-  const candidates = EQUIPMENT_CARD_IDS.filter((cardId) => !hasEquipment(player, cardId));
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+  return EQUIPMENT_CARD_IDS[Math.floor(Math.random() * EQUIPMENT_CARD_IDS.length)] ?? null;
+};
+
+const pickSideEvent = (state: GameStore): GameEvent | null => {
+  const actRequirementMet = (e: GameEvent) => !e.actRequirement || e.actRequirement <= state.currentAct;
+  const continuationEvents = SIDE_EVENTS.filter(e =>
+    e.continuationMarker && state.eventMarkers?.[e.continuationMarker] && actRequirementMet(e)
+  );
+  if (continuationEvents.length > 0) {
+    return continuationEvents[Math.floor(Math.random() * continuationEvents.length)] ?? null;
+  }
+  const pool = SIDE_EVENTS.filter(e =>
+    !e.continuationMarker && !(state.eventLog ?? []).includes(e.id) && actRequirementMet(e)
+  );
+  if (pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
 };
 
 const rollFormulaBlueprintReward = (nodeType: MapNode['type'] | undefined) => {
@@ -561,6 +598,10 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
   pendingEquipmentRewardId: null,
   pendingFormulaBlueprintId: null,
   shownFormulaPoemIds: [],
+  eventLog: [],
+  eventMarkers: {},
+  shopPriceMultiplier: 100,
+  currentEvent: null,
 });
 
 export const useGameStore = create<GameStore>()(
@@ -731,6 +772,9 @@ export const useGameStore = create<GameStore>()(
             pendingEquipmentRewardId: null,
             pendingFormulaBlueprintId: null,
             shownFormulaPoemIds: [],
+            eventLog: [],
+            eventMarkers: {},
+            shopPriceMultiplier: 100,
           });
         },
 
@@ -765,6 +809,46 @@ export const useGameStore = create<GameStore>()(
         }
 
         if (nodeType === 'shop' || nodeType === 'rest' || nodeType === 'event' || nodeType === 'chest') {
+          if (nodeType === 'event') {
+            const actKey = `act${state.currentAct}_intro`;
+            if (!(state.eventMarkers ?? {})[actKey]) {
+              const actStage = state.currentAct === 1 ? MAINLINE_EVENT.act1 : null;
+              if (actStage) {
+                set({
+                  phase: 'event',
+                  currentNodeId: nodeId,
+                  enemyActionCue: null,
+                  playerImpactCue: null,
+                  currentEvent: {
+                    id: `mainline_three_brothers_act${state.currentAct}`,
+                    title: actStage.title,
+                    description: actStage.description,
+                    options: actStage.options,
+                  },
+                  eventMarkers: { ...(state.eventMarkers ?? {}), [actKey]: 'true' },
+                });
+                return;
+              }
+            }
+            const sideEvent = pickSideEvent(state);
+            if (sideEvent) {
+              set({
+                phase: 'event',
+                currentNodeId: nodeId,
+                enemyActionCue: null,
+                playerImpactCue: null,
+                currentEvent: {
+                  id: sideEvent.id,
+                  title: sideEvent.title,
+                  description: sideEvent.description,
+                  options: sideEvent.options,
+                },
+              });
+              return;
+            }
+            set({ phase: 'event', currentNodeId: nodeId, enemyActionCue: null, playerImpactCue: null, currentEvent: null });
+            return;
+          }
           set({ phase: nodeType, currentNodeId: nodeId, enemyActionCue: null, playerImpactCue: null });
           return;
         }
@@ -789,8 +873,9 @@ export const useGameStore = create<GameStore>()(
          };
         const combatState = createCombatState(state, scaledEnemy, nodeId);
         let startingPlayer: GameStore['player'] = combatState.player;
-        if (hasEquipment(startingPlayer, 'equipment_zhiweibing')) {
-          startingPlayer = applyEquipmentBlock(startingPlayer, 5);
+        const zhiweibingCount = countEquipment(startingPlayer, 'equipment_zhiweibing');
+        if (zhiweibingCount > 0) {
+          startingPlayer = applyEquipmentBlock(startingPlayer, 5 * zhiweibingCount);
         }
         set({
           ...combatState,
@@ -883,7 +968,7 @@ export const useGameStore = create<GameStore>()(
         }
 
         const { map, currentLayerIndex, currentNode } = completeNode(state);
-        const equipmentRewardId = rollEquipmentReward(state.player, currentNode?.type);
+        const equipmentRewardId = rollEquipmentReward(currentNode?.type);
         const formulaBlueprintRewardId = rollFormulaBlueprintReward(currentNode?.type);
         const rewardPlayer = equipmentRewardId
           ? {
@@ -1089,7 +1174,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const drawDown = state.player.statusEffects.find(s => s.id === 'draw_down')?.stacks ?? 0;
         const base = BASE_DRAW_PER_TURN + Math.min(state.bossKills, MAX_DRAW_PER_TURN - BASE_DRAW_PER_TURN);
-        const equipmentBonus = hasEquipment(state.player, 'equipment_ziwuliuzhu') && state.phase === 'combat' ? 1 : 0;
+        const equipmentBonus = countEquipment(state.player, 'equipment_ziwuliuzhu') && state.phase === 'combat' ? countEquipment(state.player, 'equipment_ziwuliuzhu') : 0;
         const cap = equipmentBonus > 0 ? EQUIPMENT_DRAW_PER_TURN_CAP : MAX_DRAW_PER_TURN;
         return Math.max(0, Math.min(cap, base + equipmentBonus) - drawDown);
       },
@@ -1255,6 +1340,107 @@ export const useGameStore = create<GameStore>()(
       clearPendingFormulaBlueprintReward: () => {
         set({ pendingFormulaBlueprintId: null });
       },
+      getShopPriceMultiplier: () => get().shopPriceMultiplier ?? 100,
+      getCurrentEvent: () => get().currentEvent ?? null,
+      handleEventChoice: (eventId, optionIndex) => {
+        const state = get();
+        const event = state.currentEvent;
+        if (!event || event.id !== eventId) return;
+        const option = event.options[optionIndex];
+        if (!option) return;
+
+        const nextPlayer = { ...state.player };
+       let nextGold = state.player.gold;
+        let nextShopPriceMultiplier = state.shopPriceMultiplier ?? 100;
+        const nextEventLog = (state.eventLog ?? []).includes(eventId)
+          ? (state.eventLog ?? [])
+          : eventId.startsWith('side_')
+            ? [...(state.eventLog ?? []), eventId]
+            : (state.eventLog ?? []);
+        let nextMarkers = { ...(state.eventMarkers ?? {}) };
+
+        for (const effect of option.effects) {
+          switch (effect.type) {
+            case 'heal': {
+              const amount = effect.value === 999 ? nextPlayer.maxHp : (effect.value ?? 0);
+              nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp + amount);
+              break;
+            }
+            case 'damage': {
+              const dmg = effect.value ?? 0;
+              const blocked = Math.min(nextPlayer.block, dmg);
+              nextPlayer.block -= blocked;
+              nextPlayer.hp = Math.max(0, nextPlayer.hp - (dmg - blocked));
+              break;
+            }
+            case 'maxHpChange': {
+              const delta = effect.value ?? 0;
+              nextPlayer.maxHp = Math.max(1, nextPlayer.maxHp + delta);
+              if (delta > 0) nextPlayer.hp += delta;
+              else nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp);
+              break;
+            }
+            case 'goldChange': {
+              nextGold = Math.max(0, nextGold + (effect.value ?? 0));
+              break;
+            }
+            case 'shopPriceChange': {
+              nextShopPriceMultiplier = Math.max(50, nextShopPriceMultiplier + (effect.value ?? 0));
+              break;
+            }
+            case 'addRelic': {
+              if (effect.relicId) {
+                const c = CARD_LIBRARY[effect.relicId];
+                const count = effect.count ?? 1;
+                for (let i = 0; i < count; i++) {
+                  nextPlayer.relics = [...(nextPlayer.relics ?? []), {
+                    id: effect.relicId,
+                    name: c?.name ?? effect.relicId,
+                    description: c?.description ?? '',
+                    effectId: c?.effectId ?? '',
+                  }];
+                }
+              }
+              break;
+            }
+            case 'removeCard': {
+              const count = effect.count ?? 1;
+              for (let i = 0; i < count; i++) {
+                if (nextPlayer.deck.length > 0) {
+                  const idx = Math.floor(Math.random() * nextPlayer.deck.length);
+                  nextPlayer.deck = [...nextPlayer.deck.slice(0, idx), ...nextPlayer.deck.slice(idx + 1)];
+                }
+              }
+              break;
+            }
+          }
+        }
+
+        if (option.setMarker) {
+          const [key, val] = option.setMarker.split('=');
+          if (key && val) nextMarkers[key] = val;
+        }
+
+        if (event.clearMarkerOnTrigger) {
+          delete nextMarkers[event.clearMarkerOnTrigger];
+        }
+
+        set({
+          player: { ...nextPlayer, gold: nextGold },
+          shopPriceMultiplier: nextShopPriceMultiplier,
+          eventLog: nextEventLog,
+          eventMarkers: nextMarkers,
+          currentEvent: null,
+        });
+
+        if (eventId === 'mainline_three_brothers_act1') {
+          set({ eventMarkers: { ...nextMarkers, ['act1_intro']: 'true' } });
+        } else if (eventId === 'mainline_three_brothers_act2') {
+          set({ eventMarkers: { ...nextMarkers, ['act2_intro']: 'true' } });
+        } else if (eventId === 'mainline_three_brothers_act3') {
+          set({ eventMarkers: { ...nextMarkers, ['act3_intro']: 'true' } });
+        }
+      },
     };
   },
     {
@@ -1283,6 +1469,9 @@ export const useGameStore = create<GameStore>()(
         pendingEquipmentRewardId: state.pendingEquipmentRewardId,
         pendingFormulaBlueprintId: state.pendingFormulaBlueprintId,
         shownFormulaPoemIds: state.shownFormulaPoemIds,
+        eventLog: state.eventLog ?? [],
+        eventMarkers: state.eventMarkers ?? {},
+        shopPriceMultiplier: state.shopPriceMultiplier ?? 100,
       }),
       migrate: (persistedState, version) => {
         if (version < 8) {
@@ -1309,6 +1498,9 @@ export const useGameStore = create<GameStore>()(
             pendingEquipmentRewardId: null,
             pendingFormulaBlueprintId: null,
             shownFormulaPoemIds: [],
+            eventLog: [],
+            eventMarkers: {},
+            shopPriceMultiplier: 100,
           } as Partial<GameStore>;
         }
         const migrated = persistedState as GameStore;
@@ -1342,6 +1534,9 @@ export const useGameStore = create<GameStore>()(
           pendingEquipmentRewardId: null,
           pendingFormulaBlueprintId: null,
           shownFormulaPoemIds: migrated.shownFormulaPoemIds ?? [],
+          eventLog: migrated.eventLog ?? [],
+          eventMarkers: migrated.eventMarkers ?? {},
+          shopPriceMultiplier: migrated.shopPriceMultiplier ?? 100,
         } as GameStore;
       }
     }

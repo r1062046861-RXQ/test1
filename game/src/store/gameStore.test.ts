@@ -269,7 +269,7 @@ describe('Game Store', () => {
     expect(useGameStore.getState().player.knownFormulaBlueprintIds.filter((id) => id === expectedBlueprintId)).toHaveLength(1);
   });
 
-  it('does not roll duplicate equipment already owned', () => {
+  it('allows equipment duplicates since equipment is no longer unique', () => {
     const store = useGameStore.getState();
     store.startGame();
     const map = useGameStore.getState().map;
@@ -301,8 +301,8 @@ describe('Game Store', () => {
     randomSpy.mockRestore();
 
     const relicIds = useGameStore.getState().player.relics.map((relic) => relic.id);
-    expect(relicIds.filter((id) => id === EQUIPMENT_CARD_IDS[0])).toHaveLength(1);
-    expect(useGameStore.getState().pendingEquipmentRewardId).toBe(EQUIPMENT_CARD_IDS[1]);
+    expect(relicIds.filter((id) => id === EQUIPMENT_CARD_IDS[0])).toHaveLength(2);
+    expect(useGameStore.getState().pendingEquipmentRewardId).toBe(EQUIPMENT_CARD_IDS[0]);
     expect(useGameStore.getState().pendingFormulaBlueprintId).toBe(FORMULA_BLUEPRINTS[0].id);
   });
 

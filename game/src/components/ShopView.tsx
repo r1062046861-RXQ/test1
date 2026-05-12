@@ -27,6 +27,7 @@ export const ShopView: React.FC = () => {
     combineCards,
     spendGold,
     completeNonCombat,
+    getShopPriceMultiplier,
   } = useGameStore();
 
   const [activeTab, setActiveTab] = useState<TabKey>('buy');
@@ -35,6 +36,8 @@ export const ShopView: React.FC = () => {
   const [combineSelected, setCombineSelected] = useState<string[]>([]);
   const [combineStep, setCombineStep] = useState<'sacrifice' | 'target'>('sacrifice');
   const [sellCount, setSellCount] = useState(0);
+
+  const priceMultiplier = useMemo(() => getShopPriceMultiplier() / 100, [player.gold]);
 
   const cardPool = useMemo(
     () => Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable),
@@ -50,7 +53,7 @@ export const ShopView: React.FC = () => {
     const picked = shuffled.slice(0, 4);
     const discountIdx = Math.floor(Math.random() * picked.length);
     setBuySlots(picked.map((c, i) => {
-      const basePrice = c.rarity === 'rare' ? 80 : c.rarity === 'uncommon' ? 50 : 30;
+      const basePrice = Math.ceil((c.rarity === 'rare' ? 80 : c.rarity === 'uncommon' ? 50 : 30) * priceMultiplier);
       const discount = i === discountIdx;
       return { cardId: c.id, price: discount ? Math.ceil(basePrice * 0.5) : basePrice, discount, sold: false };
     }));

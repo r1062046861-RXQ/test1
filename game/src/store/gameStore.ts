@@ -63,7 +63,7 @@ interface GameStore extends GameState {
       label: string;
       description: string;
       setMarker?: string;
-      effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number }>;
+      effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number; rarity?: string; cardType?: string }>;
     }>;
   } | null;
   setFontSize: (size: number) => void;
@@ -98,7 +98,7 @@ interface GameStore extends GameState {
   clearPendingFormulaBlueprintReward: () => void;
   getObtainedCardIds: () => string[];
   handleEventChoice: (eventId: string, optionIndex: number) => void;
-  getCurrentEvent: () => { id: string; title: string; description: string; options: Array<{ label: string; description: string; effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number }> }> } | null;
+  getCurrentEvent: () => { id: string; title: string; description: string; options: Array<{ label: string; description: string; effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number; rarity?: string; cardType?: string }> }> } | null;
   getShopPriceMultiplier: () => number;
 }
 
@@ -1416,6 +1416,18 @@ export const useGameStore = create<GameStore>()(
             case 'addCard': {
               if (effect.cardId) {
                 nextPlayer.deck = [...nextPlayer.deck, createCardInstance(effect.cardId)];
+              }
+              break;
+            }
+            case 'randomCard': {
+              const pool = Object.values(CARD_LIBRARY).filter(c =>
+                isHerbCard(c) &&
+                (effect.rarity ? c.rarity === effect.rarity : true) &&
+                (effect.cardType ? c.type === effect.cardType : true)
+              );
+              if (pool.length > 0) {
+                const picked = pool[Math.floor(Math.random() * pool.length)];
+                nextPlayer.deck = [...nextPlayer.deck, createCardInstance(picked.id)];
               }
               break;
             }

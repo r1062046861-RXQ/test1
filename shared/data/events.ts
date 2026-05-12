@@ -17,12 +17,14 @@ export interface EventOption {
 }
 
 export interface EventEffect {
-  type: 'heal' | 'damage' | 'maxHpChange' | 'goldChange' | 'shopPriceChange' | 'addCard' | 'removeCard' | 'addEquipment' | 'addRelic';
+  type: 'heal' | 'damage' | 'maxHpChange' | 'goldChange' | 'shopPriceChange' | 'addCard' | 'removeCard' | 'addEquipment' | 'addRelic' | 'randomCard';
   value?: number;
   cardId?: string;
   equipmentId?: string;
   relicId?: string;
   count?: number;
+  rarity?: string;
+  cardType?: string;
 }
 
 export type MainlineEventStage = 'act1' | 'act2' | 'act3';
@@ -80,7 +82,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '心生动摇',
             description: '开始怀疑——也许教人防病，不如亲手救人性命来得踏实。你偷学了扁鹊的急救术。',
-            effects: [{ type: 'addCard', cardId: 'qinggusan' }, { type: 'maxHpChange', value: -2 }],
+            effects: [{ type: 'randomCard', rarity: 'rare', cardType: 'attack' }, { type: 'maxHpChange', value: -2 }],
             setMarker: 'three_brothers_act2=doubt',
           },
         ],
@@ -100,7 +102,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '心生悔意',
             description: '后悔当初没拜大哥或扁鹊。你偷师他人，走了捷径。',
-            effects: [{ type: 'addCard', cardId: 'danggui' }, { type: 'shopPriceChange', value: 10 }],
+            effects: [{ type: 'randomCard', rarity: 'rare', cardType: 'skill' }, { type: 'shopPriceChange', value: 10 }],
             setMarker: 'three_brothers_act2=regret',
           },
         ],
@@ -120,7 +122,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '坚持到底',
             description: '继续钻研起死回生之术。扁鹊叹道："你选了我的路，就得走到底。"',
-            effects: [{ type: 'addCard', cardId: 'qinggusan' }, { type: 'maxHpChange', value: -5 }],
+            effects: [{ type: 'randomCard', rarity: 'rare', cardType: 'attack' }, { type: 'maxHpChange', value: -5 }],
             setMarker: 'three_brothers_act2=persist',
           },
         ],
@@ -199,7 +201,7 @@ export const SIDE_EVENTS: GameEvent[] = [
       {
         label: '以身试针',
         description: '老翁大笑："忍得住痛，这手札归你了。"',
-        effects: [{ type: 'heal', value: 10 }, { type: 'addCard', cardId: 'gancao' }, { type: 'maxHpChange', value: -2 }],
+        effects: [{ type: 'heal', value: 10 }, { type: 'randomCard', rarity: 'common' }, { type: 'maxHpChange', value: -2 }],
         setMarker: 'needle_stage1=needle',
       },
       {

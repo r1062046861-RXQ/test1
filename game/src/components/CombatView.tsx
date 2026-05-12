@@ -40,6 +40,7 @@ export const CombatView: React.FC = () => {
     getHandLimit,
     bossKills,
     discardOverflowCard,
+    completeCombat,
   } = useGameStore();
 
   const [turnBanner, setTurnBanner] = useState<{ token: number; label: string; hint: string } | null>(null);
@@ -246,6 +247,11 @@ export const CombatView: React.FC = () => {
             <div className="absolute inset-x-[12%] top-5 h-24 rounded-full bg-stone-400/6 blur-3xl" />
               <div className="combat-view__arena-controls absolute right-4 top-4 z-20 flex items-center gap-3">
                 <Badge variant="slate">敌 {visibleEnemies.length}</Badge>
+                {player.constitution === 'admin' && (
+                  <ActionButton variant="secondary" onClick={() => completeCombat()}>
+                    跳过战斗
+                  </ActionButton>
+                )}
                 <ActionButton variant="secondary" onClick={() => setPhase('map')}>
                   返回地图
                 </ActionButton>

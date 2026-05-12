@@ -15,9 +15,9 @@ export const EventView: React.FC = () => {
           <div className="chapter-kicker mb-2">奇遇</div>
           <h2 className="text-2xl font-bold text-stone-100 mb-4">奇遇事件</h2>
           <div className="text-stone-400 text-sm leading-7">
-            <div className="rounded-2xl border border-dashed border-stone-700/40 bg-stone-900/30 px-6 py-8 my-4">
+            <div className="rounded-2xl border border-dashed border-amber-600/30 bg-amber-900/10 px-6 py-8 my-4">
               <div className="text-4xl mb-3">📜</div>
-              <p className="text-stone-500 text-sm">
+              <p className="text-amber-100/60 text-sm">
                 此间风平浪静，无可述之事。
               </p>
             </div>
@@ -46,8 +46,8 @@ export const EventView: React.FC = () => {
         <div className="mb-4 text-center">
           <div className="chapter-kicker">奇遇</div>
           <h2 className="text-2xl font-bold text-stone-100 mt-1">{currentEvent.title}</h2>
-          <div className="mt-4 rounded-2xl bg-stone-900/40 border border-stone-700/30 px-5 py-5 text-left">
-            <p className="text-sm leading-7 text-stone-300 whitespace-pre-line">{currentEvent.description}</p>
+          <div className="mt-4 rounded-2xl bg-amber-900/20 border border-amber-500/20 px-5 py-5 text-left">
+            <p className="text-sm leading-7 text-amber-100/90 whitespace-pre-line">{currentEvent.description}</p>
           </div>
         </div>
 
@@ -68,13 +68,13 @@ export const EventView: React.FC = () => {
                 onClick={() => handleSelect(i)}
                 className={`w-full text-left rounded-2xl border px-5 py-4 transition-all duration-200 ${
                   isSelected
-                    ? 'border-stone-400/40 bg-stone-400/10 ring-1 ring-stone-400/30'
+                    ? 'border-amber-400/60 bg-amber-400/15 ring-1 ring-amber-400/30'
                     : isOtherSelected
-                      ? 'border-stone-700/30 bg-stone-900/20 opacity-40'
-                      : 'border-stone-700/30 bg-stone-900/20 hover:border-stone-500/40 hover:bg-stone-800/30'
+                      ? 'border-amber-600/20 bg-amber-700/10 opacity-40'
+                      : 'border-amber-600/20 bg-amber-700/10 hover:border-amber-400/40 hover:bg-amber-500/15'
                 }`}
               >
-                <div className="text-base font-semibold text-stone-100">{opt.label}</div>
+                <div className="text-base font-semibold text-amber-50">{opt.label}</div>
               </button>
             );
           })}
@@ -87,9 +87,9 @@ export const EventView: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="mt-4 rounded-2xl border border-stone-500/20 bg-stone-800/40 px-5 py-4"
+              className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-4"
             >
-              <p className="text-sm leading-7 text-stone-200 whitespace-pre-line">{option.description}</p>
+              <p className="text-sm leading-7 text-amber-100 whitespace-pre-line">{option.description}</p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -65,8 +65,9 @@ interface GameStore extends GameState {
       setMarker?: string;
       effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number; rarity?: string; cardType?: string }>;
     }>;
-  } | null;
-  setFontSize: (size: number) => void;
+   } | null;
+   eventChosenIndex?: number | null;
+   setFontSize: (size: number) => void;
   setBgmVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
   startCombat: (nodeId: string) => void;
@@ -96,6 +97,7 @@ interface GameStore extends GameState {
   craftFormulaFromBlueprint: (blueprintId: string, ingredientInstanceIds: string[]) => CraftFormulaResult;
   clearPendingEquipmentReward: () => void;
   clearPendingFormulaBlueprintReward: () => void;
+  clearCurrentEvent: () => void;
   getObtainedCardIds: () => string[];
   handleEventChoice: (eventId: string, optionIndex: number) => void;
   getCurrentEvent: () => { id: string; title: string; description: string; options: Array<{ label: string; description: string; effects: Array<{ type: string; value?: number; cardId?: string; equipmentId?: string; relicId?: string; count?: number; rarity?: string; cardType?: string }> }> } | null;
@@ -602,6 +604,7 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
   eventMarkers: {},
   shopPriceMultiplier: 100,
   currentEvent: null,
+  eventChosenIndex: null,
 });
 
 export const useGameStore = create<GameStore>()(
@@ -1340,6 +1343,9 @@ export const useGameStore = create<GameStore>()(
       clearPendingFormulaBlueprintReward: () => {
         set({ pendingFormulaBlueprintId: null });
       },
+      clearCurrentEvent: () => {
+        set({ currentEvent: null, eventChosenIndex: null });
+      },
       getShopPriceMultiplier: () => get().shopPriceMultiplier ?? 100,
       getCurrentEvent: () => get().currentEvent ?? null,
       handleEventChoice: (eventId, optionIndex) => {
@@ -1456,7 +1462,7 @@ export const useGameStore = create<GameStore>()(
           shopPriceMultiplier: nextShopPriceMultiplier,
           eventLog: nextEventLog,
           eventMarkers: nextMarkers,
-          currentEvent: null,
+          eventChosenIndex: optionIndex,
         });
 
         if (eventId === 'mainline_three_brothers_act1') {

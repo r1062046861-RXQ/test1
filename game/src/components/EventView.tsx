@@ -4,9 +4,8 @@ import { useGameStore } from '../store/gameStore';
 import { resolveAssetBackground } from '../utils/assets';
 
 export const EventView: React.FC = () => {
-  const { player, currentEvent, handleEventChoice, completeNonCombat } = useGameStore();
+  const { player, currentEvent, eventChosenIndex, handleEventChoice, clearCurrentEvent, completeNonCombat } = useGameStore();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
 
   if (!currentEvent) {
     return (
@@ -34,6 +33,8 @@ export const EventView: React.FC = () => {
     );
   }
 
+  const confirmed = eventChosenIndex !== null;
+
   const handleSelect = (index: number) => {
     if (confirmed) return;
     setSelectedIndex(index);
@@ -42,16 +43,16 @@ export const EventView: React.FC = () => {
   const handleConfirm = () => {
     if (selectedIndex === null || confirmed) return;
     handleEventChoice(currentEvent.id, selectedIndex);
-    setConfirmed(true);
   };
 
   const handleContinue = () => {
+    clearCurrentEvent();
     completeNonCombat();
   };
 
-  const option = selectedIndex !== null ? currentEvent.options[selectedIndex] : null;
-  const showConsequence = confirmed && option;
-  const isSelectDisabled = confirmed;
+  const chosenOption = confirmed
+    ? currentEvent.options[eventChosenIndex!]
+    : null;
 
   return (
     <div className="flex min-h-full items-start justify-center p-4" style={{ backgroundImage: `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), ${resolveAssetBackground('/assets/background_main_menu.png')}`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -80,12 +81,12 @@ export const EventView: React.FC = () => {
               <button
                 key={i}
                 type="button"
-                disabled={isSelectDisabled}
+                disabled={confirmed}
                 onClick={() => handleSelect(i)}
                 className={`w-full text-left rounded-2xl border px-5 py-4 transition-all duration-200 ${
                   isSelected
                     ? 'border-amber-400/60 bg-amber-400/15 ring-1 ring-amber-400/30'
-                    : isSelectDisabled
+                    : confirmed
                       ? 'border-amber-600/20 bg-amber-700/10 opacity-40'
                       : 'border-amber-600/20 bg-amber-700/10 hover:border-amber-400/40 hover:bg-amber-500/15'
                 }`}
@@ -97,7 +98,7 @@ export const EventView: React.FC = () => {
         </div>
 
         <AnimatePresence>
-          {showConsequence && option && (
+          {confirmed && chosenOption && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -105,7 +106,7 @@ export const EventView: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-4"
             >
-              <p className="text-sm leading-7 text-amber-100 whitespace-pre-line">{option.description}</p>
+              <p className="text-sm leading-7 text-amber-100 whitespace-pre-line">{chosenOption.description}</p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -29,13 +29,18 @@ const NODE_META: Record<NodeType, { label: string; hint: string; icon: React.Rea
 const LAYER_SPACING = 110;
 const NODE_CENTER_OFFSET = 22;
 
-const HandOverview: React.FC<{ deck: CardData[] }> = ({ deck }) => {
+const HandOverview: React.FC<{ deck: CardData[]; relics: Array<{id:string;name:string;description:string;effectId:string}> }> = ({ deck, relics }) => {
   const [open, setOpen] = React.useState(false);
   const templateCounts = React.useMemo(() => countCardsByTemplate(deck), [deck]);
   const sorted = React.useMemo(
     () => Object.entries(templateCounts).sort(([, a], [, b]) => b.count - a.count),
     [templateCounts],
   );
+  const relicCounts = React.useMemo(() => {
+    const m = new Map<string, number>();
+    relics.forEach(r => { m.set(r.id, (m.get(r.id) ?? 0) + 1); });
+    return Array.from(m.entries()).sort(([,a],[,b]) => b - a);
+  }, [relics]);
 
   return (
     <>
@@ -97,7 +102,26 @@ const HandOverview: React.FC<{ deck: CardData[] }> = ({ deck }) => {
                     );
                   })}
                 </div>
-                {sorted.length === 0 && (
+                {relicCounts.length > 0 && (
+                  <>
+                    <div className="chapter-kicker mt-5 mb-2">已获装备</div>
+                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+                      {relicCounts.map(([relicId, count]) => {
+                        const relic = relics.find(r => r.id === relicId);
+                        if (!relic) return null;
+                        return (
+                          <div key={relicId} className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-[rgba(255,255,255,0.04)] px-3 py-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-bold text-amber-100 truncate">{relic.name}</div>
+                              <div className="text-xs text-stone-400">×{count}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {sorted.length === 0 && relicCounts.length === 0 && (
                   <div className="py-12 text-center text-stone-400">牌组为空</div>
                 )}
               </div>
@@ -331,7 +355,7 @@ export const MapView: React.FC = () => {
         </div>
       </div>
 
-      <HandOverview deck={player.deck} />
+      <HandOverview deck={player.deck} relics={player.relics ?? []} />
 
     </PageShell>
   );

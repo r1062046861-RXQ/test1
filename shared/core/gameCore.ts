@@ -287,6 +287,33 @@ const connectNodes = (parent: MapNode, child: MapNode) => {
   }
 };
 
+export const connectMapSegments = (prevLayers: MapLayer[], nextLayers: MapLayer[]) => {
+  if (prevLayers.length === 0 || nextLayers.length === 0) return;
+  const prevLast = prevLayers[prevLayers.length - 1].nodes;
+  const nextFirst = nextLayers[0].nodes;
+  const mainPrev = prevLast.slice(0, 3);
+  const mainNext = nextFirst.slice(0, 3);
+  if (mainPrev.length === 0 || mainNext.length === 0) return;
+  for (let i = 0; i < mainPrev.length; i++) {
+    const baseTarget = Math.round((i / (mainPrev.length - 1)) * (mainNext.length - 1));
+    const parent = mainPrev[i];
+    const child = mainNext[baseTarget];
+    if (parent && child) connectNodes(parent, child);
+    const branchDir = i === 0 ? 1 : -1;
+    const branchIndex = Math.max(0, Math.min(mainNext.length - 1, baseTarget + branchDir));
+    if (branchIndex !== baseTarget) {
+      const branchChild = mainNext[branchIndex];
+      if (parent && branchChild) connectNodes(parent, branchChild);
+    }
+  }
+  mainNext.forEach((node, ni) => {
+    if (ni >= 3) return;
+    if (node.parents.length === 0) {
+      connectNodes(mainPrev[Math.floor((ni / (mainNext.length - 1)) * (mainPrev.length - 1))] ?? mainPrev[0], node);
+    }
+  });
+};
+
 const closestNodeIndex = (nodes: MapNode[], x: number) =>
   nodes.reduce(
     (best, node, index) => {

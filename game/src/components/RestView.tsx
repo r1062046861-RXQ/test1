@@ -61,7 +61,7 @@ export const RestView: React.FC = () => {
       footer={footer}
       style={{
         backgroundImage:
-          `linear-gradient(180deg, rgba(8,11,18,0.46), rgba(6,8,14,0.9)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_rest.png')}`,
+          `linear-gradient(180deg, rgba(8,11,18,0.34), rgba(6,8,14,0.74)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_rest.png')}`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

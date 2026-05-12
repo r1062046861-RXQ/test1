@@ -88,7 +88,6 @@ interface GameStore extends GameState {
   healPlayer: (amount: number) => void;
   increaseMaxHp: (amount: number) => void;
   increaseShopRemovalCost: (amount: number) => void;
-  advanceTime: (ms: number) => void;
   discardOverflowCard: (cardId: string) => void;
   getHandLimit: () => number;
   getDrawPerTurn: () => number;
@@ -155,77 +154,45 @@ const webStorage =
 
 interface ScheduledTask {
   id: number;
-  remaining: number;
-  runAt: number;
   fn: () => void;
-  timeout: ReturnType<typeof setTimeout> | null;
+  timeout: ReturnType<typeof setTimeout>;
 }
 
 let nextScheduledTaskId = 1;
 let scheduledTasks: ScheduledTask[] = [];
 let pendingEnemyTurnTaskId: number | null = null;
 
-const removeScheduledTask = (taskId: number) => {
-  scheduledTasks = scheduledTasks.filter(task => task.id !== taskId);
-};
-
 const executeScheduledTask = (taskId: number) => {
-  const task = scheduledTasks.find(entry => entry.id === taskId);
-  if (!task) return;
-  if (task.timeout) {
-    clearTimeout(task.timeout);
-    task.timeout = null;
-  }
-  removeScheduledTask(taskId);
+  const taskIndex = scheduledTasks.findIndex(task => task.id === taskId);
+  if (taskIndex === -1) return;
+  const task = scheduledTasks[taskIndex];
+  scheduledTasks.splice(taskIndex, 1);
   task.fn();
 };
 
 const scheduleTask = (delay: number, fn: () => void) => {
   const id = nextScheduledTaskId++;
-  const task: ScheduledTask = {
-    id,
-    remaining: delay,
-    runAt: Date.now() + delay,
-    fn,
-    timeout: null,
-  };
-  task.timeout = setTimeout(() => {
+  const timeout = setTimeout(() => {
     executeScheduledTask(id);
   }, delay);
-  scheduledTasks.push(task);
+  scheduledTasks.push({ id, fn, timeout });
   return id;
 };
 
 const cancelScheduledTask = (taskId: number | null) => {
   if (taskId == null) return;
-  const task = scheduledTasks.find(entry => entry.id === taskId);
-  if (task?.timeout) {
-    clearTimeout(task.timeout);
-  }
-  removeScheduledTask(taskId);
+  const taskIndex = scheduledTasks.findIndex(task => task.id === taskId);
+  if (taskIndex === -1) return;
+  clearTimeout(scheduledTasks[taskIndex].timeout);
+  scheduledTasks.splice(taskIndex, 1);
 };
 
 const cancelAllScheduledTasks = () => {
   scheduledTasks.forEach(task => {
-    if (task.timeout) {
-      clearTimeout(task.timeout);
-    }
+    clearTimeout(task.timeout);
   });
   scheduledTasks = [];
   pendingEnemyTurnTaskId = null;
-};
-
-const advanceScheduledTasks = (ms: number) => {
-  if (scheduledTasks.length === 0) return;
-  for (const task of scheduledTasks) {
-    task.remaining -= ms;
-  }
-  const dueIds = scheduledTasks
-    .filter(task => task.remaining <= 0)
-    .sort((a, b) => a.runAt - b.runAt)
-    .map(task => task.id);
-
-  dueIds.forEach(executeScheduledTask);
 };
 
 const scheduleEnemyTurn = (fn: () => void) => {
@@ -1344,10 +1311,6 @@ export const useGameStore = create<GameStore>()(
           showPoem,
           poem: showPoem ? blueprint.poem : undefined,
         };
-      },
-
-      advanceTime: (ms) => {
-        advanceScheduledTasks(ms);
       },
       clearPendingEquipmentReward: () => {
         set({ pendingEquipmentRewardId: null });

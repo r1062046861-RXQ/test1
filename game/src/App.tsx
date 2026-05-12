@@ -105,13 +105,9 @@ function App() {
     };
 
     (window as any).render_game_to_text = renderToText;
-    (window as any).advanceTime = (ms: number) => {
-      useGameStore.getState().advanceTime(ms);
-    };
 
     return () => {
       delete (window as any).render_game_to_text;
-      delete (window as any).advanceTime;
     };
   }, []);
 

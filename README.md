@@ -27,14 +27,15 @@ wechatgame/
 ├── shared/                    # 纯规则 + 共享数据（未来可迁移 Unity）
 │   ├── baseTypes.ts           # Card, Enemy, Player, MapNode 等类型
 │   ├── core/gameCore.ts       # 战斗结算/地图生成/状态系统
-│   ├── data/cards.ts          # 109 条卡牌模板数据
+│   ├── data/cards.ts          # 108+ 条卡牌模板数据
 │   ├── data/formulas.ts       # 12 种药方蓝图
-│   └── data/enemies.ts        # 20 个敌人数据
+│   ├── data/enemies.ts        # 20 个敌人数据
+│   └── data/events.ts         # 事件数据（1条主线3幕+11条支线）
 ├── game/
 │   ├── src/
 │   │   ├── App.tsx            # 阶段路由 + 调试 hook
 │   │   ├── store/gameStore.ts # Zustand 主状态、流程、持久化
-│   │   ├── components/        # MapView, CombatView, RewardView 等
+│   │   ├── components/        # MapView, CombatView, EventView, RewardView 等
 │   │   ├── data/              # 图鉴元数据 + 资源 manifest
 │   │   ├── hooks/             # 渐进图片加载
 │   │   ├── services/          # 音频 + 资源加载服务
@@ -54,19 +55,23 @@ wechatgame/
 | 功能 | 状态 |
 |------|------|
 | 9 种体质 + 管理员体质全部可选 | ✅ |
-| 109 条卡牌模板：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 | ✅ |
+| 108+ 条卡牌模板：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 | ✅ |
 | 12 种药方蓝图：合成台合成，可重复合成无上限 | ✅ |
-| 11 种装备牌：普通/精英/首领胜利分别 10%/20%/50% 掉落 | ✅ |
+| 11 种装备牌：可重复获取，支持堆叠效果 | ✅ |
+| 12 条事件（1主线分叉3幕 + 11支线）：叙事选择+效果+后果动画 | ✅ |
 | 20 个敌人（含 4 个 Boss），支持管理员自选敌人挑战 | ✅ |
 | Act 1/2/3 管理员可选章节进入 | ✅ |
 | 全部卡牌图片已替换为真实素材 | ✅ |
+| 24 张卡牌名称已完成全局统一重命名（药材名+功效） | ✅ |
 | 背景图全部换新（战斗/地图/休憩/药房/合成台），压缩至200KB内 | ✅ |
 | 音频全部压缩（59MB→29MB），总资源152MB | ✅ |
 | 字体优化（宋体/Songti SC，macOS兼容） | ✅ |
 | 战斗UI去琥珀色，按幕次主题配色（天蓝/玫红/紫清） | ✅ |
 | 药方合成后汤头歌诀全屏动画展示 | ✅ |
-| 手牌总览按钮（MapView右下） | ✅ |
+| 手牌总览按钮（MapView右下）含装备牌显示 | ✅ |
+| 管理员体质跳过战斗按钮（正常领取奖励） | ✅ |
 | 无限地图 + Boss 独立通道（需3场战斗解锁） | ✅ |
+| 商店价格倍率系统 | ✅ |
 | 本地持久化存档 | ✅ |
 
 ---
@@ -97,12 +102,13 @@ wechatgame/
 ## 卡牌与合成
 
 - 卡牌分类：`herb` 药材牌、`formula` 药方牌、`equipment` 装备牌、`enemy` 敌方机制牌。
-- 战斗类型分布：`attack=27 / skill=47 / power=36`。
-- 稀有度分布：`common=23 / uncommon=31 / rare=56`。
-- 费用分布：`0费=66 / 1费=31 / 2费=10 / 3费=3`。
+- 战斗类型分布：`attack=27 / skill=45 / power=36`。
+- 稀有度分布：`common=22 / uncommon=30 / rare=56`。
+- 费用分布：`0费=65 / 1费=31 / 2费=9 / 3费=3`。
 - 药方牌只能通过合成台消耗药材牌和已录入药方蓝图获得，不进入普通奖励、商店或宝箱池。
 - 正常地图战斗胜利每次奖励 1 张真实药方蓝图；重复蓝图录入保持幂等。
-- 装备牌不会进入手牌、牌组、奖励池或商店池；获得后存入当前跑图装备并立即生效。
+- 装备牌不会进入手牌、牌组、奖励池或商店池；获得后存入当前跑图装备并立即生效。装备可重复获得，效果按数量倍增（堆叠）。
+- 地图事件可在商店/药房间隔出现，Act 1 主线分三路展开，延至 Act 2/3 各有独立分支叙事。
 
 ---
 
@@ -114,6 +120,7 @@ wechatgame/
 | 改药方蓝图配方 | `shared/data/formulas.ts` |
 | 改战斗规则 | `shared/core/gameCore.ts` |
 | 改地图生成 | `shared/core/gameCore.ts` → `generateMap()` / `generateLayerTypes()` |
+| 改事件数据/效果 | `shared/data/events.ts` → `SIDE_EVENTS[]` / `getMainlineActData()` |
 | 改游戏流程、掉落、合成台状态 | `game/src/store/gameStore.ts` |
 | 改 UI / 页面 | `game/src/components/` + `game/src/index.css` |
 | 改运行时资源 | `game/public/assets/`，改后执行 `npm run assets:manifest` |
@@ -131,7 +138,7 @@ npm run build
 
 当前验证：`npm test -- --run` 为 6 个测试文件、69 个测试用例通过。
 
-`npm run build` 当前通过。主 JS chunk 约 556 kB，构建产物发布于 `game/dist/`。
+`npm run build` 当前通过。主 JS chunk 约 575 kB，构建产物发布于 `game/dist/`。
 
 ---
 

@@ -1,6 +1,6 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-14
+更新日期：2026-05-15
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
@@ -11,6 +11,7 @@
 
 - 玩家选择 9 种体质之一后开始一局游戏。
 - 地图节点驱动流程：普通战斗、Boss、事件、药房、休息、奖励；精英和宝箱类型仍保留，但当前常规地图生成不产出精英或宝箱节点。
+- 事件系统：1 条主线（三兄弟择师，分三路，跨 3 幕分支叙事）+ 11 条支线事件。参与地图调度（主线优先/续集优先/随机池），通过标记系统跨 Act 持久化分叉状态。事件选项可触发治疗、伤害、金币变化、商店价格、卡牌获取/遗忘、装备获取、随机卡牌池等效果。
 - 战斗核心是手牌、真气、格挡、生命、状态、敌人意图和回合推进。
 - 地图为无限循环结构，每幕 10 层，击败 Boss 后进入下一幕（上限 3 幕）；没有正常胜利终点；`GamePhase` 仍保留 `victory` 类型。
 - Boss 和 Boss 前休憩在独立通道上，需在当前循环累计 3 场战斗胜利后解锁。击败 Boss 后 `currentAct` 递增（上限 3），敌池、敌人行动次数和 BGM 随 Act 切换。
@@ -90,11 +91,12 @@ wechatgame/
 
 | 项目 | 当前数量 / 说明 |
 | --- | --- |
-| 卡牌总数 | 109 条模板记录：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 |
+| 卡牌总数 | 108+ 条模板记录：76 药材牌、12 药方牌、11 装备牌、10 敌方机制牌 |
 | 起始牌组 | 9 种体质各 15 张，管理员体质约 88 张（全部药材+药方） |
 | 药方蓝图 | 12 种正式蓝图，合成台按配方合成，可重复合成无上限 |
 | 药方牌 | 12 张，除合成台外无其他获取方法 |
-| 装备牌 | 11 张，普通/精英/首领胜利分别 10%/20%/50% 概率掉落，获得后全局被动 |
+| 装备牌 | 11 张，战斗胜利掉落，获得后全局被动，可重复获得堆叠效果（`countRelic`） |
+| 事件 | 1 条主线（分叉 3 幕）+ 11 条支线，含 `eventLog`/`eventMarkers` 持久化 |
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
 | 语音/音频 | BGM 10 首 + 环境音 5 个 + SFX 12 个，已压缩至 96kbps/64kbps |
@@ -163,7 +165,7 @@ wechatgame/
 | `chest` | `ChestView` | 宝箱页存在；当前地图生成不产出宝箱节点 |
 | `rest` | `RestView` | 休息 |
 | `shop` | `ShopView` | 药房（购买/出售/旧合成页保留） |
-| `event` | `EventView` | 事件占位页（当前只展示占位文案并继续前进） |
+| `event` | `EventView` | 叙事事件页，支持选项-确认-后果三步交互，效果含 HP/金币/装备/卡牌/商店价格 |
 | `game_over` | `App.tsx` 内联界面 | 失败结算 |
 | `victory` | 类型保留 | 当前无限地图没有正常胜利终点 |
 
@@ -202,9 +204,9 @@ wechatgame/
 | 维度 | 分布 |
 | --- | --- |
 | 分类 | herb 76，formula 12，equipment 11，enemy 10 |
-| 战斗类型 | attack 27，skill 46，power 36 |
-| 稀有度 | common 22，uncommon 31，rare 56 |
-| 费用 | 0 费 65，1 费 31，2 费 10，3 费 3 |
+| 战斗类型 | attack 27，skill 45，power 36 |
+| 稀有度 | common 22，uncommon 30，rare 56 |
+| 费用 | 0 费 65，1 费 31，2 费 9，3 费 3 |
 | 目标 | self 74，single_enemy 23，all_enemies 12 |
 
 规则要点：
@@ -213,7 +215,7 @@ wechatgame/
 - 药方牌共有 12 张，只能通过合成台消耗完整配方药材实例后加入牌组。
 - 药方蓝图共有 12 种，正常地图战斗胜利每次奖励 1 张真实蓝图；重复蓝图录入不会重复污染进度。
 - 第一次成功合成某药方时，本局显示对应汤头歌诀；同一局再次合成不重复弹。
-- 装备牌共有 11 张，只通过战斗胜利掉落：普通 10%、精英 20%、首领 50%。装备获得后作为当前跑图全局被动，不进入手牌、牌组、商店、宝箱或普通奖励池。
+- 装备牌共有 11 张，只通过战斗胜利掉落：普通 10%、精英 20%、首领 50%。装备获得后作为当前跑图全局被动，不进入手牌、牌组、商店、宝箱或普通奖励池。装备可重复获得（不再唯一），效果按持有数量倍增（通过 `countRelic` / `countEquipment`），`hasRelic` 已替换为 `countRelic` 倍乘逻辑。
 - 允许持有同模板多张卡，系统以运行时实例 ID 区分；模板数量上限保留为 10 张。
 
 不要只改卡牌文案。凡是修改卡牌能力，必须同时检查：
@@ -222,6 +224,29 @@ wechatgame/
 - `shared/core/gameCore.ts` 的 `resolveCardPlay` 分支。
 - `game/src/store/gameCore.test.ts` 的规则测试。
 - 图鉴展示是否读取同一份数据。
+
+## 8.5 事件系统
+
+源文件：`shared/data/events.ts`
+
+事件分类：
+- **主线事件**（`mainline_three_brothers`）：Act 1 择师三选一 → 通过 `eventMarkers[three_brothers]` 记录分支 → Act 2/3 各逻辑分叉叙事（`getMainlineActData(act, markers)`）
+- **支线事件**（`SIDE_EVENTS[]`）：11 条，含续集优先（`continuationMarker`）和随机调度
+
+调度逻辑（`gameStore.ts`）：
+1. Act 首层事件节点 → 优先主线事件（`act1/2/3_intro` 标记防重复）
+2. 续集优先 → `continuationMarker` 匹配且当前 Act 满足 `actRequirement` 的事件
+3. 随机池 → 从剩余 `SIDE_EVENTS` 中筛选，排除已触发过且非续集的事件
+
+关键类型：
+- `GameEvent`：id, title, description, options[], actRequirement, continuationMarker, clearMarkerOnTrigger
+- `EventOption`：label, description, effects[], setMarker
+- `EventEffect`：type（heal/damage/maxHpChange/goldChange/shopPriceChange/addCard/addEquipment/addRelic/randomCard/removeCard）+ value/cardId/relicId/rarity/cardType
+
+交互流程（`EventView.tsx`）：
+1. 点选项 → 高亮选中
+2. 点「确认选择」→ 执行所有效果 + 显示效果标签 + 叙事后果文字，通过 store `eventChosenIndex` 保持 `currentEvent` 不消失
+3. 点「继续」→ `clearCurrentEvent()` + `completeNonCombat()` 回地图
 
 ## 9. 敌人系统
 
@@ -305,8 +330,8 @@ wechatgame/
 | **3胜解锁** | `combatWinsThisCycle >= 3` 才可进入 rest/boss 节点 |
 | **Boss后进入下一幕** | Boss 节点自身无子节点，完成后 `currentAct++`（上限 3），重置地图进入下一幕 |
 | **主线3分支** | col 0-2 为主线，非保底时随机一个主线位置可能替换为 shop/event |
-| **药房/事件保底** | 连续4场战斗无药房/事件则强制出现 |
-| **主线特殊节点概率** | 非保底时为 25% 事件 / 30% 药房 / 45% 战斗 |
+| **药房/事件保底** | 连续 2 场战斗无药房/事件则强制出现 |
+| **主线特殊节点概率** | 非保底时为 35% 事件 / 30% 药房 / 35% 战斗 |
 | **本地图无宝箱** | `chest` 类型保留在类型系统但地图生成不产出宝箱节点 |
 
 普通跑图当前在 `gameStore.ts` 中按 `state.currentAct` 动态选择 `ENEMY_POOLS.act1/act2/act3`；击败 Boss 后 `currentAct++`（上限 3），重置地图进入下一幕。开战时只应用 HP 缩放：`ceil(baseHp * (1 + floor * 0.05))`；`damageBonus` 虽由 `getEnemyScaling()` 返回，但当前普通开战流程未把它应用到敌人伤害。
@@ -321,13 +346,14 @@ wechatgame/
 - `persist` 本地持久化。
 - 存储 key：`wuxing-yidao-storage`。
 - 当前持久化 version：14。
+- 新增状态字段：`eventLog`（已触发事件ID列表）、`eventMarkers`（事件分叉标记）、`shopPriceMultiplier`（商店价格倍率）、`eventChosenIndex`（事件选项确认状态）。
 - 创建新局、选择体质、进入地图节点、启动战斗。
 - 连接 UI 操作和 `shared/core/gameCore.ts` 规则函数。
 - 管理奖励、装备掉落、药方蓝图掉落、合成台、商店、休息、事件等流程。
 - 管理敌方行动动画调度和测试用时间推进。
 - `combatWinsThisCycle`：当前循环内战斗胜利次数（达 3 解锁 Boss 通道）。
-- 地图到达末端前自动扩展 12 层（`generateMap(12, map.length)`）。
-- `EventView` 当前是占位继续前进；`ChestView` 存在，但当前地图生成不产出 `chest` 节点。
+- 地图到达末端前自动扩展 12 层（通过 `connectMapSegments` 连接新旧段）。
+- `EventView` 现为完整事件交互页，`ChestView` 存在但当前地图生成不产出 `chest` 节点。
 
 重要动作：
 
@@ -341,6 +367,8 @@ wechatgame/
 - `combineCards(cardIds, targetCardId)`
 - `recordFormulaBlueprint(blueprintId)`
 - `craftFormulaFromBlueprint(blueprintId, ingredientInstanceIds)`
+- `handleEventChoice(eventId, optionIndex)` → 执行事件选项效果，设置 `eventChosenIndex`
+- `clearCurrentEvent()` → 清空 `currentEvent` 和 `eventChosenIndex`
 - `clearPendingEquipmentReward`
 - `clearPendingFormulaBlueprintReward`
 - `advanceTime`
@@ -524,7 +552,17 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
-| Act 2/3 正式开放 | 击败当前幕 Boss 后 `currentAct++`（上限 3），敌池/敌人行动次数/BGM 随 Act 切换 |
+| 事件系统 v2.1 | 新增 1 主线（3 幕分叉）+ 11 支线事件，含完整叙事、选项效果、后果动画；`eventLog`/`eventMarkers` 持久化 |
+| 装备堆叠 | 装备不再唯一，`hasRelic` 替换为 `countRelic` 倍乘逻辑，11 件装备全部支持堆叠 |
+| 事件密度调整 | 层类型概率 25%→35%，保底间隔 4→2 场战斗，三幕全通约 11-12 事件 |
+| 24 张卡牌重命名 | 药材名统一改为「药名+功效」格式（如「葛根」→「葛根解肌」） |
+| randomCard 效果 | 事件可按 rarity+cardType 从牌库随机抽取卡牌 |
+| 商店价格倍率 | 新增 `shopPriceMultiplier` 系统，事件可调商店价格 |
+| 管理员跳过战斗 | CombatView 右上角新增跳过按钮，调用 `completeCombat` 走正常奖励 |
+| 路径延展断连修复 | `connectMapSegments` 连接新旧地图段，消除末端按钮不可点击 |
+| EventView 交互修复 | 确认→结果→继续三步流程，效果标签显示，不再跳空占位页 |
+| 手牌列表显示装备 | MapView 手牌总览新增装备牌分区，含卡图缩略 |
+| 名声系统移除 | 所有名声相关逻辑替换为金币/商店价格 |
 | 药方牌图片替换 | 12 张药方牌全部替换为真实 450×600 PNG（43–75 KB） |
 | 新药材牌图片替换 | 24 张药材牌全部替换为真实 450×600 PNG（21–62 KB） |
 | 黄芩图片替换 | `huangqin` 从 SVG 占位替换为真实 450×600 PNG（36 KB） |

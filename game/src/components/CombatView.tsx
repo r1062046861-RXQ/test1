@@ -116,7 +116,7 @@ export const CombatView: React.FC = () => {
       )}
       style={{ backgroundImage: `url("${backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,6,3,0.55),rgba(4,2,1,0.92))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,6,3,0.40),rgba(4,2,1,0.78))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,rgba(255,255,255,0.06),transparent_24%)]" />
       <div className="page-shell__grain" />
 

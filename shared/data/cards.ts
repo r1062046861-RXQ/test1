@@ -219,7 +219,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'danshen': {
     id: 'danshen',
-    name: '三棱',
+    name: '三棱破血',
     image: '/assets/cards_replacement_placeholders/danshen.png',
     type: 'attack',
     rarity: 'common',
@@ -337,7 +337,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'xiaochaihu': {
     id: 'xiaochaihu',
-    name: '葛根',
+    name: '葛根解肌',
     image: '/assets/cards_replacement_placeholders/xiaochaihu.png',
     type: 'skill',
     rarity: 'uncommon',
@@ -499,7 +499,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'angong': {
     id: 'angong',
-    name: '干姜',
+    name: '干姜温中',
     image: '/assets/cards_replacement_placeholders/angong.png',
     type: 'power',
     rarity: 'rare',
@@ -515,7 +515,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'zhenwu': {
     id: 'zhenwu',
-    name: '苍术',
+    name: '苍术健脾',
     image: '/assets/cards_replacement_placeholders/zhenwu.png',
     type: 'power',
     rarity: 'rare',
@@ -649,7 +649,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'qinggusan': {
     id: 'qinggusan',
-    name: '杏仁',
+    name: '杏仁降气',
     image: '/assets/cards_replacement_placeholders/qinggusan.png',
     type: 'attack',
     rarity: 'rare',
@@ -773,7 +773,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'buzhongyiqi': {
     id: 'buzhongyiqi',
-    name: '熟地黄',
+    name: '熟地滋阴',
     image: '/assets/cards_replacement_placeholders/buzhongyiqi.png',
     type: 'power',
     rarity: 'rare',
@@ -905,7 +905,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'mahuangtang': {
     id: 'mahuangtang',
-    name: '细辛',
+    name: '细辛通窍',
     image: '/assets/cards_replacement_placeholders/mahuangtang.png',
     type: 'attack',
     rarity: 'rare',
@@ -920,7 +920,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'sijunzi': {
     id: 'sijunzi',
-    name: '天门冬',
+    name: '天冬养阴',
     image: '/assets/cards_replacement_placeholders/sijunzi.png',
     type: 'skill',
     rarity: 'rare',
@@ -937,7 +937,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'xiaoyao': {
     id: 'xiaoyao',
-    name: '赤芍',
+    name: '赤芍凉血',
     image: '/assets/cards_replacement_placeholders/xiaoyao.png',
     type: 'skill',
     rarity: 'rare',
@@ -953,7 +953,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'liuwei': {
     id: 'liuwei',
-    name: '五味子',
+    name: '五味敛阴',
     image: '/assets/cards_replacement_placeholders/liuwei.png',
     type: 'skill',
     rarity: 'rare',
@@ -970,7 +970,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'yinqiao': {
     id: 'yinqiao',
-    name: '生石膏',
+    name: '石膏清热',
     image: '/assets/cards_replacement_placeholders/yinqiao.png',
     type: 'attack',
     rarity: 'rare',
@@ -987,7 +987,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'xuefu': {
     id: 'xuefu',
-    name: '厚朴',
+    name: '厚朴行气',
     image: '/assets/cards_replacement_placeholders/xuefu.png',
     type: 'attack',
     rarity: 'rare',
@@ -1002,7 +1002,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'huoxiang': {
     id: 'huoxiang',
-    name: '苏叶',
+    name: '苏叶解表',
     image: '/assets/cards_replacement_placeholders/huoxiang.png',
     type: 'skill',
     rarity: 'rare',
@@ -1018,7 +1018,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'longdan': {
     id: 'longdan',
-    name: '人参',
+    name: '人参补气',
     image: '/assets/cards_replacement_placeholders/longdan.png',
     type: 'attack',
     rarity: 'rare',
@@ -1034,7 +1034,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'yupingfeng': {
     id: 'yupingfeng',
-    name: '竹叶',
+    name: '竹叶清心',
     image: '/assets/cards_replacement_placeholders/yupingfeng.png',
     type: 'skill',
     rarity: 'rare',
@@ -1050,7 +1050,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'guipi': {
     id: 'guipi',
-    name: '淡豆豉',
+    name: '豆豉宣郁',
     image: '/assets/cards_replacement_placeholders/guipi.png',
     type: 'skill',
     rarity: 'rare',
@@ -1067,7 +1067,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'wumei': {
     id: 'wumei',
-    name: '荆芥穗',
+    name: '芥穗散风',
     image: '/assets/cards_replacement_placeholders/wumei.png',
     type: 'skill',
     rarity: 'rare',
@@ -1082,7 +1082,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'dachengqi': {
     id: 'dachengqi',
-    name: '莪术',
+    name: '莪术破积',
     image: '/assets/cards_replacement_placeholders/dachengqi.png',
     type: 'attack',
     rarity: 'rare',
@@ -1098,7 +1098,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'huanglianjiedu': {
     id: 'huanglianjiedu',
-    name: '牛蒡子',
+    name: '牛蒡解毒',
     image: '/assets/cards_replacement_placeholders/huanglianjiedu.png',
     type: 'attack',
     rarity: 'rare',
@@ -1114,7 +1114,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'banxia': {
     id: 'banxia',
-    name: '半夏',
+    name: '半夏燥湿',
     image: '/assets/cards_replacement_placeholders/banxia.png',
     type: 'attack',
     rarity: 'rare',
@@ -1130,7 +1130,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'jinkui': {
     id: 'jinkui',
-    name: '柴胡',
+    name: '柴胡疏肝',
     image: '/assets/cards_replacement_placeholders/jinkui.png',
     type: 'skill',
     rarity: 'rare',
@@ -1147,7 +1147,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'qingying': {
     id: 'qingying',
-    name: '蒲公英',
+    name: '蒲公英消肿',
     image: '/assets/cards_replacement_placeholders/qingying.png',
     type: 'skill',
     rarity: 'rare',
@@ -1162,7 +1162,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'baohe': {
     id: 'baohe',
-    name: '苦桔梗',
+    name: '桔梗宣肺',
     image: '/assets/cards_replacement_placeholders/baohe.png',
     type: 'power',
     rarity: 'rare',
@@ -1177,7 +1177,7 @@ export const CARD_LIBRARY: Record<string, Card> = {
   },
   'chuanxiongcha': {
     id: 'chuanxiongcha',
-    name: '薄荷',
+    name: '薄荷疏风',
     image: '/assets/cards_replacement_placeholders/chuanxiongcha.png',
     type: 'power',
     rarity: 'rare',

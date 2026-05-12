@@ -1413,6 +1413,12 @@ export const useGameStore = create<GameStore>()(
               }
               break;
             }
+            case 'addCard': {
+              if (effect.cardId) {
+                nextPlayer.deck = [...nextPlayer.deck, createCardInstance(effect.cardId)];
+              }
+              break;
+            }
           }
         }
 

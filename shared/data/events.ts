@@ -42,13 +42,13 @@ export const MAINLINE_EVENT = {
       {
         label: '拜入大哥门下',
         description: '"病未发而先防，是谓上工。"\n村民笑你"没出息"——但你心知，最好的医生让人不生病。',
-        effects: [{ type: 'addRelic', relicId: 'equipment_zhiweibing', count: 1 }],
+        effects: [{ type: 'addRelic' as const, relicId: 'equipment_zhiweibing', count: 1 }],
         setMarker: 'three_brothers=dade',
       },
       {
         label: '拜入二哥门下',
         description: '"病初起而速治，是为中工。"\n二哥赠言："见微知著，截断病势。这条路虽不显赫，却最踏实。"',
-        effects: [{ type: 'heal', value: 999 }, { type: 'goldChange', value: 50 }],
+        effects: [{ type: 'heal' as const, value: 999 }, { type: 'goldChange' as const, value: 50 }],
         setMarker: 'three_brothers=erge',
       },
       {
@@ -59,6 +59,135 @@ export const MAINLINE_EVENT = {
       },
     ],
   },
+};
+
+export const getMainlineActData = (act: number, markers: Record<string, string>): { title: string; description: string; options: EventOption[] } | null => {
+  const choice = markers['three_brothers'];
+  if (act === 1) return MAINLINE_EVENT.act1 as { title: string; description: string; options: EventOption[] };
+
+  if (act === 2) {
+    if (choice === 'dade') {
+      return {
+        title: '各从其道',
+        description: '多年行医，你教人防病于未然。村里人笑你"没本事的医生才教人养生"。\n你沉默不语，只是继续教。一日，邻村瘟疫爆发，唯独你所在的村子无人染病。\n村民这才明白——你早就在井水里下了防疫的草药。他们跪谢时，你想起大哥的话：\n"上工治未病，无功便是功。"',
+        options: [
+          {
+            label: '继续坚守',
+            description: '"无功便是功。"大哥的教诲，你已刻入骨髓。',
+            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 2 }],
+            setMarker: 'three_brothers_act2=steadfast',
+          },
+          {
+            label: '心生动摇',
+            description: '开始怀疑——也许教人防病，不如亲手救人性命来得踏实。你偷学了扁鹊的急救术。',
+            effects: [{ type: 'maxHpChange', value: -2 }],
+            setMarker: 'three_brothers_act2=doubt',
+          },
+        ],
+      };
+    }
+    if (choice === 'erge') {
+      return {
+        title: '各从其道',
+        description: '你随二哥行医多年，救人无数，但名声始终不大。百姓说：\n"这大夫不错，小病一治就好。"可一旦有人得了重病，他们扭头就去找扁鹊。\n你心中渐生不甘。二哥看出你的心思，淡淡道：\n"怎么，嫌跟我学医没出息？你救的人，哪个没有好好活着？"',
+        options: [
+          {
+            label: '坚守初心',
+            description: '继续跟二哥踏实行医。二哥点头："见微知著，足矣。"',
+            effects: [{ type: 'addRelic', relicId: 'equipment_ziwuliuzhu', count: 1 }],
+            setMarker: 'three_brothers_act2=steadfast',
+          },
+          {
+            label: '心生悔意',
+            description: '后悔当初没拜大哥或扁鹊。你偷师他人，走了捷径。',
+            effects: [{ type: 'shopPriceChange', value: 10 }],
+            setMarker: 'three_brothers_act2=regret',
+          },
+        ],
+      };
+    }
+    if (choice === 'bianque') {
+      return {
+        title: '各从其道',
+        description: '因师从扁鹊，你名声大噪，求诊者络绎不绝。可你发现，\n来的都是重病将死之人——你拼尽全力，十人中只能救回两三个。\n深夜独坐，你满手是血，开始怀疑：早知如此，当初是不是该跟大哥或二哥学？',
+        options: [
+          {
+            label: '割然醒悟',
+            description: '回头向大哥求教。大哥不计前嫌，从头教你"治未病"之理。',
+            effects: [{ type: 'addRelic', relicId: 'equipment_zhiweibing', count: 1 }, { type: 'maxHpChange', value: -3 }],
+            setMarker: 'three_brothers_act2=awaken',
+          },
+          {
+            label: '坚持到底',
+            description: '继续钻研起死回生之术。扁鹊叹道："你选了我的路，就得走到底。"',
+            effects: [{ type: 'maxHpChange', value: -5 }],
+            setMarker: 'three_brothers_act2=persist',
+          },
+        ],
+      };
+    }
+    return null;
+  }
+
+  if (act === 3) {
+    if (choice === 'dade') {
+      return {
+        title: '三兄弟重聚',
+        description: '多年后，你已是白发苍苍的老医者。一日，三兄弟再次齐聚。\n二哥拱手道："当年你选大哥，我心有不甘。如今方知——你那条路，才是最难的。"\n扁鹊点头："我们治的是病，你治的是天下。"\n大哥拍你的肩："你救了千万人，损了自己。值吗？"',
+        options: [
+          {
+            label: '答：值了',
+            description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
+            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+          },
+          {
+            label: '答：不悔，但偶尔羡慕',
+            description: '"若当初选了另一条路……"大哥递来最后一副药方："收下吧。你早就是自己的师父了。"',
+            effects: [],
+          },
+        ],
+      };
+    }
+    if (choice === 'erge') {
+      return {
+        title: '三兄弟重聚',
+        description: '多年后，你已是白发苍苍的老医者。一日，三兄弟再次齐聚。\n大哥点头："你走的是最踏实的路。不显赫，但每一步都踩得稳。"\n扁鹊难得沉默，良久才说："我救将死之人，你救初病之人。我们救的都是人。"\n二哥看着你："没给我丢人。"',
+        options: [
+          {
+            label: '答：值了',
+            description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
+            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+          },
+          {
+            label: '答：不悔，但偶尔羡慕',
+            description: '"若当初选了另一条路……"大哥递来最后一副药方："收下吧。你早就是自己的师父了。"',
+            effects: [],
+          },
+        ],
+      };
+    }
+    if (choice === 'bianque') {
+      return {
+        title: '三兄弟重聚',
+        description: '多年后，你已是白发苍苍的老医者。一日，三兄弟再次齐聚。\n大哥打量你："你走最险的路，救最难的人。你的手满是血，你的心满是痕。"\n二哥轻轻说："若当初跟我……" 扁鹊打断："他走的是他自己的路。"',
+        options: [
+          {
+            label: '答：值了',
+            description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
+            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+          },
+          {
+            label: '答：不悔，但偶尔羡慕',
+            description: '"若当初选了另一条路……"大哥递来最后一副药方："收下吧。你早就是自己的师父了。"',
+            effects: [],
+          },
+        ],
+      };
+    }
+    return null;
+  }
+
+  return null;
 };
 
 export const SIDE_EVENTS: GameEvent[] = [

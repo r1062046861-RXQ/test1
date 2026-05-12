@@ -17,7 +17,7 @@ import { FORMULA_BLUEPRINTS, FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
 import { countCardCopies, getCardCategory, getTemplateCardId, isFormulaCard, isHerbCard } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
 import { ENEMIES, ENEMY_POOLS } from '../data/enemies';
-import { MAINLINE_EVENT, SIDE_EVENTS } from '../../../shared/data/events';
+import { SIDE_EVENTS, getMainlineActData } from '../../../shared/data/events';
 import type { GameEvent } from '../../../shared/data/events';
 import { createRuntimeId } from '../utils/id';
 import { primeProgressiveAsset } from '../utils/progressiveAssets';
@@ -812,8 +812,8 @@ export const useGameStore = create<GameStore>()(
           if (nodeType === 'event') {
             const actKey = `act${state.currentAct}_intro`;
             if (!(state.eventMarkers ?? {})[actKey]) {
-              const actStage = state.currentAct === 1 ? MAINLINE_EVENT.act1 : null;
-              if (actStage) {
+              const actStageData = getMainlineActData(state.currentAct, state.eventMarkers ?? {});
+              if (actStageData) {
                 set({
                   phase: 'event',
                   currentNodeId: nodeId,
@@ -821,9 +821,9 @@ export const useGameStore = create<GameStore>()(
                   playerImpactCue: null,
                   currentEvent: {
                     id: `mainline_three_brothers_act${state.currentAct}`,
-                    title: actStage.title,
-                    description: actStage.description,
-                    options: actStage.options,
+                    title: actStageData.title,
+                    description: actStageData.description,
+                    options: actStageData.options,
                   },
                   eventMarkers: { ...(state.eventMarkers ?? {}), [actKey]: 'true' },
                 });
@@ -1423,6 +1423,14 @@ export const useGameStore = create<GameStore>()(
 
         if (event.clearMarkerOnTrigger) {
           delete nextMarkers[event.clearMarkerOnTrigger];
+        }
+
+        if (eventId === 'side_needle_stage2' && optionIndex === 0) {
+          const needlePath = nextMarkers['needle_stage1'];
+          if (needlePath === 'needle') {
+            nextPlayer.maxHp = Math.max(1, nextPlayer.maxHp - 3);
+            nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp);
+          }
         }
 
         set({

@@ -235,6 +235,16 @@ export const StartMenu: React.FC = () => {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState<string | null>(null); // 'panel' | 'game'
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
+  const [rememberPassword, setRememberPassword] = useState(() => {
+    try { return localStorage.getItem('wuxing_admin_pw') === '260208'; } catch { return false; }
+  });
+
+  const openPasswordPrompt = (mode: 'panel' | 'game') => {
+    setShowPasswordPrompt(mode);
+    const saved = rememberPassword ? '260208' : '';
+    setPasswordInput(saved);
+    setPasswordError(false);
+  };
 
   const checkPassword = (pw: string) => {
     if (pw === '260208') {
@@ -242,6 +252,9 @@ export const StartMenu: React.FC = () => {
       setShowPasswordPrompt(null);
       setPasswordInput('');
       setPasswordError(false);
+      if (rememberPassword) {
+        try { localStorage.setItem('wuxing_admin_pw', '260208'); } catch { /* */ }
+      }
       return true;
     }
     setPasswordError(true);
@@ -287,7 +300,7 @@ export const StartMenu: React.FC = () => {
 
   const handleStartGame = (constitution: Constitution) => {
     if (constitution === 'admin' && !adminUnlocked) {
-      setShowPasswordPrompt('game');
+      openPasswordPrompt('game');
       return;
     }
     playSfx('confirm');
@@ -310,7 +323,7 @@ export const StartMenu: React.FC = () => {
       setShowAdminPanel(true);
       return;
     }
-    setShowPasswordPrompt('panel');
+    openPasswordPrompt('panel');
   };
 
   const handleRandomAdminCombat = () => {
@@ -811,6 +824,15 @@ export const StartMenu: React.FC = () => {
                   {passwordError && (
                     <p className="text-xs text-red-400">密码错误，请重试。</p>
                   )}
+                  <label className="flex items-center gap-2 text-xs text-stone-400 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberPassword}
+                      onChange={(e) => setRememberPassword(e.target.checked)}
+                      className="rounded border-amber-500/30 bg-stone-900/60 accent-amber-400"
+                    />
+                    记住密码
+                  </label>
                   <button
                     type="button"
                     onClick={() => checkPassword(passwordInput)}

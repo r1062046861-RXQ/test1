@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CARD_LIBRARY, isHerbCard } from '../data/cards';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { ActionButton, Badge, SectionTitle } from './ui/PageShell';
-import { resolveAssetBackground } from '../utils/assets';
+import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
 type TabKey = 'buy' | 'sell' | 'combine' | 'decompose';
 
@@ -35,6 +36,7 @@ export const ShopView: React.FC = () => {
   const [msg, setMsg] = useState<string | null>(null);
   const [combineSelected, setCombineSelected] = useState<string[]>([]);
   const [combineStep, setCombineStep] = useState<'sacrifice' | 'target'>('sacrifice');
+  const [combineResultCardId, setCombineResultCardId] = useState<string | null>(null);
   const [sellCount, setSellCount] = useState(0);
 
   const priceMultiplier = useMemo(() => getShopPriceMultiplier() / 100, [player.gold]);
@@ -83,6 +85,7 @@ export const ShopView: React.FC = () => {
     setCombineSelected([]);
     setCombineStep('sacrifice');
     setMsg('合成成功');
+    setCombineResultCardId(targetCardId);
     setTimeout(() => setMsg(null), 1500);
   };
 
@@ -281,6 +284,53 @@ export const ShopView: React.FC = () => {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {combineResultCardId ? (
+          <motion.div
+            className="synthesis-bench-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setCombineResultCardId(null)}
+          >
+            <motion.div
+              className="synthesis-bench"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '320px', padding: '24px' }}
+            >
+              <div className="text-center space-y-4">
+                <div className="chapter-kicker">合成成功</div>
+                {(() => {
+                  const card = CARD_LIBRARY[combineResultCardId];
+                  if (!card) return null;
+                  return (
+                    <>
+                      {card.image && (
+                        <img
+                          src={resolveAssetUrl(card.image)}
+                          alt={card.name}
+                          className="mx-auto w-48 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                        />
+                      )}
+                      <h3 className="text-lg font-bold text-amber-100">{card.name}</h3>
+                      <p className="text-sm text-stone-300">{card.description}</p>
+                    </>
+                  );
+                })()}
+                <ActionButton variant="primary" onClick={() => setCombineResultCardId(null)}>
+                  确 认
+                </ActionButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 };

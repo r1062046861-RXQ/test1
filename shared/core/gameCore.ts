@@ -471,16 +471,16 @@ const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinc
   if (isCombatLayer) {
     // cols 0-2 = main content, col 3 = boss lane connector (combat)
     const forceShop = combatSinceShop >= 4;
-    const forceEvent = combatSinceEvent >= 2;
+    const forceEvent = combatSinceEvent >= 1;
     let specialType: NodeType = 'combat';
     if (forceEvent) {
-      specialType = 'event';
+      specialType = Math.random() < 0.85 ? 'event' : 'shop';
     } else if (forceShop) {
       specialType = 'shop';
     } else {
       const roll = Math.random();
-      if (roll < 0.80) specialType = 'event';
-      else if (roll < 0.90) specialType = 'shop';
+      if (roll < 0.85) specialType = 'event';
+      else if (roll < 0.95) specialType = 'shop';
     }
     const specialIdx = Math.floor(Math.random() * 3);
     const r: NodeType[] = ['combat', 'combat', 'combat', 'combat'];

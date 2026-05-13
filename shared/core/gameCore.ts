@@ -326,13 +326,40 @@ const closestNodeIndex = (nodes: MapNode[], x: number) =>
 // Helper to generate map with branches
 export function generateMap(layers: number, startOffset = 0): MapLayer[] {
   const safeLayers = Math.max(layers, startOffset === 0 ? 14 : layers);
-  return generateMapSegment(safeLayers, startOffset);
+  const result = generateMapSegment(safeLayers, startOffset, 0, 0);
+  return result.layers;
 }
 
-export const generateMapSegment = (totalLayers: number, startLayerIndex: number): MapLayer[] => {
+const scanTailCounters = (layers: MapLayer[]): { combatSinceEvent: number; combatSinceShop: number } => {
+  let cse = 0; let css = 0;
+  for (let i = Math.max(0, layers.length - 4); i < layers.length; i++) {
+    const types = layers[i].nodes.map(n => n.type);
+    const mainTypes = types.slice(0, Math.min(3, types.length));
+    const hasEvent = mainTypes.some(t => t === 'event');
+    const hasShop = mainTypes.some(t => t === 'shop');
+    const hasRestBoss = types.some(t => t === 'rest' || t === 'boss');
+    if (hasEvent || hasShop || hasRestBoss) {
+      cse = 0;
+      if (hasShop) css = 0;
+      else if (!hasRestBoss) css += 1;
+    } else {
+      cse += 1; css += 1;
+    }
+  }
+  return { combatSinceEvent: cse, combatSinceShop: css };
+};
+
+export function extendMap(existingLayers: MapLayer[]): MapLayer[] {
+  const tail = scanTailCounters(existingLayers);
+  const newSegment = generateMapSegment(12, existingLayers.length, tail.combatSinceEvent, tail.combatSinceShop);
+  connectMapSegments(existingLayers, newSegment.layers);
+  return [...existingLayers, ...newSegment.layers];
+}
+
+export const generateMapSegment = (totalLayers: number, startLayerIndex: number, initialCombatSinceEvent = 0, initialCombatSinceShop = 0): { layers: MapLayer[]; combatSinceEvent: number; combatSinceShop: number } => {
   const layers: MapLayer[] = [];
-  let combatSinceShop = 0;
-  let combatSinceEvent = 0;
+  let combatSinceShop = initialCombatSinceShop;
+  let combatSinceEvent = initialCombatSinceEvent;
 
   for (let li = 0; li < totalLayers; li += 1) {
     const absoluteLayer = startLayerIndex + li;
@@ -420,7 +447,7 @@ export const generateMapSegment = (totalLayers: number, startLayerIndex: number)
     }
   }
 
-  return layers;
+  return { layers, combatSinceEvent, combatSinceShop };
 };
 
 const absoluteLayer = (li: number, startLayerIndex: number) => startLayerIndex + li;
@@ -446,16 +473,14 @@ const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinc
     const forceShop = combatSinceShop >= 4;
     const forceEvent = combatSinceEvent >= 2;
     let specialType: NodeType = 'combat';
-    if (forceShop && forceEvent) {
-      specialType = Math.random() < 0.5 ? 'shop' : 'event';
+    if (forceEvent) {
+      specialType = 'event';
     } else if (forceShop) {
       specialType = 'shop';
-    } else if (forceEvent) {
-      specialType = 'event';
     } else {
       const roll = Math.random();
-      if (roll < 0.45) specialType = 'event';
-      else if (roll < 0.65) specialType = 'shop';
+      if (roll < 0.55) specialType = 'event';
+      else if (roll < 0.75) specialType = 'shop';
     }
     const specialIdx = Math.floor(Math.random() * 3);
     const r: NodeType[] = ['combat', 'combat', 'combat', 'combat'];

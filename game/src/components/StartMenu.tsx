@@ -249,11 +249,20 @@ export const StartMenu: React.FC = () => {
   const checkPassword = (pw: string) => {
     if (pw === '260208') {
       setAdminUnlocked(true);
+      const mode = showPasswordPrompt;
       setShowPasswordPrompt(null);
       setPasswordInput('');
       setPasswordError(false);
       if (rememberPassword) {
         try { localStorage.setItem('wuxing_admin_pw', '260208'); } catch { /* */ }
+      }
+      if (mode === 'panel') {
+        resetAdminPickerState();
+        setShowAdminPanel(true);
+      } else if (mode === 'game') {
+        playSfx('confirm');
+        startGame('admin');
+        setNewRunStage('closed');
       }
       return true;
     }

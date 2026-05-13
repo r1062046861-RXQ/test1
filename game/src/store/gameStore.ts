@@ -25,7 +25,7 @@ import {
   INITIAL_PLAYER,
   INITIAL_TURN_FLAGS,
   applyCardUpgrade,
-  connectMapSegments,
+  extendMap,
   generateMap,
   getBossUnlockWinsRequired,
   getEnemyScaling,
@@ -1000,9 +1000,7 @@ export const useGameStore = create<GameStore>()(
         let nextFloor = currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor;
 
         if (nextFloor >= map.length - 2) {
-          const newSegment = generateMap(12, map.length);
-          connectMapSegments(map, newSegment);
-          nextMap = [...map, ...newSegment];
+          nextMap = extendMap(map);
           nextFloor = Math.min(nextFloor, nextMap.length - 1);
         }
 
@@ -1026,9 +1024,7 @@ export const useGameStore = create<GameStore>()(
         let nextMap = map;
         let nextFloor = currentLayerIndex >= 0 ? Math.min(currentLayerIndex + 1, map.length - 1) : state.currentFloor;
         if (nextFloor >= map.length - 2) {
-          const newSegment = generateMap(12, map.length);
-          connectMapSegments(map, newSegment);
-          nextMap = [...map, ...newSegment];
+          nextMap = extendMap(map);
           nextFloor = Math.min(nextFloor, nextMap.length - 1);
         }
         set({

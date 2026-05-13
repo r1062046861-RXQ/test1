@@ -8,7 +8,6 @@ const formatEffect = (e: { type: string; value?: number; count?: number; cardId?
   const n = e.value ?? 0;
   switch (e.type) {
     case 'heal':
-      if (n >= 999) return '回复全部生命';
       return `回复 ${n} 生命`;
     case 'damage':
       return `受到 ${n} 点伤害`;

@@ -231,6 +231,22 @@ export const StartMenu: React.FC = () => {
     }
   })();
   const [showAdminPanel, setShowAdminPanel] = useState(adminEnabled);
+  const [adminUnlocked, setAdminUnlocked] = useState(adminEnabled);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState<string | null>(null); // 'panel' | 'game'
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+
+  const checkPassword = (pw: string) => {
+    if (pw === '260208') {
+      setAdminUnlocked(true);
+      setShowPasswordPrompt(null);
+      setPasswordInput('');
+      setPasswordError(false);
+      return true;
+    }
+    setPasswordError(true);
+    return false;
+  };
 
   const adminEnemyGroups = useMemo(() => {
     const enemyEntries: EnemyEntry[] = Object.values(ENEMIES).map((enemy) => {
@@ -270,6 +286,10 @@ export const StartMenu: React.FC = () => {
   };
 
   const handleStartGame = (constitution: Constitution) => {
+    if (constitution === 'admin' && !adminUnlocked) {
+      setShowPasswordPrompt('game');
+      return;
+    }
     playSfx('confirm');
     startGame(constitution);
     setNewRunStage('closed');
@@ -285,8 +305,12 @@ export const StartMenu: React.FC = () => {
   };
 
   const openAdminPanel = () => {
-    resetAdminPickerState();
-    setShowAdminPanel(true);
+    if (adminUnlocked) {
+      resetAdminPickerState();
+      setShowAdminPanel(true);
+      return;
+    }
+    setShowPasswordPrompt('panel');
   };
 
   const handleRandomAdminCombat = () => {
@@ -752,6 +776,53 @@ export const StartMenu: React.FC = () => {
             onSelect={handleStartGame}
           />
         ) : null}
+
+        <AnimatePresence>
+          {showPasswordPrompt ? (
+            <motion.div
+              className="synthesis-bench-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowPasswordPrompt(null); setPasswordInput(''); setPasswordError(false); }}
+            >
+              <motion.div
+                className="synthesis-bench"
+                initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.99 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '360px' }}
+              >
+                <div className="synthesis-bench__header">
+                  <h2 className="synthesis-bench__title">管理员验证</h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  <p className="text-sm text-stone-300">请输入管理员密码：</p>
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') checkPassword(passwordInput); }}
+                    autoFocus
+                    className="w-full rounded-xl border border-amber-500/30 bg-stone-900/60 px-4 py-2.5 text-amber-100 placeholder-stone-500 outline-none focus:border-amber-400/60"
+                    placeholder="输入密码"
+                  />
+                  {passwordError && (
+                    <p className="text-xs text-red-400">密码错误，请重试。</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => checkPassword(passwordInput)}
+                    className="w-full rounded-full border border-amber-400/40 bg-amber-400/15 px-6 py-2.5 text-sm font-bold text-amber-50 hover:bg-amber-400/25 active:scale-[0.97] transition-all duration-200"
+                  >
+                    确认
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </AnimatePresence>
     </>
   );

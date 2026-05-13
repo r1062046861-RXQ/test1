@@ -50,7 +50,7 @@ export const MAINLINE_EVENT = {
       {
         label: '拜入二哥门下',
         description: '"病初起而速治，是为中工。"\n二哥赠言："见微知著，截断病势。这条路虽不显赫，却最踏实。"',
-        effects: [{ type: 'heal' as const, value: 999 }, { type: 'goldChange' as const, value: 50 }],
+        effects: [{ type: 'heal' as const, value: 15 }, { type: 'goldChange' as const, value: 50 }],
         setMarker: 'three_brothers=erge',
       },
       {
@@ -76,7 +76,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '继续坚守',
             description: '"无功便是功。"大哥的教诲，你已刻入骨髓。',
-            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 2 }],
+            effects: [{ type: 'heal', value: 25 }, { type: 'maxHpChange', value: 2 }],
             setMarker: 'three_brothers_act2=steadfast',
           },
           {
@@ -140,7 +140,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '答：值了',
             description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
-            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+            effects: [{ type: 'heal', value: 30 }, { type: 'maxHpChange', value: 3 }],
           },
           {
             label: '答：不悔，但偶尔羡慕',
@@ -158,7 +158,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '答：值了',
             description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
-            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+            effects: [{ type: 'heal', value: 30 }, { type: 'maxHpChange', value: 3 }],
           },
           {
             label: '答：不悔，但偶尔羡慕',
@@ -176,7 +176,7 @@ export const getMainlineActData = (act: number, markers: Record<string, string>)
           {
             label: '答：值了',
             description: '"这是我的选择。"三兄弟齐声道："你已得道。"',
-            effects: [{ type: 'heal', value: 999 }, { type: 'maxHpChange', value: 3 }],
+            effects: [{ type: 'heal', value: 30 }, { type: 'maxHpChange', value: 3 }],
           },
           {
             label: '答：不悔，但偶尔羡慕',
@@ -246,7 +246,7 @@ export const SIDE_EVENTS: GameEvent[] = [
       {
         label: '一视同仁',
         description: '药王说："你救他性命，他偷你盘缠。世间因果，便是整体。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_zhengti', count: 1 }, { type: 'heal', value: 999 }, { type: 'goldChange', value: -80 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_zhengti', count: 1 }, { type: 'heal', value: 25 }, { type: 'goldChange', value: -80 }],
       },
       {
         label: '区别对待',
@@ -290,7 +290,7 @@ export const SIDE_EVENTS: GameEvent[] = [
       {
         label: '拜师学艺',
         description: '道长说："入门需清心。"道长祝福："阴阳互根，你已入门。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'heal', value: 999 }, { type: 'removeCard', count: 1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'heal', value: 20 }, { type: 'removeCard', count: 1 }],
       },
       {
         label: '切磋求悟',

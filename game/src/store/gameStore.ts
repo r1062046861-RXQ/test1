@@ -68,6 +68,8 @@ interface GameStore extends GameState {
     }>;
    } | null;
    eventChosenIndex?: number | null;
+   eventQueue?: string[];
+   lastEnemyId?: string | null;
    setFontSize: (size: number) => void;
   setBgmVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
@@ -269,11 +271,24 @@ const pickSideEvent = (state: GameStore): GameEvent | null => {
   if (continuationEvents.length > 0) {
     return continuationEvents[Math.floor(Math.random() * continuationEvents.length)] ?? null;
   }
-  const pool = SIDE_EVENTS.filter(e =>
-    !e.continuationMarker && !(state.eventLog ?? []).includes(e.id) && actRequirementMet(e)
-  );
-  if (pool.length === 0) return null;
-  return pool[Math.floor(Math.random() * pool.length)] ?? null;
+  const queue = state.eventQueue ?? [];
+  for (const id of queue) {
+    if ((state.eventLog ?? []).includes(id)) continue;
+    const e = SIDE_EVENTS.find(ev => ev.id === id);
+    if (e && actRequirementMet(e)) return e;
+  }
+  return null;
+};
+
+const buildEventQueue = (): string[] => {
+  const nonContinuation = SIDE_EVENTS.filter(e => !e.continuationMarker);
+  const shuffled = [...nonContinuation].sort(() => Math.random() - 0.5);
+  const needleIdx = shuffled.findIndex(e => e.id === 'side_needle_stage1');
+  if (needleIdx > 0 && Math.random() < 0.5) {
+    const [needle] = shuffled.splice(needleIdx, 1);
+    shuffled.unshift(needle);
+  }
+  return shuffled.map(e => e.id);
 };
 
 const rollFormulaBlueprintReward = (nodeType: MapNode['type'] | undefined) => {
@@ -570,9 +585,11 @@ const buildNewRunState = (constitution: Constitution = 'balanced', currentAct = 
   shownFormulaPoemIds: [],
   eventLog: [],
   eventMarkers: {},
+  eventQueue: buildEventQueue(),
   shopPriceMultiplier: 100,
   currentEvent: null,
   eventChosenIndex: null,
+  lastEnemyId: null,
 });
 
 export const useGameStore = create<GameStore>()(
@@ -751,6 +768,7 @@ export const useGameStore = create<GameStore>()(
             shownFormulaPoemIds: [],
             eventLog: [],
             eventMarkers: {},
+            eventQueue: buildEventQueue(),
             shopPriceMultiplier: 100,
           });
         },
@@ -838,8 +856,14 @@ export const useGameStore = create<GameStore>()(
         const allPools = ENEMY_POOLS[poolKey] ?? ENEMY_POOLS.act1;
         const enemyIds =
           nodeType === 'boss' ? allPools.boss : nodeType === 'elite' ? allPools.elite : allPools.common;
-        const enemyTemplate = ENEMIES[enemyIds[Math.floor(Math.random() * enemyIds.length)]];
+        const availableIds = enemyIds.length > 1
+          ? enemyIds.filter(id => id !== state.lastEnemyId)
+          : enemyIds;
+        const pickedId = availableIds[Math.floor(Math.random() * availableIds.length)] ?? enemyIds[0];
+        const enemyTemplate = ENEMIES[pickedId];
         if (!enemyTemplate) return;
+
+        set({ lastEnemyId: pickedId });
 
         primeEnemyMedia(enemyTemplate);
         const scale = getEnemyScaling(state.currentFloor);

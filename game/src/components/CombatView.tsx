@@ -285,12 +285,12 @@ export const CombatView: React.FC = () => {
                   )}
                 >
                   <div
-                    className={cn(
-                      'combat-view__enemy-row relative flex flex-wrap items-end justify-center',
-                      enemyLayoutMode === 'crowded' && 'combat-view__enemy-row--crowded',
-                      enemyLayoutMode === 'packed' && 'combat-view__enemy-row--packed',
-                    )}
-                  >
+        className={cn(
+          'combat-view__enemy-row relative flex items-end justify-center',
+          enemyLayoutMode === 'crowded' && 'combat-view__enemy-row--crowded',
+          enemyLayoutMode === 'packed' && 'combat-view__enemy-row--packed',
+        )}
+      >
                     {visibleEnemies.map((enemy) => (
                       <Enemy
                         key={enemy.id}

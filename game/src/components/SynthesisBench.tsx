@@ -6,7 +6,7 @@ import { CARD_LIBRARY, countCardsByTemplate, getCardCategory, getTemplateCardId 
 import { FORMULA_BLUEPRINTS } from '../data/formulas';
 import { useGameStore, type CraftFormulaResult } from '../store/gameStore';
 import { ActionButton, Badge, Panel } from './ui/PageShell';
-import { resolveAssetBackground } from '../utils/assets';
+import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 
 const SYNTHESIS_BG_IMAGES = ['/assets/bg_synthesis_1.png', '/assets/bg_synthesis_2.png'];
 
@@ -23,6 +23,7 @@ export const SynthesisBench: React.FC = () => {
   const [result, setResult] = React.useState<CraftFormulaResult>(EMPTY_RESULT);
   const [selectedIngredientIds, setSelectedIngredientIds] = React.useState<string[]>([]);
   const [poemOverlay, setPoemOverlay] = React.useState<string | null>(null);
+  const [craftCardId, setCraftCardId] = React.useState<string | null>(null);
   const [synthesisBgIndex] = React.useState(() => Math.floor(Math.random() * SYNTHESIS_BG_IMAGES.length));
   const dialogTitleId = React.useId();
 
@@ -73,6 +74,7 @@ export const SynthesisBench: React.FC = () => {
     setResult(nextResult);
     if (nextResult.ok) {
       setSelectedIngredientIds([]);
+      setCraftCardId(activeBlueprint.formulaCardId);
       if (nextResult.showPoem && nextResult.poem) {
         setPoemOverlay(nextResult.poem);
       }
@@ -384,6 +386,53 @@ export const SynthesisBench: React.FC = () => {
             </motion.div>
           </motion.div>
         ) : null}
+
+        <AnimatePresence>
+          {craftCardId && !poemOverlay ? (
+            <motion.div
+              className="synthesis-bench-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => setCraftCardId(null)}
+            >
+              <motion.div
+                className="synthesis-bench"
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '320px', padding: '24px' }}
+              >
+                <div className="text-center space-y-4">
+                  <div className="chapter-kicker">合成成功</div>
+                  {craftCardId && (() => {
+                    const card = CARD_LIBRARY[craftCardId];
+                    if (!card) return null;
+                    return (
+                      <>
+                        {card.image && (
+                          <img
+                            src={resolveAssetUrl(card.image)}
+                            alt={card.name}
+                            className="mx-auto w-48 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                          />
+                        )}
+                        <h3 className="text-lg font-bold text-amber-100">{card.name}</h3>
+                        <p className="text-sm text-stone-300">{card.description}</p>
+                      </>
+                    );
+                  })()}
+                  <ActionButton variant="primary" onClick={() => setCraftCardId(null)}>
+                    确 认
+                  </ActionButton>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </AnimatePresence>
     </>
   );

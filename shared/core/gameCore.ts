@@ -339,10 +339,18 @@ export const generateMapSegment = (totalLayers: number, startLayerIndex: number)
     const nodeCount = getNodeCountForLayerV3(absoluteLayer);
     const types = generateLayerTypes(absoluteLayer, nodeCount, combatSinceShop, combatSinceEvent);
 
-    for (const t of types) {
-      if (t === 'shop') { combatSinceShop = 0; combatSinceEvent += 1; }
-      else if (t === 'event') { combatSinceEvent = 0; combatSinceShop += 1; }
-      else if (t === 'combat' || t === 'elite') { combatSinceShop += 1; combatSinceEvent += 1; }
+    const mainTypes = types.slice(0, Math.min(3, types.length));
+    const hasEvent = mainTypes.some(t => t === 'event');
+    const hasShop = mainTypes.some(t => t === 'shop');
+    const hasRestBoss = types.some(t => t === 'rest' || t === 'boss');
+
+    if (hasEvent || hasShop || hasRestBoss) {
+      combatSinceEvent = 0;
+      if (hasShop) combatSinceShop = 0;
+      else if (!hasRestBoss) combatSinceShop += 1;
+    } else {
+      combatSinceEvent += 1;
+      combatSinceShop += 1;
     }
 
     const nodes = types.map((nodeType, ni) =>

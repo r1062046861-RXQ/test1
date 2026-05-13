@@ -360,11 +360,14 @@ export const generateMapSegment = (totalLayers: number, startLayerIndex: number,
   const layers: MapLayer[] = [];
   let combatSinceShop = initialCombatSinceShop;
   let combatSinceEvent = initialCombatSinceEvent;
+  let lastCombatCol = -1;
 
   for (let li = 0; li < totalLayers; li += 1) {
     const absoluteLayer = startLayerIndex + li;
     const nodeCount = getNodeCountForLayerV3(absoluteLayer);
-    const types = generateLayerTypes(absoluteLayer, nodeCount, combatSinceShop, combatSinceEvent);
+    const result = generateLayerTypes(absoluteLayer, nodeCount, combatSinceShop, combatSinceEvent, lastCombatCol);
+    const types = result.types;
+    lastCombatCol = result.lastCombatCol;
 
     const mainTypes = types.slice(0, Math.min(3, types.length));
     const hasEvent = mainTypes.some(t => t === 'event');
@@ -454,41 +457,49 @@ const absoluteLayer = (li: number, startLayerIndex: number) => startLayerIndex +
 
 const ACT_LENGTH = 10;
 
-const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinceShop: number, combatSinceEvent: number): NodeType[] => {
-  if (absoluteLayer === 0) return ['start'];
-  if (absoluteLayer === 1) return ['event'];
+const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinceShop: number, combatSinceEvent: number, prevCombatCol: number): { types: NodeType[]; lastCombatCol: number } => {
+  const none = (): { types: NodeType[]; lastCombatCol: number } => {
+    const t = Array.from({ length: nodeCount }, () => 'combat' as NodeType);
+    return { types: t, lastCombatCol: prevCombatCol };
+  };
+  if (absoluteLayer === 0) return { types: ['start'], lastCombatCol: prevCombatCol };
+  if (absoluteLayer === 1) return { types: ['event'], lastCombatCol: prevCombatCol };
 
   const cyclePos = (absoluteLayer - 2) % ACT_LENGTH;
 
   // cyclePos 8: pre-boss rest (boss lane, col 3)
-  if (cyclePos === 8) return ['combat', 'combat', 'combat', 'rest'];
+  if (cyclePos === 8) return { types: ['combat', 'combat', 'combat', 'rest'], lastCombatCol: prevCombatCol };
   // cyclePos 9: boss (boss lane, col 3)
-  if (cyclePos === 9) return ['combat', 'combat', 'combat', 'boss'];
+  if (cyclePos === 9) return { types: ['combat', 'combat', 'combat', 'boss'], lastCombatCol: prevCombatCol };
   // cyclePos 4: mid-act rest (boss lane, col 3)
-  if (cyclePos === 4) return ['combat', 'combat', 'combat', 'rest'];
+  if (cyclePos === 4) return { types: ['combat', 'combat', 'combat', 'rest'], lastCombatCol: prevCombatCol };
 
   const isCombatLayer = (cyclePos >= 0 && cyclePos <= 3) || (cyclePos >= 5 && cyclePos <= 7);
   if (isCombatLayer) {
     // cols 0-2 = main content, col 3 = boss lane connector (combat)
     const forceShop = combatSinceShop >= 4;
     const forceEvent = combatSinceEvent >= 1;
-    let specialType: NodeType = 'combat';
-    if (forceEvent) {
-      specialType = Math.random() < 0.85 ? 'event' : 'shop';
-    } else if (forceShop) {
-      specialType = 'shop';
-    } else {
-      const roll = Math.random();
-      if (roll < 0.85) specialType = 'event';
-      else if (roll < 0.95) specialType = 'shop';
-    }
-    const specialIdx = Math.floor(Math.random() * 3);
     const r: NodeType[] = ['combat', 'combat', 'combat', 'combat'];
-    r[specialIdx] = specialType;
-    return r;
+    let combatCol = -1;
+
+    if (forceEvent) {
+      for (let i = 0; i < 3; i++) r[i] = Math.random() < 0.85 ? 'event' : 'shop';
+    } else if (forceShop) {
+      for (let i = 0; i < 3; i++) r[i] = 'shop';
+    } else {
+      // Pick 2 of 3 cols for event/shop, 1 for combat — rotate away from prevCombatCol
+      combatCol = prevCombatCol < 0 || prevCombatCol >= 3
+        ? Math.floor(Math.random() * 3)
+        : (prevCombatCol + 1 + Math.floor(Math.random() * 2)) % 3;
+      for (let i = 0; i < 3; i++) {
+        if (i === combatCol) continue;
+        r[i] = Math.random() < 0.85 ? 'event' : 'shop';
+      }
+    }
+    return { types: r, lastCombatCol: combatCol };
   }
 
-  return Array.from({ length: nodeCount }, () => 'combat');
+  return none();
 };
 
 const getNodeCountForLayerV3 = (absoluteLayer: number): number => {

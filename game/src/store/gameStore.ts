@@ -265,12 +265,6 @@ const rollEquipmentReward = (nodeType: MapNode['type'] | undefined) => {
 
 const pickSideEvent = (state: GameStore): GameEvent | null => {
   const actRequirementMet = (e: GameEvent) => !e.actRequirement || e.actRequirement <= state.currentAct;
-  const continuationEvents = SIDE_EVENTS.filter(e =>
-    e.continuationMarker && state.eventMarkers?.[e.continuationMarker] && actRequirementMet(e)
-  );
-  if (continuationEvents.length > 0) {
-    return continuationEvents[Math.floor(Math.random() * continuationEvents.length)] ?? null;
-  }
   const queue = state.eventQueue ?? [];
   for (const id of queue) {
     if ((state.eventLog ?? []).includes(id)) continue;
@@ -1464,6 +1458,19 @@ export const useGameStore = create<GameStore>()(
           eventChosenIndex: optionIndex,
         });
 
+        if (eventId !== 'mainline_three_brothers_act1' && eventId !== 'mainline_three_brothers_act2' && eventId !== 'mainline_three_brothers_act3') {
+          const updatedState = get();
+          const newEventLog = updatedState.eventLog ?? [];
+          const contEvents = SIDE_EVENTS.filter(se =>
+            se.continuationMarker && nextMarkers[se.continuationMarker] && !newEventLog.includes(se.id)
+          );
+          if (contEvents.length > 0) {
+            const curQueue = updatedState.eventQueue ?? [];
+            const remaining = curQueue.filter(id => !newEventLog.includes(id));
+            set({ eventQueue: [...contEvents.map(e => e.id), ...remaining] });
+          }
+        }
+
         if (eventId === 'mainline_three_brothers_act1') {
           set({ eventMarkers: { ...nextMarkers, ['act1_intro']: 'true' } });
         } else if (eventId === 'mainline_three_brothers_act2') {
@@ -1502,6 +1509,7 @@ export const useGameStore = create<GameStore>()(
         shownFormulaPoemIds: state.shownFormulaPoemIds,
         eventLog: state.eventLog ?? [],
         eventMarkers: state.eventMarkers ?? {},
+        eventQueue: state.eventQueue ?? buildEventQueue(),
         shopPriceMultiplier: state.shopPriceMultiplier ?? 100,
       }),
       migrate: (persistedState, version) => {
@@ -1531,6 +1539,7 @@ export const useGameStore = create<GameStore>()(
             shownFormulaPoemIds: [],
             eventLog: [],
             eventMarkers: {},
+            eventQueue: buildEventQueue(),
             shopPriceMultiplier: 100,
           } as Partial<GameStore>;
         }
@@ -1567,6 +1576,7 @@ export const useGameStore = create<GameStore>()(
           shownFormulaPoemIds: migrated.shownFormulaPoemIds ?? [],
           eventLog: migrated.eventLog ?? [],
           eventMarkers: migrated.eventMarkers ?? {},
+          eventQueue: migrated.eventQueue ?? buildEventQueue(),
           shopPriceMultiplier: migrated.shopPriceMultiplier ?? 100,
         } as GameStore;
       }

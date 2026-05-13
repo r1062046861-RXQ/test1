@@ -479,8 +479,8 @@ const generateLayerTypes = (absoluteLayer: number, nodeCount: number, combatSinc
       specialType = 'shop';
     } else {
       const roll = Math.random();
-      if (roll < 0.55) specialType = 'event';
-      else if (roll < 0.75) specialType = 'shop';
+      if (roll < 0.80) specialType = 'event';
+      else if (roll < 0.90) specialType = 'shop';
     }
     const specialIdx = Math.floor(Math.random() * 3);
     const r: NodeType[] = ['combat', 'combat', 'combat', 'combat'];

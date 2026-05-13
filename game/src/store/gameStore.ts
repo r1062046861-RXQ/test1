@@ -799,6 +799,31 @@ export const useGameStore = create<GameStore>()(
 
         if (nodeType === 'shop' || nodeType === 'rest' || nodeType === 'event' || nodeType === 'chest') {
           if (nodeType === 'event') {
+            const queue = state.eventQueue ?? [];
+            const nextQueueId = queue[0];
+
+            if (nextQueueId === '__mainline_act2' || nextQueueId === '__mainline_act3') {
+              const mlAct = parseInt(nextQueueId.slice(-1));
+              const actStageData = getMainlineActData(mlAct, state.eventMarkers ?? {});
+              if (actStageData) {
+                set({
+                  phase: 'event',
+                  currentNodeId: nodeId,
+                  enemyActionCue: null,
+                  playerImpactCue: null,
+                  currentEvent: {
+                    id: `mainline_three_brothers_act${mlAct}`,
+                    title: actStageData.title,
+                    description: actStageData.description,
+                    options: actStageData.options,
+                  },
+                  eventMarkers: { ...(state.eventMarkers ?? {}), [`act${mlAct}_intro`]: 'true' },
+                  eventQueue: queue.slice(1),
+                });
+                return;
+              }
+            }
+
             const actKey = `act${state.currentAct}_intro`;
             if (!(state.eventMarkers ?? {})[actKey]) {
               const actStageData = getMainlineActData(state.currentAct, state.eventMarkers ?? {});
@@ -1469,8 +1494,12 @@ export const useGameStore = create<GameStore>()(
 
         if (eventId === 'mainline_three_brothers_act1') {
           set({ eventMarkers: { ...nextMarkers, ['act1_intro']: 'true' } });
+          const curQueue = (get().eventQueue ?? []).filter(id => id !== '__mainline_act2' && id !== '__mainline_act3');
+          set({ eventQueue: ['__mainline_act2', ...curQueue] });
         } else if (eventId === 'mainline_three_brothers_act2') {
           set({ eventMarkers: { ...nextMarkers, ['act2_intro']: 'true' } });
+          const curQueue = (get().eventQueue ?? []).filter(id => id !== '__mainline_act3');
+          set({ eventQueue: ['__mainline_act3', ...curQueue] });
         } else if (eventId === 'mainline_three_brothers_act3') {
           set({ eventMarkers: { ...nextMarkers, ['act3_intro']: 'true' } });
         }

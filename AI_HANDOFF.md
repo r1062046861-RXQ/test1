@@ -11,7 +11,7 @@
 
 - 玩家选择 9 种体质之一后开始一局游戏。
 - 地图节点驱动流程：普通战斗、Boss、事件、药房、休息、奖励；精英和宝箱类型仍保留，但当前常规地图生成不产出精英或宝箱节点。
-- 事件系统：1 条主线（三兄弟择师，分三路，跨 3 幕分支叙事）+ 11 条支线事件。参与地图调度（主线优先/续集优先/随机池），通过标记系统跨 Act 持久化分叉状态。事件选项可触发治疗、伤害、金币变化、商店价格、卡牌获取/遗忘、装备获取、随机卡牌池等效果。
+- 事件系统：1 条主线（三兄弟择师，分三路，跨 3 幕分支叙事）+ 11 条支线事件。**严格线性队列**：三兄弟 Act1→Act2→Act3 顺序不可插队，支线按 `eventQueue` 预洗牌队列（50% 子午流注优先）依次消费，续集触发后注入队首。通过 `eventLog`/`eventMarkers` 持久化标记。
 - 战斗核心是手牌、真气、格挡、生命、状态、敌人意图和回合推进。
 - 地图为无限循环结构，每幕 10 层，击败 Boss 后进入下一幕（上限 3 幕）；没有正常胜利终点；`GamePhase` 仍保留 `victory` 类型。
 - Boss 和 Boss 前休憩在独立通道上，需在当前循环累计 3 场战斗胜利后解锁。击败 Boss 后 `currentAct` 递增（上限 3），敌池、敌人行动次数和 BGM 随 Act 切换。
@@ -230,13 +230,15 @@ wechatgame/
 源文件：`shared/data/events.ts`
 
 事件分类：
-- **主线事件**（`mainline_three_brothers`）：Act 1 择师三选一 → 通过 `eventMarkers[three_brothers]` 记录分支 → Act 2/3 各逻辑分叉叙事（`getMainlineActData(act, markers)`）
-- **支线事件**（`SIDE_EVENTS[]`）：11 条，含续集优先（`continuationMarker`）和随机调度
+- **主线事件**（`mainline_three_brothers`）：Act 1 择师三选一 → `eventMarkers[three_brothers]` 分支 → Act 2/3 各分支叙事。完成后 `handleEventChoice` 注入 `__mainline_act2/act3` 到 `eventQueue` 队首。
+- **支线事件**（`SIDE_EVENTS[]`）：11 条，含续集（`continuationMarker`）。
 
-调度逻辑（`gameStore.ts`）：
-1. Act 首层事件节点 → 优先主线事件（`act1/2/3_intro` 标记防重复）
-2. 续集优先 → `continuationMarker` 匹配且当前 Act 满足 `actRequirement` 的事件
-3. 随机池 → 从剩余 `SIDE_EVENTS` 中筛选，排除已触发过且非续集的事件
+调度逻辑（`gameStore.ts`，严格线性队列）：
+1. `startCombat`：检查 `eventQueue[0]` 是否为 `__mainline_act*`，是则消费之（出主线事件）
+2. 否则检查 `actX_intro` marker：未触发则出主线事件
+3. 否则 `pickSideEvent` 按队列顺序遍历 `eventQueue`，跳过 `eventLog` 已触发的
+4. 续集事件通过 `handleEventChoice` 注入队首，不会被随机支线插队
+5. `buildEventQueue`：开局洗牌，50% 概率 `side_needle_stage1` 排首位（第二个事件）
 
 关键类型：
 - `GameEvent`：id, title, description, options[], actRequirement, continuationMarker, clearMarkerOnTrigger
@@ -329,9 +331,10 @@ wechatgame/
 | **Boss独立通道** | col 3（最右列），从 event 节点直连，全程由灰色小圆点串联 |
 | **3胜解锁** | `combatWinsThisCycle >= 3` 才可进入 rest/boss 节点 |
 | **Boss后进入下一幕** | Boss 节点自身无子节点，完成后 `currentAct++`（上限 3），重置地图进入下一幕 |
-| **主线3分支** | col 0-2 为主线，非保底时随机一个主线位置可能替换为 shop/event |
-| **药房/事件保底** | 连续 2 场战斗无药房/事件则强制出现 |
-| **主线特殊节点概率** | 非保底时为 35% 事件 / 30% 药房 / 35% 战斗 |
+| **主线3分支** | col 0-2 为主线，每层 2 列事件/商店 + 1 列战斗（`lastCombatCol` 轮换不重复） |
+| **路径无连战** | `combatSinceEvent >= 2` 时 3 列全事件/商店；任意单列不可能连续战斗 |
+| **事件密度** | 85% 事件 / 10% 商店 / 5% 战斗；force 时 3 列全事件(85%)/商店(15%） |
+| **主线特殊节点概率** | 非保底时为 85% 事件 / 10% 商店 / 5% 战斗 |
 | **本地图无宝箱** | `chest` 类型保留在类型系统但地图生成不产出宝箱节点 |
 
 普通跑图当前在 `gameStore.ts` 中按 `state.currentAct` 动态选择 `ENEMY_POOLS.act1/act2/act3`；击败 Boss 后 `currentAct++`（上限 3），重置地图进入下一幕。开战时只应用 HP 缩放：`ceil(baseHp * (1 + floor * 0.05))`；`damageBonus` 虽由 `getEnemyScaling()` 返回，但当前普通开战流程未把它应用到敌人伤害。
@@ -346,7 +349,7 @@ wechatgame/
 - `persist` 本地持久化。
 - 存储 key：`wuxing-yidao-storage`。
 - 当前持久化 version：14。
-- 新增状态字段：`eventLog`（已触发事件ID列表）、`eventMarkers`（事件分叉标记）、`shopPriceMultiplier`（商店价格倍率）、`eventChosenIndex`（事件选项确认状态）。
+- 新增状态字段：`eventLog`（已触发事件ID列表）、`eventMarkers`（事件分叉标记）、`eventQueue`（支线事件线性队列）、`lastEnemyId`（防重复敌人）、`shopPriceMultiplier`（商店价格倍率）、`eventChosenIndex`（事件选项确认状态）。
 - 创建新局、选择体质、进入地图节点、启动战斗。
 - 连接 UI 操作和 `shared/core/gameCore.ts` 规则函数。
 - 管理奖励、装备掉落、药方蓝图掉落、合成台、商店、休息、事件等流程。
@@ -552,6 +555,12 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
+| 路径战斗轮换 v2.4 | 每层 2/3 列事件/商店 + 1/3 战斗，`lastCombatCol` 轮换确保单列不连战 |
+| 事件线性队列 | 三兄弟 Act1→Act2→Act3 不可插队；`eventQueue` 预洗牌+`__mainline_act*`注入 |
+| 管理员密码 | 密码 260208 保护管理员面板和体质入口，支持 localstorage 记住密码 |
+| 药房合成弹窗 | ShopView combine 成功后弹出卡牌图片+名称+描述全屏动画 |
+| 敌人不重复 | `lastEnemyId` 过滤，同一敌人不连续出现 |
+| 三兄弟数值 | 全部 `heal:999` 替换为 15/25/30 合理数值 |
 | 事件系统 v2.1 | 新增 1 主线（3 幕分叉）+ 11 支线事件，含完整叙事、选项效果、后果动画；`eventLog`/`eventMarkers` 持久化 |
 | 装备堆叠 | 装备不再唯一，`hasRelic` 替换为 `countRelic` 倍乘逻辑，11 件装备全部支持堆叠 |
 | 事件密度调整 | 层类型概率 25%→35%，保底间隔 4→2 场战斗，三幕全通约 11-12 事件 |

@@ -11,6 +11,7 @@ import {
 import { FORMULA_BLUEPRINTS } from '../data/formulas';
 import { useGameStore } from './gameStore';
 import * as progressiveAssets from '../utils/progressiveAssets';
+import { getMainlineActData } from '../../../shared/data/events';
 
 describe('Game Store', () => {
   beforeEach(() => {
@@ -142,6 +143,36 @@ describe('Game Store', () => {
       id: 'special_diathesis_passive',
       dispelImmune: true,
     }));
+  });
+
+  it('gives the second brother route a lasting opening benefit instead of wasted healing', () => {
+    const act1 = getMainlineActData(1, {});
+    expect(act1).toBeTruthy();
+
+    useGameStore.setState({
+      currentEvent: {
+        id: 'mainline_three_brothers_act1',
+        title: act1!.title,
+        description: act1!.description,
+        options: act1!.options,
+      },
+      eventMarkers: {},
+      eventQueue: [],
+      player: {
+        ...useGameStore.getState().player,
+        hp: 80,
+        maxHp: 80,
+        gold: 0,
+      },
+    });
+
+    useGameStore.getState().handleEventChoice('mainline_three_brothers_act1', 1);
+
+    const state = useGameStore.getState();
+    expect(state.player.maxHp).toBe(82);
+    expect(state.player.hp).toBe(82);
+    expect(state.player.gold).toBe(50);
+    expect(state.eventMarkers?.three_brothers).toBe('erge');
   });
 
   it('starts combat correctly', () => {

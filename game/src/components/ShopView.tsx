@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CARD_LIBRARY, isHerbCard } from '../data/cards';
+import { CARD_LIBRARY, countCardsByTemplate, getTemplateCardId, isHerbCard } from '../data/cards';
 import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { ActionButton, Badge, SectionTitle } from './ui/PageShell';
@@ -28,6 +28,7 @@ export const ShopView: React.FC = () => {
     combineCards,
     spendGold,
     completeNonCombat,
+    getHandLimit,
     getShopPriceMultiplier,
   } = useGameStore();
 
@@ -40,6 +41,8 @@ export const ShopView: React.FC = () => {
   const [sellCount, setSellCount] = useState(0);
 
   const priceMultiplier = useMemo(() => getShopPriceMultiplier() / 100, [player.gold]);
+  const deckCounts = useMemo(() => countCardsByTemplate(player.deck), [player.deck]);
+  const handLimit = getHandLimit();
 
   const cardPool = useMemo(
     () => Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable),
@@ -207,6 +210,15 @@ export const ShopView: React.FC = () => {
               title={combineStep === 'sacrifice' ? '合成药材 · 选择材料' : '合成药材 · 选择目标'}
               hint={combineStep === 'sacrifice' ? '选择3张牌作为合成材料' : '从已获取的牌中选择1张作为合成结果'}
             />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge variant="slate">牌组 {player.deck.length} 张</Badge>
+              <Badge variant={player.hand.length > handLimit ? 'crimson' : 'blue'}>
+                手牌 {player.hand.length}/{handLimit}
+              </Badge>
+              <Badge variant={combineSelected.length === 3 ? 'emerald' : 'amber'}>
+                材料 {combineSelected.length}/3
+              </Badge>
+            </div>
             {player.deck.length < 3 ? (
               <p className="text-stone-300 mt-4">牌组不足3张，无法合成。</p>
             ) : combineStep === 'sacrifice' ? (
@@ -214,6 +226,8 @@ export const ShopView: React.FC = () => {
                 <div className="grid grid-cols-4 gap-4 mt-3 max-h-[40vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
                   {player.deck.map((card) => {
                     const sel = combineSelected.includes(card.id);
+                    const templateId = getTemplateCardId(card);
+                    const ownedCount = templateId ? (deckCounts[templateId]?.count ?? 1) : 1;
                     return (
                       <button
                         key={card.id}
@@ -224,6 +238,9 @@ export const ShopView: React.FC = () => {
                         }}
                         className={`relative transition ${sel ? 'ring-4 ring-stone-400 rounded-[22px] scale-105' : 'opacity-70 hover:opacity-100'}`}
                       >
+                        <div className="absolute right-2 top-2 z-20 rounded-full border border-amber-200/35 bg-stone-950/75 px-2 py-0.5 text-[11px] font-bold text-amber-100 shadow-lg">
+                          x{ownedCount}
+                        </div>
                         <Card card={card} interactive={false} hoverLift={false} />
                       </button>
                     );
@@ -246,6 +263,7 @@ export const ShopView: React.FC = () => {
                   {obtainedCandidates.map((cid) => {
                     const card = CARD_LIBRARY[cid];
                     if (!card) return null;
+                    const ownedCount = deckCounts[cid]?.count ?? 0;
                     return (
                       <button
                         key={cid}
@@ -253,6 +271,9 @@ export const ShopView: React.FC = () => {
                         onClick={() => doCombine(cid)}
                         className="relative transition hover:scale-105 hover:opacity-100 opacity-80"
                       >
+                        <div className="absolute right-2 top-2 z-20 rounded-full border border-amber-200/35 bg-stone-950/75 px-2 py-0.5 text-[11px] font-bold text-amber-100 shadow-lg">
+                          x{ownedCount}
+                        </div>
                         <Card card={card} interactive={false} hoverLift={false} />
                       </button>
                     );

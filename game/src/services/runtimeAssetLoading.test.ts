@@ -43,6 +43,16 @@ describe('runtimeAssetLoadingController', () => {
     ]);
   });
 
+  it('uses only preloaded stages for total progress bytes', () => {
+    const controller = createRuntimeAssetLoadingController({
+      manifest,
+      preloadAsset: async () => true,
+    });
+
+    expect(controller.getSnapshot().totalBytes).toBe(180);
+    expect(controller.getSnapshot().totalCount).toBe(2);
+  });
+
   it('keeps the background load running after a subscriber unsubscribes', async () => {
     const visited: string[] = [];
 

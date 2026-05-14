@@ -1,6 +1,5 @@
 import {
   RUNTIME_ASSET_MANIFEST,
-  TOTAL_RUNTIME_ASSET_BYTES,
   type RuntimeAssetManifestEntry,
   type RuntimeAssetStage,
 } from '../data/runtimeAssetManifest';
@@ -306,5 +305,4 @@ export const createRuntimeAssetLoadingController = ({
 
 export const runtimeAssetLoadingController = createRuntimeAssetLoadingController({
   manifest: RUNTIME_ASSET_MANIFEST,
-  totalBytes: TOTAL_RUNTIME_ASSET_BYTES,
 });

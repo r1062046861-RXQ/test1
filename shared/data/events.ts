@@ -50,7 +50,7 @@ export const MAINLINE_EVENT = {
       {
         label: '拜入二哥门下',
         description: '"病初起而速治，是为中工。"\n二哥赠言："见微知著，截断病势。这条路虽不显赫，却最踏实。"',
-        effects: [{ type: 'heal' as const, value: 15 }, { type: 'goldChange' as const, value: 50 }],
+        effects: [{ type: 'maxHpChange' as const, value: 2 }, { type: 'goldChange' as const, value: 50 }],
         setMarker: 'three_brothers=erge',
       },
       {

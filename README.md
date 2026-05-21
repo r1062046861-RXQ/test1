@@ -184,7 +184,7 @@ React 18 · TypeScript 5 · Vite 5 · Zustand 4 · Framer Motion 11 · Tailwind 
 
 1. 先读 `AI_HANDOFF.md`，再读相关源码。
 2. 修改规则先改 `shared/core/gameCore.ts`，再改数据文案和测试。
-3. 修改 UI 先搜索 `game/src/index.css` 中的已有 class。
+3. 修改 UI 先搜索 `game/src/index.css` 中的已有 class，并先读 `AI_HANDOFF.md` 的“UI 替换关键词规范”。
 4. 修改资源后执行 `npm run assets:manifest`。
 5. 不要把规则逻辑写进 React 组件；规则放在 `shared/` 下。
 6. 文本显示乱码不要复制终端输出，用能识别 UTF-8 的编辑器看源码。

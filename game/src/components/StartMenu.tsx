@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, Play, Settings, Shield, Users, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ENEMY_ACT_LABELS, ENEMY_CODEX_DETAILS, ENEMY_TIER_LABELS, type EnemyTier } from '../data/codex';
 import { ENEMIES } from '../data/enemies';
 import { useGameStore } from '../store/gameStore';
 import type { Constitution } from '../types';
-import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
+import { resolveAssetUrl } from '../utils/assets';
 import { useRuntimeAssetLoadingProgress } from '../hooks/useRuntimeAssetLoadingProgress';
 import {
   CONSTITUTION_CINEMATIC_MS,
@@ -14,7 +14,7 @@ import {
   type ConstitutionIntroStage,
   type ConstitutionOption,
 } from './ConstitutionIntroOverlay';
-import { ActionButton, Badge, PageShell, Panel } from './ui/PageShell';
+import { ActionButton, Badge } from './ui/PageShell';
 import { playSfx } from '../services/audioService';
 
 const CONSTITUTIONS: ConstitutionOption[] = [
@@ -145,42 +145,92 @@ type EnemyEntry = {
   summary: string;
 };
 
-const MenuActionCard: React.FC<{
+const REF_W = 1920;
+const REF_H = 1080;
+
+type StartMenuButtonId = 'continue' | 'new_run' | 'codex' | 'contact' | 'settings' | 'admin';
+
+type MenuButtonVisual = {
   title: string;
-  description: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'quiet';
-  wide?: boolean;
-  id?: string;
-}> = ({ title, description, icon, onClick, variant = 'secondary', wide = false, id }) => {
-  const handleClick = () => {
-    playSfx('button_click');
-    onClick();
-  };
-  return (
-  <motion.button
-    id={id}
-    type="button"
-    onClick={handleClick}
-    whileHover={{ y: -4, scale: 1.01 }}
-    whileTap={{ scale: 0.985 }}
-    className={[
-      'start-menu__action-card',
-      `start-menu__action-card--${variant}`,
-      wide ? 'md:col-span-2' : '',
-    ]
-      .filter(Boolean)
-      .join(' ')}
-  >
-    <div className="start-menu__action-icon">{icon}</div>
-    <div className="start-menu__action-copy">
-      <div className="start-menu__action-title">{title}</div>
-      <p className="start-menu__action-description">{description}</p>
-    </div>
-  </motion.button>
-  );
+  subtitle: string;
+  icon: string;
+  defaultRegion: string;
+  hoverRegion: string;
+  gridLeft: number;
+  gridTop: number;
 };
+
+type MenuButtonDef = MenuButtonVisual & {
+  id: StartMenuButtonId;
+  requiresSavedRun?: boolean;
+};
+
+const BUTTON_CONFIG: MenuButtonDef[] = [
+  {
+    id: 'continue',
+    requiresSavedRun: true,
+    title: '继续巡诊',
+    subtitle: '回到地图。',
+    icon: '/assets/main_menu/icon_继续巡诊.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/continue.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/continue.png',
+    gridLeft: 136,
+    gridTop: 197,
+  },
+  {
+    id: 'new_run',
+    title: '重新巡诊',
+    subtitle: '重新选择体质。',
+    icon: '/assets/main_menu/icon_重新巡诊.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/new_run.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/new_run.png',
+    gridLeft: 136,
+    gridTop: 449,
+  },
+  {
+    id: 'codex',
+    title: '图鉴总览',
+    subtitle: '查看已收集的药材等。',
+    icon: '/assets/main_menu/icon_图鉴总览.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/codex.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/codex.png',
+    gridLeft: 136,
+    gridTop: 701,
+  },
+  {
+    id: 'settings',
+    title: '功能设置',
+    subtitle: '调整显示。',
+    icon: '/assets/main_menu/icon_功能设置.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/settings.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/settings.png',
+    gridLeft: 1334,
+    gridTop: 197,
+  },
+  {
+    id: 'contact',
+    title: '联系作者',
+    subtitle: '扫码联系。',
+    icon: '/assets/main_menu/icon_联系作者.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/contact.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/contact.png',
+    gridLeft: 1334,
+    gridTop: 449,
+  },
+  {
+    id: 'admin',
+    title: '管理员测试',
+    subtitle: '调试入口。',
+    icon: '/assets/main_menu/icon_管理员测试.png',
+    defaultRegion: '/assets/main_menu/regions/plate/default/admin.png',
+    hoverRegion: '/assets/main_menu/regions/plate/hover/admin.png',
+    gridLeft: 1334,
+    gridTop: 701,
+  },
+];
+
+const MENU_BUTTON_W = 446;
+const MENU_BUTTON_H = 219;
 
 const formatMegabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 const LOADING_STAGE_LABELS = {
@@ -200,6 +250,38 @@ const formatLoadingSpeed = (bytesPerSecond: number) => {
   }
 
   return `${(bytesPerSecond / (1024 * 1024)).toFixed(2)} MB/s`;
+};
+
+const MenuCard: React.FC<{
+  button: MenuButtonDef;
+  enabled: boolean;
+  onClick: () => void;
+  onHover: (id: StartMenuButtonId | null) => void;
+}> = ({ button, enabled, onClick, onHover }) => {
+  return (
+    <button
+      type="button"
+      disabled={!enabled}
+      onClick={enabled ? onClick : undefined}
+      onMouseEnter={() => onHover(button.id)}
+      onMouseLeave={() => onHover(null)}
+      onFocus={() => onHover(button.id)}
+      onBlur={() => onHover(null)}
+      className={[
+        'start-menu-card',
+        enabled ? '' : 'start-menu-card--disabled',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={{
+        left: `${(button.gridLeft / REF_W) * 100}%`,
+        top: `${(button.gridTop / REF_H) * 100}%`,
+        width: `${(MENU_BUTTON_W / REF_W) * 100}%`,
+        height: `${(MENU_BUTTON_H / REF_H) * 100}%`,
+      }}
+      aria-label={button.title}
+    />
+  );
 };
 
 export const StartMenu: React.FC = () => {
@@ -232,7 +314,7 @@ export const StartMenu: React.FC = () => {
   })();
   const [showAdminPanel, setShowAdminPanel] = useState(adminEnabled);
   const [adminUnlocked, setAdminUnlocked] = useState(adminEnabled);
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState<string | null>(null); // 'panel' | 'game'
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(() => {
@@ -347,124 +429,149 @@ export const StartMenu: React.FC = () => {
     : 100;
   const currentStageLabel = LOADING_STAGE_LABELS[assetLoadingProgress.currentStage];
 
+  const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
+  const handleMenuAction = (id: StartMenuButtonId) => {
+    playSfx('button_click');
+    switch (id) {
+      case 'continue':
+        setPhase('map');
+        break;
+      case 'new_run':
+        openNewRunFlow();
+        break;
+      case 'codex':
+        setPhase('card_codex');
+        break;
+      case 'contact':
+        setShowContactPanel(true);
+        break;
+      case 'settings':
+        setShowSettings(true);
+        break;
+      case 'admin':
+        openAdminPanel();
+        break;
+    }
+  };
+
   return (
     <>
-      <PageShell
-        tone="immersive"
-        headerSurface="plain"
-        title="五行医道"
-        kicker="五行辨证巡诊"
-        subtitle="辨体质，定路径，开巡诊。"
-        className="start-menu-page"
-        headerClassName="start-menu__hero"
-        style={{
-          backgroundImage:
-            `linear-gradient(180deg, rgba(8,10,18,0.28), rgba(6,8,14,0.78)), radial-gradient(circle at top, rgba(255,221,161,0.14), transparent 32%), ${resolveAssetBackground('/assets/background_main_menu.png')}`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-        contentClassName="start-menu__layout start-menu__layout--focused"
-      >
-        <Panel className="start-menu__stage start-menu__stage--focused px-5 py-5 md:px-7 md:py-7">
-          <div className="start-menu__stage-kicker">巡诊起局</div>
-          <div className="start-menu__stage-title">
-            {hasSavedRun ? '继续当前巡诊，或重新起一局' : '开始一局新的巡诊'}
-          </div>
-          <p className="start-menu__stage-copy">
-            {hasSavedRun ? '继续会直接回到地图；重新巡诊会先进入体质选择。' : '先选体质，再开始本局巡诊。'}
-          </p>
+      <div className="start-menu-page">
+        <canvas
+          id="playwright-canvas"
+          className="fixed inset-0 w-full h-full opacity-0 pointer-events-none"
+        />
 
-          <div className="start-menu__actions-grid">
-            {hasSavedRun ? (
-              <MenuActionCard
-                title="继续巡诊"
-                description="回到地图。"
-                icon={<Play size={20} />}
-                variant="primary"
-                onClick={() => setPhase('map')}
-              />
-            ) : null}
-
-            <MenuActionCard
-              title={hasSavedRun ? '重新巡诊' : '开始巡诊'}
-              description={hasSavedRun ? '重新选择体质。' : '进入体质选择。'}
-              icon={<Play size={20} />}
-              variant="primary"
-              wide={!hasSavedRun}
-              onClick={openNewRunFlow}
+        <div className="start-menu-page__inner">
+          <div className="start-menu-page__canvas">
+            <div
+              className="start-menu-page__background"
+              style={{
+                backgroundImage: `url("${resolveAssetUrl('/assets/main_menu/background.png')}")`,
+              }}
+            />
+            <img
+              className="start-menu-title-star start-menu-title-star--left"
+              src={resolveAssetUrl('/assets/main_menu/title_star_left.png')}
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              className="start-menu-title-text"
+              src={resolveAssetUrl('/assets/main_menu/title_text.png')}
+              alt="五行辩证巡诊"
+            />
+            <img
+              className="start-menu-title-star start-menu-title-star--right"
+              src={resolveAssetUrl('/assets/main_menu/title_star_right.png')}
+              alt=""
+              aria-hidden="true"
             />
 
-            <MenuActionCard
-              title="图鉴总览"
-              description="查看条目。"
-              icon={<BookOpen size={20} />}
-              onClick={() => setPhase('card_codex')}
-            />
-            <MenuActionCard
-              title="联系作者"
-              description="扫码联系。"
-              icon={<Users size={20} />}
-              onClick={() => setShowContactPanel(true)}
-            />
-            <MenuActionCard
-              title="设置"
-              description="调整显示。"
-              icon={<Settings size={20} />}
-              variant="quiet"
-              onClick={() => setShowSettings(true)}
-            />
-            <MenuActionCard
-              title="管理员测试"
-              description="调试入口。"
-              icon={<Shield size={20} />}
-              variant="quiet"
-              id="open-admin-panel-btn"
-              onClick={openAdminPanel}
-            />
-          </div>
-
-          <AnimatePresence>
-            {assetLoadingProgress.visible && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className="start-menu__asset-loader"
-              >
-                <div className="start-menu__asset-loader-head">
-                  <div>
-                    <div className="start-menu__asset-loader-kicker">资源加载</div>
-                    <div className="start-menu__asset-loader-copy">
-                      {formatMegabytes(assetLoadingProgress.loadedBytes)} / {formatMegabytes(assetLoadingProgress.totalBytes)}
-                    </div>
-                    <div className="start-menu__asset-loader-status">
-                      <span>当前阶段：{currentStageLabel}</span>
-                      <span>当前速度：{formatLoadingSpeed(assetLoadingProgress.speedBytesPerSecond)}</span>
-                    </div>
-                  </div>
-                  <div className="start-menu__asset-loader-meta">
-                    <span>{assetLoadingProgress.loadedCount}/{assetLoadingProgress.totalCount}</span>
-                    <span>{loadingProgressPercent.toFixed(0)}%</span>
-                  </div>
-                </div>
-                <div className="start-menu__asset-loader-track" aria-hidden="true">
-                  <motion.div
-                    className="start-menu__asset-loader-fill"
-                    animate={{ width: `${loadingProgressPercent}%` }}
-                    transition={{ duration: 0.24, ease: 'easeOut' }}
+            {BUTTON_CONFIG.map((button) => {
+              const enabled = !button.requiresSavedRun || hasSavedRun;
+              const isHovered = hoveredBtn === button.id && enabled;
+              const gridStyle = {
+                left: `${(button.gridLeft / REF_W) * 100}%`,
+                top: `${(button.gridTop / REF_H) * 100}%`,
+                width: `${(MENU_BUTTON_W / REF_W) * 100}%`,
+                height: `${(MENU_BUTTON_H / REF_H) * 100}%`,
+              };
+              return (
+                <React.Fragment key={button.id}>
+                  <img
+                    src={resolveAssetUrl(isHovered ? button.hoverRegion : button.defaultRegion)}
+                    alt=""
+                    aria-hidden="true"
+                    className={[
+                      'start-menu-button-overlay',
+                      enabled ? '' : 'start-menu-button-overlay--disabled',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={gridStyle}
                   />
-                </div>
-                <div className="start-menu__asset-loader-note">
-                  {assetLoadingProgress.finished
-                    ? '素材已加载完成。'
-                    : '资源会在后台继续加载，不用等全部完成也能开始游玩。'}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Panel>
-      </PageShell>
+                  <MenuCard
+                    button={button}
+                    enabled={enabled}
+                    onClick={() => handleMenuAction(button.id)}
+                    onHover={setHoveredBtn}
+                  />
+                </React.Fragment>
+              );
+            })}
+
+            <AnimatePresence>
+              {assetLoadingProgress.visible && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="start-menu__asset-loader"
+                  style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 'min(90%, 600px)',
+                  }}
+                >
+                  <div className="start-menu__asset-loader-head">
+                    <div>
+                      <div className="start-menu__asset-loader-kicker">资源加载</div>
+                      <div className="start-menu__asset-loader-copy">
+                        {formatMegabytes(assetLoadingProgress.loadedBytes)} / {formatMegabytes(assetLoadingProgress.totalBytes)}
+                      </div>
+                      <div className="start-menu__asset-loader-status">
+                        <span>当前阶段：{currentStageLabel}</span>
+                        <span>当前速度：{formatLoadingSpeed(assetLoadingProgress.speedBytesPerSecond)}</span>
+                      </div>
+                    </div>
+                    <div className="start-menu__asset-loader-meta">
+                      <span>{assetLoadingProgress.loadedCount}/{assetLoadingProgress.totalCount}</span>
+                      <span>{loadingProgressPercent.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <div className="start-menu__asset-loader-track" aria-hidden="true">
+                    <motion.div
+                      className="start-menu__asset-loader-fill"
+                      animate={{ width: `${loadingProgressPercent}%` }}
+                      transition={{ duration: 0.24, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <div className="start-menu__asset-loader-note">
+                    {assetLoadingProgress.finished
+                      ? '素材已加载完成。'
+                      : '资源会在后台继续加载，不用等全部完成也能开始游玩。'}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {showContactPanel && (

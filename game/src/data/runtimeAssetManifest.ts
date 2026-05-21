@@ -1166,6 +1166,251 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
+    "path": "/assets/main_menu/background.png",
+    "bytes": 1308281,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_功能设置_hover.png",
+    "bytes": 224573,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_功能设置选项.png",
+    "bytes": 138277,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_图鉴总览_hover.png",
+    "bytes": 207710,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_图鉴总览选项.png",
+    "bytes": 127152,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_管理员测试_hover.png",
+    "bytes": 197639,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_管理员测试选项.png",
+    "bytes": 122522,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_继续巡诊_hover.png",
+    "bytes": 208912,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_继续巡诊选项.png",
+    "bytes": 123808,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_联系作者_hover.png",
+    "bytes": 184297,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_联系作者选项.png",
+    "bytes": 112683,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_重新巡诊_hover.png",
+    "bytes": 229175,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/button_重新巡诊选项.png",
+    "bytes": 137508,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_功能设置.png",
+    "bytes": 5222,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_图鉴总览.png",
+    "bytes": 4352,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_管理员测试.png",
+    "bytes": 4349,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_继续巡诊.png",
+    "bytes": 4079,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_联系作者.png",
+    "bytes": 5077,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/icon_重新巡诊.png",
+    "bytes": 4161,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/reference_hover.png",
+    "bytes": 2090471,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/reference.png",
+    "bytes": 1705926,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/admin.png",
+    "bytes": 98707,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/codex.png",
+    "bytes": 104775,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/contact.png",
+    "bytes": 89048,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/continue.png",
+    "bytes": 101096,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/new_run.png",
+    "bytes": 115943,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/default/settings.png",
+    "bytes": 115406,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/admin.png",
+    "bytes": 165084,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/codex.png",
+    "bytes": 179596,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/contact.png",
+    "bytes": 149393,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/continue.png",
+    "bytes": 179126,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/new_run.png",
+    "bytes": 200718,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/hover/settings.png",
+    "bytes": 197791,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/admin.png",
+    "bytes": 126908,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/codex.png",
+    "bytes": 131156,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/contact.png",
+    "bytes": 118996,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/continue.png",
+    "bytes": 119771,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/new_run.png",
+    "bytes": 142155,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/default/settings.png",
+    "bytes": 138671,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/admin.png",
+    "bytes": 186987,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/codex.png",
+    "bytes": 209205,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/contact.png",
+    "bytes": 168822,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/continue.png",
+    "bytes": 202084,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/new_run.png",
+    "bytes": 230185,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/regions/plate/hover/settings.png",
+    "bytes": 230418,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/text_plate.png",
+    "bytes": 18590,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/title_star_left.png",
+    "bytes": 385,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/title_star_right.png",
+    "bytes": 383,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/title_text.png",
+    "bytes": 7027,
+    "stage": "static"
+  },
+  {
     "path": "/assets/background_combat_act1.png",
     "bytes": 202508,
     "stage": "static"
@@ -1282,4 +1527,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 159827643;
+export const TOTAL_RUNTIME_ASSET_BYTES = 170702243;

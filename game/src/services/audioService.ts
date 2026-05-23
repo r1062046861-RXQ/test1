@@ -24,15 +24,14 @@ const BGM_FILES: Record<string, BgmEntry> = {
 };
 
 const SFX_FILES: Record<string, SfxEntry> = {
-  button_click: { name: '按钮点击', path: `${AUDIO_BASE}/sfx/button_click.mp3` },
+  button_click: { name: '按钮点击', path: `${AUDIO_BASE}/sfx/interaction_select.wav` },
   card_hover: { name: '卡牌悬停', path: `${AUDIO_BASE}/sfx/card_hover.mp3` },
-  confirm: { name: '确认选择', path: `${AUDIO_BASE}/sfx/confirm.mp3` },
+  confirm: { name: '确认选择', path: `${AUDIO_BASE}/sfx/interaction_select.wav` },
   back: { name: '返回关闭', path: `${AUDIO_BASE}/sfx/back.mp3` },
   card_draw: { name: '抽牌', path: `${AUDIO_BASE}/sfx/card_draw.mp3` },
   card_discard: { name: '弃牌', path: `${AUDIO_BASE}/sfx/card_discard.mp3` },
-  victory: { name: '战斗胜利', path: `${AUDIO_BASE}/sfx/victory.mp3` },
   chest_open: { name: '宝箱打开', path: `${AUDIO_BASE}/sfx/chest_open.mp3` },
-  card_reward: { name: '获得卡牌', path: `${AUDIO_BASE}/sfx/card_reward.mp3` },
+  card_reward: { name: '获得卡牌', path: `${AUDIO_BASE}/sfx/card_flip.wav` },
   gold_gain: { name: '获得金币', path: `${AUDIO_BASE}/sfx/gold_gain.mp3` },
   heal: { name: '治疗', path: `${AUDIO_BASE}/sfx/heal.mp3` },
   shop_purchase: { name: '商店购买', path: `${AUDIO_BASE}/sfx/shop_purchase.mp3` },

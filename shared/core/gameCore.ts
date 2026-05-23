@@ -1,5 +1,6 @@
 import { Card, Enemy, EnemyIntent, GamePhase, MapLayer, MapNode, NodeType, Player, StatusEffect } from '../baseTypes';
 import { ENEMIES } from '../data/enemies';
+import { getEnemyStrategy, getEnemyActionCount, type EnemyActionContext } from './enemyStrategies';
 
 export interface TurnFlags {
   playedAttack: boolean;
@@ -1833,18 +1834,60 @@ const getAliveEnemyCount = (enemies: Enemy[]) => enemies.filter(enemy => enemy.c
 
 const canSummonEnemy = (enemies: Enemy[]) => getAliveEnemyCount(enemies) < MAX_ALIVE_ENEMIES_ON_FIELD;
 
-const getEnemyRank = (enemy: Enemy): 'common' | 'elite' | 'boss' => {
-  if (enemy.behavior?.startsWith('boss_') || enemy.id.includes('boss')) return 'boss';
-  if (['external_combination', 'phlegm_stasis', 'jueyin_complex'].includes(enemy.behavior ?? enemy.id)) return 'elite';
-  return 'common';
+const applyDamageToPlayer = (
+  player: Player,
+  baseDamage: number,
+  turnFlags: TurnFlags,
+  log: (message: string) => void
+): number => {
+  let dmg = baseDamage;
+  if (hasPassive(player, 'yin_deficiency_passive')) {
+    dmg += 1;
+  }
+  if (hasPassive(player, 'qi_stagnation_passive') && !turnFlags.tookAttackDamage) {
+    dmg = Math.max(0, dmg - 4);
+    log('[气郁质] 闪转腾挪：本次伤害减少4点');
+  }
+  const bloodStasis = getStacks(player, 'blood_stasis');
+  if (bloodStasis > 0) {
+    dmg += bloodStasis;
+  }
+  const reduceOnce = getStacks(player, 'reduce_next_damage');
+  if (reduceOnce > 0) {
+    dmg = Math.max(0, dmg - reduceOnce);
+    removeStatus(player, 'reduce_next_damage');
+  }
+  if (player.block >= dmg) {
+    player.block -= dmg;
+    return 0;
+  }
+  dmg -= player.block;
+  player.block = 0;
+  const dealt = takePlayerHpDamage(player, dmg);
+  if (dealt > 0) {
+    turnFlags.tookAttackDamage = true;
+  }
+  if (dealt > 0 && hasRelic(player, 'equipment_zhengxie')) {
+    const current = getStacks(player, 'equipment_zhengqi');
+    if (current < 3) {
+      addStatus(player, {
+        id: 'equipment_zhengqi',
+        name: '正气',
+        type: 'buff',
+        stacks: 1,
+        canStack: true,
+        description: '每层使格挡获得+1，最多3层',
+      });
+      const status = getStatus(player, 'equipment_zhengqi');
+      if (status && status.stacks > 3) status.stacks = 3;
+      log('[正邪相争] 正气被激发，格挡收益提高');
+    }
+  }
+  return dealt;
 };
 
-const getEnemyActionCount = (enemy: Enemy, currentAct: number) => {
-  const rank = getEnemyRank(enemy);
-  if (rank !== 'common') return 2;
-  if (currentAct <= 1) return 1;
-  if (currentAct === 2) return Math.random() < 0.65 ? 2 : 1;
-  return 2;
+const applyDebuffToPlayer = (player: Player, status: StatusEffect): void => {
+  addStatus(player, status);
 };
 
 export const resolveEnemyTurn = (
@@ -1892,565 +1935,30 @@ export const resolveEnemyTurn = (
     };
   }
 
-  const applyDamageToPlayer = (baseDamage: number) => {
-    let dmg = baseDamage;
-    if (hasPassive(newPlayer, 'yin_deficiency_passive')) {
-      dmg += 1;
-    }
-    if (hasPassive(newPlayer, 'qi_stagnation_passive') && !nextTurnFlags.tookAttackDamage) {
-      dmg = Math.max(0, dmg - 4);
-      log('[气郁质] 闪转腾挪：本次伤害减少4点');
-    }
-    const bloodStasis = getStacks(newPlayer, 'blood_stasis');
-    if (bloodStasis > 0) {
-      dmg += bloodStasis;
-    }
-    const reduceOnce = getStacks(newPlayer, 'reduce_next_damage');
-    if (reduceOnce > 0) {
-      dmg = Math.max(0, dmg - reduceOnce);
-      removeStatus(newPlayer, 'reduce_next_damage');
-    }
-    if (newPlayer.block >= dmg) {
-      newPlayer.block -= dmg;
-      return 0;
-    }
-    dmg -= newPlayer.block;
-    newPlayer.block = 0;
-    const dealt = takePlayerHpDamage(newPlayer, dmg);
-    if (dealt > 0) {
-      nextTurnFlags.tookAttackDamage = true;
-    }
-    if (dealt > 0 && hasRelic(newPlayer, 'equipment_zhengxie')) {
-      const current = getStacks(newPlayer, 'equipment_zhengqi');
-      if (current < 3) {
-        addStatus(newPlayer, {
-          id: 'equipment_zhengqi',
-          name: '正气',
-          type: 'buff',
-          stacks: 1,
-          canStack: true,
-          description: '每层使格挡获得+1，最多3层',
-        });
-        const status = getStatus(newPlayer, 'equipment_zhengqi');
-        if (status && status.stacks > 3) status.stacks = 3;
-        log('[正邪相争] 正气被激发，格挡收益提高');
-      }
-    }
-    return dealt;
-  };
+  const damageToPlayer = (baseDamage: number) =>
+    applyDamageToPlayer(newPlayer, baseDamage, nextTurnFlags, log);
 
-  const applyDebuffToPlayer = (status: StatusEffect) => {
-    addStatus(newPlayer, status);
-  };
+  const debuffPlayer = (status: StatusEffect) =>
+    applyDebuffToPlayer(newPlayer, status);
 
-  const getNextIntent = (enemy: Enemy): EnemyIntent => {
-    const roll = Math.random();
-    switch (enemy.behavior) {
-      case 'wind_cold_guest':
-        return roll < 0.68
-          ? { type: 'attack', value: 7, description: '寒邪侵袭' }
-          : { type: 'debuff', value: 0, description: '风寒束表' };
-      case 'wind_heat_attack':
-        return roll < 0.62
-          ? { type: 'attack', value: 4, hits: 2, description: '热邪连袭' }
-          : { type: 'debuff', value: 0, description: '热邪灼络' };
-      case 'damp_turbidity':
-        return roll < 0.55
-          ? { type: 'attack', value: 6, description: '湿浊侵身' }
-          : { type: 'debuff', value: 0, description: '湿邪困脾' };
-      case 'external_combination': {
-        const form = enemy.meta?.form || 'cold';
-        if (form === 'cold') {
-          return roll < 0.42
-            ? { type: 'attack', value: 9, description: '寒邪裹体' }
-            : { type: 'debuff', value: 0, description: '风寒束表' };
-        }
-        return roll < 0.4
-          ? { type: 'debuff', value: 0, description: '热邪蒸腾' }
-          : { type: 'attack', value: 5 + getStacks(enemy, 'heat_evil'), hits: 2, description: '热邪连袭' };
-      }
-      case 'boss_wind_cold': {
-        const turn = enemy.meta?.turn || 0;
-        const phaseTwo = enemy.currentHp / enemy.maxHp < 0.5;
-        if (phaseTwo && turn % 3 === 2) {
-          return { type: 'special', value: 0, description: '寒凝血瘀' };
-        }
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '风寒束表' }
-          : { type: 'attack', value: phaseTwo ? 16 : 13, description: '寒邪侵袭' };
-      }
-      case 'boss_liver_fire': {
-        const heatGrowth = getStacks(enemy, 'fire_growth');
-        const phaseTwo = enemy.currentHp / enemy.maxHp < 0.5;
-        const turn = enemy.meta?.turn || 0;
-        if (phaseTwo && turn % 3 === 2) {
-          return { type: 'special', value: 0, description: '火旺伤阴' };
-        }
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '热邪炽盛' }
-          : { type: 'attack', value: 9 + heatGrowth, hits: phaseTwo ? 2 : 1, description: '肝火灼袭' };
-      }
-      case 'qi_blood_stasis': {
-        const turn = enemy.meta?.turn || 0;
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '气滞血瘀' }
-          : { type: 'attack', value: 10, description: '郁阻作痛' };
-      }
-      case 'spleen_dampness':
-        return roll < 0.32
-          ? { type: 'attack', value: 8, description: '湿浊压身' }
-          : roll < 0.72
-            ? { type: 'defend', value: 10, description: '脾虚护体' }
-            : { type: 'debuff', value: 0, description: '湿困中焦' };
-      case 'heart_kidney_gap':
-        return roll < 0.72
-          ? { type: 'debuff', value: 0, description: '心悸不安' }
-          : { type: 'attack', value: 8, description: '神乱冲心' };
-      case 'tanmengxinqiao': {
-        const turn = enemy.meta?.turn || 0;
-        const playerAlreadyControlled =
-          getStacks(newPlayer, 'stun') > 0 || getStacks(newPlayer, 'draw_down') > 0 || getStacks(newPlayer, 'no_block') > 0;
-        if (playerAlreadyControlled && turn % 2 === 1) {
-          return { type: 'attack', value: 10, description: '窍闭冲击' };
-        }
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '痰蒙心窍' }
-          : { type: 'attack', value: 9, description: '窍闭失神' };
-      }
-      case 'phlegm_stasis':
-        return roll < 0.5
-          ? { type: 'attack', value: 12, description: '痰瘀互结' }
-          : { type: 'defend', value: 14, description: '痰凝护体' };
-      case 'boss_spleen_damp': {
-        const turn = enemy.meta?.turn || 0;
-        const phaseTwo = enemy.currentHp / enemy.maxHp < 0.4;
-        if (turn > 0 && turn % 2 === 0) {
-          return { type: 'special', value: 0, description: '水湿不运' };
-        }
-        if (phaseTwo && getStacks(enemy, 'dampness_evil') > 0 && turn % 3 === 1) {
-          return { type: 'special', value: 0, description: '化热' };
-        }
-        return turn % 2 === 1
-          ? { type: 'debuff', value: 0, description: '湿困中焦' }
-          : { type: 'attack', value: 14, description: '湿浊扑袭' };
-      }
-      case 'yin_yang_split': {
-        const form = enemy.meta?.form || 'yin';
-        return form === 'yin'
-          ? { type: 'defend', value: 8, description: '阴守' }
-          : { type: 'attack', value: 11, description: '阳攻' };
-      }
-      case 'chong_ren_instability':
-        return roll < 0.7
-          ? { type: 'debuff', value: 0, description: '冲任不固' }
-          : { type: 'attack', value: 9, description: '逆乱冲袭' };
-      case 'reruyingxue': {
-        const turn = enemy.meta?.turn || 0;
-        const playerHeat = getStacks(newPlayer, 'heat_evil');
-        if (turn % 2 === 0 || playerHeat < 2) {
-          return { type: 'debuff', value: 0, description: '热入营血' };
-        }
-        return { type: 'attack', value: 10 + Math.min(4, playerHeat), description: '营热灼袭' };
-      }
-      case 'shenbunaqi': {
-        const turn = enemy.meta?.turn || 0;
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '肾不纳气' }
-          : { type: 'attack', value: 11, description: '纳气失司' };
-      }
-      case 'yangmingfushi': {
-        const turn = enemy.meta?.turn || 0;
-        if (newPlayer.block > 0 && turn % 2 === 0) {
-          return { type: 'special', value: 0, description: '阳明腑实' };
-        }
-        return { type: 'attack', value: 13, description: '腑实压顶' };
-      }
-      case 'jueyin_complex': {
-        const turn = enemy.meta?.turn || 0;
-        return turn % 2 === 0
-          ? { type: 'debuff', value: 0, description: '寒邪+虚弱' }
-          : { type: 'debuff', value: 0, description: '热邪+易伤' };
-      }
-      case 'boss_five_elements': {
-        const phase = enemy.meta?.phase || 'wood';
-        if (phase === 'wood') return { type: 'attack', value: 7, hits: 2, description: '风木摇动' };
-        if (phase === 'fire') return { type: 'debuff', value: 0, description: '热入营血' };
-        if (phase === 'earth') return { type: 'debuff', value: 0, description: '湿浊中阻' };
-        if (phase === 'metal') return { type: 'special', value: 0, description: '燥邪伤肺' };
-        return { type: 'special', value: 0, description: '寒水泛溢' };
-      }
-      case 'damp_minion':
-        return roll < 0.65
-          ? { type: 'debuff', value: 0, description: '湿邪侵体' }
-          : { type: 'attack', value: 5, description: '浊气扑袭' };
-      default:
-        return Math.random() > 0.5
-          ? { type: 'attack', value: 7, description: '攻击' }
-          : { type: 'defend', value: 5, description: '格挡' };
-    }
-  };
-  const getFollowUpIntent = (enemy: Enemy, primary: EnemyIntent): EnemyIntent => {
-    switch (enemy.behavior) {
-      case 'wind_cold_guest':
-        return primary.type === 'attack'
-          ? { type: 'debuff', value: 0, description: '风寒束表' }
-          : { type: 'attack', value: 6, description: '寒邪追袭' };
-      case 'wind_heat_attack':
-        return primary.type === 'attack'
-          ? { type: 'debuff', value: 0, description: '热邪灼络' }
-          : { type: 'attack', value: 4, hits: 2, description: '火毒追击' };
-      case 'damp_turbidity':
-        return primary.type === 'attack'
-          ? { type: 'debuff', value: 0, description: '湿邪困脾' }
-          : { type: 'defend', value: 6, description: '浊气护体' };
-      case 'external_combination':
-        return primary.type === 'attack'
-          ? { type: 'debuff', value: 0, description: enemy.meta?.form === 'cold' ? '风寒束表' : '热邪蒸腾' }
-          : {
-              type: 'attack',
-              value: enemy.meta?.form === 'cold' ? 8 : 4 + getStacks(enemy, 'heat_evil'),
-              hits: enemy.meta?.form === 'cold' ? 1 : 2,
-              description: enemy.meta?.form === 'cold' ? '寒袭追打' : '热邪连袭',
-            };
-      case 'boss_wind_cold':
-        return primary.type === 'special'
-          ? { type: 'attack', value: enemy.currentHp / enemy.maxHp < 0.5 ? 15 : 13, description: '寒邪崩压' }
-          : primary.type === 'attack'
-            ? { type: 'debuff', value: 0, description: '风寒束表' }
-            : { type: 'attack', value: enemy.currentHp / enemy.maxHp < 0.5 ? 15 : 13, description: '寒邪侵袭' };
-      case 'boss_liver_fire':
-        return primary.type === 'special'
-          ? { type: 'attack', value: 10 + getStacks(enemy, 'fire_growth'), hits: enemy.currentHp / enemy.maxHp < 0.5 ? 2 : 1, description: '火势追袭' }
-          : primary.type === 'attack'
-            ? { type: 'debuff', value: 0, description: '热邪炽盛' }
-            : { type: 'attack', value: 10 + getStacks(enemy, 'fire_growth'), hits: enemy.currentHp / enemy.maxHp < 0.5 ? 2 : 1, description: '肝火灼袭' };
-      case 'qi_blood_stasis':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 10, description: '瘀阻重击' }
-          : { type: 'debuff', value: 0, description: '气滞血瘀' };
-      case 'spleen_dampness':
-        if (primary.type === 'defend') return { type: 'attack', value: 8, description: '湿浊压身' };
-        if (primary.type === 'attack') return { type: 'debuff', value: 0, description: '湿困中焦' };
-        return { type: 'attack', value: 8, description: '浊气扑压' };
-      case 'heart_kidney_gap':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 8, description: '心肾失衡' }
-          : { type: 'debuff', value: 0, description: '心悸不安' };
-      case 'tanmengxinqiao':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 9, description: '迷窍冲心' }
-          : { type: 'debuff', value: 0, description: '迷窍封格' };
-      case 'phlegm_stasis':
-        return primary.type === 'defend'
-          ? { type: 'attack', value: 11, description: '痰瘀镇压' }
-          : { type: 'defend', value: 12, description: '痰凝护体' };
-      case 'boss_spleen_damp':
-        return primary.description === '化热'
-          ? { type: 'attack', value: 15, description: '湿热压顶' }
-          : primary.type === 'attack'
-            ? { type: 'debuff', value: 0, description: '湿困中焦' }
-            : { type: 'attack', value: 14, description: '湿浊扑袭' };
-      case 'yin_yang_split':
-        return primary.type === 'defend'
-          ? { type: 'attack', value: 9, description: '阳袭' }
-          : { type: 'defend', value: 7, description: '阴守' };
-      case 'chong_ren_instability':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 9, description: '逆乱冲袭' }
-          : { type: 'debuff', value: 0, description: '冲任不固' };
-      case 'reruyingxue':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 8 + Math.min(3, getStacks(newPlayer, 'heat_evil')), description: '营热追袭' }
-          : { type: 'debuff', value: 0, description: '热入营血' };
-      case 'shenbunaqi':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 10, description: '逆气冲胸' }
-          : { type: 'debuff', value: 0, description: '肾不纳气' };
-      case 'yangmingfushi':
-        return primary.type === 'special'
-          ? { type: 'attack', value: 12, description: '腑实追压' }
-          : newPlayer.block > 0
-            ? { type: 'special', value: 0, description: '阳明腑实' }
-            : { type: 'attack', value: 11, description: '燥结逼压' };
-      case 'jueyin_complex':
-        return { type: 'attack', value: 12, description: '厥阴交错' };
-      case 'boss_five_elements': {
-        const phase = enemy.meta?.phase || 'wood';
-        if (phase === 'wood') return { type: 'debuff', value: 0, description: '木郁乘土' };
-        if (phase === 'fire') return { type: 'attack', value: 12, description: '火势焚袭' };
-        if (phase === 'earth') return { type: 'attack', value: 11, description: '湿土镇压' };
-        if (phase === 'metal') return { type: 'attack', value: 10, hits: 2, description: '金风肃杀' };
-        return { type: 'debuff', value: 0, description: '寒水逼压' };
-      }
-      case 'damp_minion':
-        return primary.type === 'debuff'
-          ? { type: 'attack', value: 4, description: '浊气扑袭' }
-          : { type: 'debuff', value: 0, description: '湿邪侵体' };
-      default:
-        return primary.type === 'attack'
-          ? { type: 'defend', value: 4, description: '格挡' }
-          : { type: 'attack', value: 6, description: '攻击' };
-    }
-  };
-
-  const executeEnemyIntent = (enemy: Enemy, intent: EnemyIntent) => {
-    if (intent.type === 'attack') {
-      const hits = intent.hits || 1;
-      for (let i = 0; i < hits; i += 1) {
-        let dmg = (intent.value || 0) + getStrength(enemy);
-        const phlegmBind = getStacks(enemy, 'phlegm_bind');
-        if (phlegmBind > 0) {
-          dmg = Math.max(0, dmg - phlegmBind);
-        }
-        if (getStacks(enemy, 'weak') > 0) {
-          dmg = Math.floor(dmg * 0.75);
-        }
-        const dealt = applyDamageToPlayer(dmg);
-        log(`${enemy.name} 攻击了你，造成 ${dealt} 点伤害`);
-      }
-      return;
-    }
-    if (intent.type === 'defend') {
-      enemy.block += intent.value || 0;
-      log(`${enemy.name} 获得了 ${intent.value || 0} 点格挡`);
-      return;
-    }
-    if (intent.type === 'special') {
-      switch (enemy.behavior) {
-        case 'boss_wind_cold': {
-          const coldStacks = getStacks(newPlayer, 'cold_evil');
-          if (coldStacks >= 3) {
-            const coldStatus = getStatus(newPlayer, 'cold_evil');
-            if (coldStatus) {
-              coldStatus.stacks -= 3;
-              if (coldStatus.stacks <= 0) removeStatus(newPlayer, 'cold_evil');
-            }
-            applyDebuffToPlayer({ id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加' });
-            log('寒凝血瘀：3 层寒邪转化为 1 层血瘀');
-          } else {
-            applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 2, canStack: true, description: '寒邪缠身' });
-            log('风寒束表进一步加深寒邪');
-          }
-          break;
-        }
-        case 'boss_liver_fire': {
-          const yin = getStatus(newPlayer, 'yin');
-          if (yin && yin.stacks > 0) {
-            yin.stacks -= 1;
-            if (yin.stacks <= 0) removeStatus(newPlayer, 'yin');
-            log('火旺伤阴：你失去了 1 层滋阴');
-          } else {
-            applyDebuffToPlayer({
-              id: 'no_yin_gain',
-              name: '伤阴',
-              type: 'debuff',
-              stacks: 1,
-              canStack: false,
-              description: '下回合无法获得滋阴',
-              duration: 1,
-            });
-            log('火旺伤阴：下回合无法获得滋阴');
-          }
-          break;
-        }
-        case 'boss_spleen_damp': {
-          if (intent.description === '水湿不运') {
-            log(canSummonEnemy(newEnemies) ? '脾虚湿困：召来水湿小怪' : '脾虚湿困：湿气翻涌，但场上敌人已满');
-          } else {
-            const damp = Math.max(1, getStacks(enemy, 'dampness_evil'));
-            removeStatus(enemy, 'dampness_evil');
-            applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: damp, canStack: true, description: '回合结束受到伤害' });
-            log(`化热：将 ${damp} 层湿邪转化为热邪压向玩家`);
-          }
-          break;
-        }
-        case 'boss_five_elements': {
-          const phase = enemy.meta?.phase || 'wood';
-          if (phase === 'metal') {
-            applyDebuffToPlayer({
-              id: 'lung_dryness',
-              name: '燥邪伤肺',
-              type: 'debuff',
-              stacks: 1,
-              canStack: true,
-              description: '治疗与格挡效果下降',
-              duration: 2,
-            });
-            log('燥邪伤肺：你的治疗与格挡效果下降');
-          } else if (phase === 'water') {
-            applyDebuffToPlayer({
-              id: 'energy_drain',
-              name: '肾不纳气',
-              type: 'debuff',
-              stacks: 1,
-              canStack: true,
-              description: '真气上限降低',
-              duration: 2,
-            });
-            applyDebuffToPlayer({
-              id: 'max_energy_down',
-              name: '寒水泛溢',
-              type: 'debuff',
-              stacks: 1,
-              canStack: true,
-              description: '下回合真气上限 -1',
-              duration: 1,
-            });
-            log('寒水泛溢：你的真气被偷取');
-          }
-          break;
-        }
-        case 'yangmingfushi': {
-          const clearedBlock = newPlayer.block;
-          if (clearedBlock > 0) {
-            newPlayer.block = 0;
-            log(`阳明腑实：清空了 ${clearedBlock} 点格挡`);
-          } else {
-            log('阳明腑实：逼压防线，回合末格挡仍会被清空');
-          }
-          applyDebuffToPlayer({
-            id: 'remove_block_end',
-            name: '阳明腑实',
-            type: 'debuff',
-            stacks: 1,
-            canStack: false,
-            description: '回合结束时清空格挡',
-            duration: 1,
-          });
-          break;
-        }
-        default:
-          break;
-      }
-      return;
-    }
-    if (intent.type === 'debuff') {
-      switch (enemy.behavior) {
-        case 'wind_cold_guest':
-          applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-          applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-          log('风寒束表：你被寒邪侵袭');
-          break;
-        case 'wind_heat_attack':
-          applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
-          log('热邪灼络：你被热邪灼伤');
-          break;
-        case 'damp_turbidity':
-          applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
-          log('湿邪困脾：你的格挡效率下降');
-          break;
-        case 'external_combination':
-          if ((enemy.meta?.form || 'cold') === 'cold') {
-            applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-            applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-            log('外感合病（风寒态）：施加寒邪与虚弱');
-          } else {
-            applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
-            log('外感合病（风热态）：热邪蒸腾');
-          }
-          break;
-        case 'spleen_dampness':
-          applyDebuffToPlayer({ id: 'cost_up', name: '脾虚湿困', type: 'debuff', stacks: 1, canStack: true, description: '卡牌消耗增加', duration: 3 });
-          applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
-          log('湿困中焦：卡牌消耗增加');
-          break;
-        case 'heart_kidney_gap':
-          if (Math.random() < 0.5) {
-            applyDebuffToPlayer({ id: 'draw_down', name: '心悸不安', type: 'debuff', stacks: 1, canStack: true, description: '下回合少抽牌', duration: 1 });
-            applyDebuffToPlayer({ id: 'no_block', name: '心肾不交', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
-            log('心悸不安：下回合抽牌减少');
-          } else {
-            applyDebuffToPlayer({ id: 'stun', name: '痰蒙心窍', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
-            applyDebuffToPlayer({ id: 'no_block', name: '心肾不交', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
-            log('痰蒙心窍：你被眩晕');
-          }
-          break;
-        case 'tanmengxinqiao':
-          if (getStacks(newPlayer, 'draw_down') > 0 || getStacks(newPlayer, 'no_block') > 0) {
-            applyDebuffToPlayer({ id: 'stun', name: '痰蒙心窍', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
-            log('痰蒙心窍：你被迷窍眩晕');
-          } else {
-            applyDebuffToPlayer({ id: 'draw_down', name: '神志昏蒙', type: 'debuff', stacks: 1, canStack: true, description: '下回合少抽牌', duration: 1 });
-            applyDebuffToPlayer({ id: 'no_block', name: '窍闭失固', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
-            log('痰蒙心窍：下回合少抽且无法获得格挡');
-          }
-          break;
-        case 'qi_blood_stasis':
-          applyDebuffToPlayer({ id: 'cost_up_next', name: '气滞', type: 'debuff', stacks: 1, canStack: false, description: '下一张卡牌消耗 +1' });
-          applyDebuffToPlayer({ id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加' });
-          log('气滞血瘀：你被施加负面状态');
-          break;
-        case 'boss_wind_cold':
-          applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 2, canStack: true, description: '寒邪缠身' });
-          applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-          log('风寒束表：寒邪侵体');
-          break;
-        case 'boss_liver_fire':
-          applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
-          log('肝火炽盛：热邪侵身');
-          break;
-        case 'boss_spleen_damp':
-          applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 2, canStack: true, description: '格挡获得降低' });
-          applyDebuffToPlayer({ id: 'max_energy_down', name: '真气受阻', type: 'debuff', stacks: 1, canStack: true, description: '下回合真气上限 -1', duration: 1 });
-          log('湿困中焦：真气受阻');
-          break;
-        case 'chong_ren_instability':
-          removeBuffs(newPlayer);
-          log('冲任不固：失去所有正面状态');
-          break;
-        case 'reruyingxue':
-          applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
-          log('热入营血：热邪进一步深入营血');
-          break;
-        case 'shenbunaqi':
-          applyDebuffToPlayer({ id: 'energy_drain', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '真气上限降低', duration: 2 });
-          applyDebuffToPlayer({ id: 'max_energy_down', name: '纳气失司', type: 'debuff', stacks: 1, canStack: true, description: '下回合真气上限 -1', duration: 1 });
-          applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-          applyDebuffToPlayer({ id: 'weak', name: '气虚失摄', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 1 });
-          log('肾不纳气：真气受抑，寒邪与虚弱同时侵袭');
-          break;
-        case 'jueyin_complex': {
-          const turn = enemy.meta?.turn || 0;
-          if (turn % 2 === 0) {
-            applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-            applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-          } else {
-            applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 1, canStack: true, description: '回合结束受到伤害' });
-            applyDebuffToPlayer({ id: 'vulnerable', name: '易伤', type: 'debuff', stacks: 1, canStack: true, description: '下次受伤增加50%' });
-          }
-          log('寒热错杂侵袭');
-          break;
-        }
-        case 'boss_five_elements': {
-          const phase = enemy.meta?.phase || 'wood';
-          if (phase === 'fire') {
-            applyDebuffToPlayer({ id: 'heat_evil', name: '热邪', type: 'debuff', stacks: 2, canStack: true, description: '回合结束受到伤害' });
-            log('热入营血：热邪加深');
-          } else if (phase === 'earth') {
-            applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
-            enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + 6);
-            addStatus(enemy, { id: 'dampness_evil', name: '湿邪', type: 'buff', stacks: 1, canStack: true, description: '可转化为热邪' });
-            log('湿浊中阻：湿邪缠身');
-          } else if (phase === 'water') {
-            applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-            applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-            applyDebuffToPlayer({ id: 'max_energy_down', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '下回合真气上限 -1', duration: 1 });
-            log('寒水泛溢：真气受阻');
-          } else if (phase === 'wood') {
-            applyDebuffToPlayer({ id: 'weak', name: '木郁', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 1 });
-            log('木郁乘土：攻势被压制');
-          }
-          break;
-        }
-        case 'damp_minion':
-          applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
-          log('湿邪侵体');
-          break;
-        default:
-          break;
-      }
-    }
-  };
+  const buildContext = (): EnemyActionContext => ({
+    player: newPlayer,
+    enemies: newEnemies,
+    turnFlags: nextTurnFlags,
+    log,
+    currentAct: state.currentAct,
+    getStacks,
+    getStatus,
+    addStatus,
+    removeStatus,
+    removeBuffs,
+    hasPassive,
+    getStrength,
+    canSummonEnemy,
+    createEnemyFromTemplate,
+    applyDamageToPlayer: damageToPlayer,
+    applyDebuffToPlayer: debuffPlayer,
+  });
 
   for (let enemyIndex = 0; enemyIndex < newEnemies.length; enemyIndex += 1) {
     const enemy = newEnemies[enemyIndex];
@@ -2472,105 +1980,26 @@ export const resolveEnemyTurn = (
       continue;
     }
 
-    if (enemy.behavior === 'external_combination') {
-      const formTurns = enemy.meta?.formTurns ?? 3;
-      if (formTurns <= 0) {
-        const nextForm = enemy.meta?.form === 'cold' ? 'heat' : 'cold';
-        enemy.meta = { ...(enemy.meta || {}), form: nextForm, formTurns: 3 };
-        enemy.statusEffects = [];
-        log(`外感合病切换为${nextForm === 'cold' ? '风寒态' : '风热态'}`);
-      } else {
-        enemy.meta = { ...(enemy.meta || {}), formTurns: formTurns - 1 };
-      }
-    }
+    const strategy = getEnemyStrategy(enemy.behavior ?? '');
+    const ctx = buildContext();
 
-    if (
-      enemy.behavior === 'boss_wind_cold' ||
-      enemy.behavior === 'boss_liver_fire' ||
-      enemy.behavior === 'qi_blood_stasis' ||
-      enemy.behavior === 'tanmengxinqiao' ||
-      enemy.behavior === 'reruyingxue' ||
-      enemy.behavior === 'shenbunaqi' ||
-      enemy.behavior === 'yangmingfushi'
-    ) {
-      enemy.meta = { ...(enemy.meta || {}), turn: (enemy.meta?.turn || 0) + 1 };
-    }
+    strategy.onTurnStart?.(enemy, ctx);
 
-    if (enemy.behavior === 'boss_liver_fire') {
-      addStatus(enemy, { id: 'fire_growth', name: '肝火势', type: 'buff', stacks: 1, canStack: true, description: '攻击力提高' });
-    }
-
-    if (enemy.behavior === 'phlegm_stasis') {
-      if (getStacks(newPlayer, 'dampness_evil') > 0) {
-        enemy.block += 4;
-      }
-      if (getStacks(newPlayer, 'blood_stasis') > 0) {
-        addStatus(enemy, { id: 'strength', name: '力量', type: 'buff', stacks: 1, canStack: true, description: '攻击伤害提高' });
-      }
-    }
-
-    if (enemy.behavior === 'boss_five_elements') {
-      const hpRatio = enemy.currentHp / enemy.maxHp;
-      const phases = ['wood', 'fire', 'earth', 'metal', 'water'];
-      const currentPhase = enemy.meta?.phase || 'wood';
-      const currentIndex = phases.indexOf(currentPhase);
-      const thresholdPhase = phases[Math.min(4, Math.floor((1 - hpRatio) / 0.2))];
-      const phaseTurn = (enemy.meta?.phaseTurn || 0) + 1;
-      const shouldRotateByTurn = phaseTurn >= 3;
-      const nextPhase = thresholdPhase !== currentPhase
-        ? thresholdPhase
-        : shouldRotateByTurn
-          ? phases[(currentIndex + 1 + phases.length) % phases.length]
-          : currentPhase;
-      if (enemy.meta?.phase !== nextPhase) {
-        enemy.meta = { ...(enemy.meta || {}), phase: nextPhase, phaseTurn: 0 };
-        enemy.statusEffects = [];
-        log(`五行失调切换到${nextPhase}阶段`);
-      } else {
-        enemy.meta = { ...(enemy.meta || {}), phase: nextPhase, phaseTurn };
-      }
-      if (nextPhase === 'wood') {
-        addStatus(enemy, { id: 'strength', name: '木势', type: 'buff', stacks: 2, canStack: true, description: '攻击力提高' });
-      } else if (nextPhase === 'earth') {
-        addStatus(enemy, { id: 'dampness_evil', name: '湿邪', type: 'buff', stacks: 1, canStack: true, description: '湿郁化热' });
-      }
-    }
-
-    if (enemy.behavior === 'boss_spleen_damp') {
-      const turn = (enemy.meta?.turn || 0) + 1;
-      enemy.meta = { ...(enemy.meta || {}), turn };
-      if (turn % 2 === 0 && canSummonEnemy(newEnemies)) {
-        newEnemies.push(
-          createEnemyFromTemplate('damp_minion', {
-            id: `damp_minion_${Date.now()}_${enemyIndex}`,
-          }),
-        );
-      }
-      addStatus(enemy, { id: 'dampness_evil', name: '湿邪', type: 'buff', stacks: 1, canStack: true, description: '化热前积蓄湿邪' });
-    }
-
-    if (enemy.behavior === 'yin_yang_split') {
-      const form = enemy.meta?.form === 'yang' ? 'yin' : 'yang';
-      enemy.meta = { ...(enemy.meta || {}), form };
-    }
-
-    if (enemy.behavior === 'jueyin_complex') {
-      const turn = (enemy.meta?.turn || 0) + 1;
-      enemy.meta = { ...(enemy.meta || {}), turn };
-    }
-
-    const primaryIntent = getNextIntent(enemy);
+    const primaryIntent = strategy.getPrimaryIntent(enemy, ctx);
     const plannedIntents = [primaryIntent];
     const totalActions = getEnemyActionCount(enemy, state.currentAct);
-    if (totalActions > 1) {
-      plannedIntents.push(getFollowUpIntent(enemy, primaryIntent));
+    if (totalActions > 1 && strategy.getFollowUpIntent) {
+      const followUp = strategy.getFollowUpIntent(enemy, primaryIntent, ctx);
+      if (followUp) {
+        plannedIntents.push(followUp);
+      }
     }
 
     for (const intent of plannedIntents) {
       if (enemy.currentHp <= 0 || newPlayer.hp <= 0) break;
       enemy.intent = intent;
       const beforePlayer = clonePlayerState(newPlayer);
-      executeEnemyIntent(enemy, intent);
+      strategy.executeIntent(enemy, intent, ctx);
 
       actions.push({
         enemyId: enemy.id,

@@ -971,7 +971,6 @@ export const useGameStore = create<GameStore>()(
       completeCombat: () => {
         cancelAllScheduledTasks();
         const state = get();
-        playSfx('victory');
 
         if (isAdminEnemyChallengeNode(state.currentNodeId)) {
           set({

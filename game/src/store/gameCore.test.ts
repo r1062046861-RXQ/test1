@@ -11,6 +11,7 @@ import {
   type CoreState,
   type PlayCardResult,
 } from '../../../shared/core/gameCore';
+import { hasEnemyStrategy } from '../../../shared/core/enemyStrategies';
 
 const makeCard = (id: keyof typeof CARD_LIBRARY, suffix = Math.random().toString(36).slice(2, 7)): Card => ({
   ...CARD_LIBRARY[id],
@@ -455,10 +456,34 @@ describe('shared game core', () => {
     enemy.currentHp = 380;
     enemy.meta = { phase: 'wood', phaseTurn: 0 };
     const player = makePlayer();
+    const logs: string[] = [];
 
-    const result = resolveEnemyTurn(makeState(player, [enemy]), () => undefined);
+    const result = resolveEnemyTurn(makeState(player, [enemy]), (message) => logs.push(message));
     expect(result).not.toBeNull();
     expect(result!.enemies[0].meta?.phase).toBe('fire');
+    expect(logs).toContain('五行失调切换到fire阶段');
+  });
+
+  it('外感合病切换形态时会保留可见战斗日志', () => {
+    const enemy = makeEnemy('external_combination');
+    enemy.meta = { form: 'cold', formTurns: 0 };
+    const player = makePlayer();
+    const logs: string[] = [];
+
+    const result = resolveEnemyTurn(makeState(player, [enemy]), (message) => logs.push(message));
+    expect(result).not.toBeNull();
+    expect(result!.enemies[0].meta?.form).toBe('heat');
+    expect(logs).toContain('外感合病切换为风热态');
+  });
+
+  it('所有正式敌人行为都有显式策略注册', () => {
+    const missingBehaviors = Object.values(ENEMIES)
+      .map((enemy) => enemy.behavior)
+      .filter((behavior): behavior is string => Boolean(behavior))
+      .filter((behavior, index, behaviors) => behaviors.indexOf(behavior) === index)
+      .filter((behavior) => !hasEnemyStrategy(behavior));
+
+    expect(missingBehaviors).toEqual([]);
   });
 
   it('禁止获得滋阴状态会阻止麦冬滋阴生效', () => {

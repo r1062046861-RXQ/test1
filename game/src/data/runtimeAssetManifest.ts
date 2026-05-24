@@ -1136,6 +1136,46 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
+    "path": "/assets/constitution_select/back_to_menu.png",
+    "bytes": 11686,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/background.png",
+    "bytes": 328205,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/choice_button_frame.png",
+    "bytes": 6075,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/deck_icon.png",
+    "bytes": 67595,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/hover_frame.png",
+    "bytes": 25676,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/page_controls_hover.png",
+    "bytes": 5384,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/page_left.png",
+    "bytes": 3509,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/constitution_select/page_right.png",
+    "bytes": 3535,
+    "stage": "static"
+  },
+  {
     "path": "/assets/constitutions/blood_stasis.webp",
     "bytes": 63208,
     "stage": "static"
@@ -1163,6 +1203,61 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
     "path": "/assets/constitutions/yang_deficiency.webp",
     "bytes": 67524,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/agreement.png",
+    "bytes": 6224,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/background.png",
+    "bytes": 3439243,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/enter_main_menu.png",
+    "bytes": 51417,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/icon_activity.png",
+    "bytes": 15104,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/icon_codex.png",
+    "bytes": 13246,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/icon_frame.png",
+    "bytes": 6605,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/icon_notice.png",
+    "bytes": 13060,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/icon_settings.png",
+    "bytes": 13634,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/side_menu.png",
+    "bytes": 61393,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/title.png",
+    "bytes": 167249,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/top_copy.png",
+    "bytes": 28190,
     "stage": "static"
   },
   {
@@ -1411,6 +1506,201 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
+    "path": "/assets/main_menu/v2/background.png",
+    "bytes": 2443789,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/admin_icon.png",
+    "bytes": 3732,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/admin_plate.png",
+    "bytes": 86570,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/admin_text.png",
+    "bytes": 8574,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/border.png",
+    "bytes": 2407,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/codex_icon.png",
+    "bytes": 3671,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/codex_plate.png",
+    "bytes": 90457,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/codex_text.png",
+    "bytes": 8963,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/contact_icon.png",
+    "bytes": 5159,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/contact_plate.png",
+    "bytes": 79708,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/contact_text.png",
+    "bytes": 9463,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/continue_icon.png",
+    "bytes": 3811,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/continue_plate.png",
+    "bytes": 62014,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/continue_text.png",
+    "bytes": 8982,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/new_run_icon.png",
+    "bytes": 3851,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/new_run_plate.png",
+    "bytes": 99384,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/new_run_text.png",
+    "bytes": 9182,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/settings_icon.png",
+    "bytes": 5264,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/settings_plate.png",
+    "bytes": 100270,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/default/settings_text.png",
+    "bytes": 9968,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/admin_plate.png",
+    "bytes": 141409,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/admin.png",
+    "bytes": 176109,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/codex_plate.png",
+    "bytes": 159723,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/codex.png",
+    "bytes": 193664,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/contact_plate.png",
+    "bytes": 124836,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/contact.png",
+    "bytes": 161746,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/continue_plate.png",
+    "bytes": 157963,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/continue.png",
+    "bytes": 195108,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/gold_border.png",
+    "bytes": 36969,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/new_run_plate.png",
+    "bytes": 181338,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/new_run.png",
+    "bytes": 217172,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/settings_plate.png",
+    "bytes": 169209,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/settings.png",
+    "bytes": 204313,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/hover/text_backplate.png",
+    "bytes": 5191,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/qa/default_no_text.png",
+    "bytes": 2599495,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/qa/default_with_text.png",
+    "bytes": 2635999,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/qa/hover_no_text.png",
+    "bytes": 2854598,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/qa/hover_with_text.png",
+    "bytes": 2879054,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/main_menu/v2/title_text.png",
+    "bytes": 4238,
+    "stage": "static"
+  },
+  {
     "path": "/assets/background_combat_act1.png",
     "bytes": 202508,
     "stage": "static"
@@ -1527,4 +1817,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 170702243;
+export const TOTAL_RUNTIME_ASSET_BYTES = 191112626;

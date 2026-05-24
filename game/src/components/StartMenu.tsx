@@ -153,11 +153,23 @@ type StartMenuButtonId = 'continue' | 'new_run' | 'codex' | 'contact' | 'setting
 type MenuButtonVisual = {
   title: string;
   subtitle: string;
-  icon: string;
-  defaultRegion: string;
+  defaultPlate: string;
+  defaultText: string;
+  defaultIcon: string;
   hoverRegion: string;
-  gridLeft: number;
-  gridTop: number;
+  hoverPlate: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  defaultTextX: number;
+  defaultTextY: number;
+  defaultTextWidth: number;
+  defaultTextHeight: number;
+  hoverX: number;
+  hoverY: number;
+  hoverWidth: number;
+  hoverHeight: number;
 };
 
 type MenuButtonDef = MenuButtonVisual & {
@@ -171,66 +183,161 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
     requiresSavedRun: true,
     title: '继续巡诊',
     subtitle: '回到地图。',
-    icon: '/assets/main_menu/icon_继续巡诊.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/continue.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/continue.png',
-    gridLeft: 136,
-    gridTop: 197,
+    defaultPlate: '/assets/main_menu/v2/default/continue_plate.png',
+    defaultText: '/assets/main_menu/v2/default/continue_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/continue_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/continue.png',
+    hoverPlate: '/assets/main_menu/v2/hover/continue_plate.png',
+    x: 168,
+    y: 208,
+    width: 424,
+    height: 197,
+    defaultTextX: 360,
+    defaultTextY: 329,
+    defaultTextWidth: 193,
+    defaultTextHeight: 55,
+    hoverX: 0,
+    hoverY: 0,
+    hoverWidth: 796,
+    hoverHeight: 628,
   },
   {
     id: 'new_run',
     title: '重新巡诊',
     subtitle: '重新选择体质。',
-    icon: '/assets/main_menu/icon_重新巡诊.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/new_run.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/new_run.png',
-    gridLeft: 136,
-    gridTop: 449,
+    defaultPlate: '/assets/main_menu/v2/default/new_run_plate.png',
+    defaultText: '/assets/main_menu/v2/default/new_run_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/new_run_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/new_run.png',
+    hoverPlate: '/assets/main_menu/v2/hover/new_run_plate.png',
+    x: 158,
+    y: 453,
+    width: 442,
+    height: 215,
+    defaultTextX: 360,
+    defaultTextY: 588,
+    defaultTextWidth: 193,
+    defaultTextHeight: 55,
+    hoverX: 0,
+    hoverY: 237,
+    hoverWidth: 796,
+    hoverHeight: 642,
   },
   {
     id: 'codex',
     title: '图鉴总览',
     subtitle: '查看已收集的药材等。',
-    icon: '/assets/main_menu/icon_图鉴总览.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/codex.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/codex.png',
-    gridLeft: 136,
-    gridTop: 701,
+    defaultPlate: '/assets/main_menu/v2/default/codex_plate.png',
+    defaultText: '/assets/main_menu/v2/default/codex_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/codex_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/codex.png',
+    hoverPlate: '/assets/main_menu/v2/hover/codex_plate.png',
+    x: 158,
+    y: 703,
+    width: 442,
+    height: 215,
+    defaultTextX: 360,
+    defaultTextY: 838,
+    defaultTextWidth: 208,
+    defaultTextHeight: 55,
+    hoverX: 0,
+    hoverY: 488,
+    hoverWidth: 796,
+    hoverHeight: 592,
   },
   {
     id: 'settings',
     title: '功能设置',
     subtitle: '调整显示。',
-    icon: '/assets/main_menu/icon_功能设置.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/settings.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/settings.png',
-    gridLeft: 1334,
-    gridTop: 197,
+    defaultPlate: '/assets/main_menu/v2/default/settings_plate.png',
+    defaultText: '/assets/main_menu/v2/default/settings_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/settings_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/settings.png',
+    hoverPlate: '/assets/main_menu/v2/hover/settings_plate.png',
+    x: 1350,
+    y: 206,
+    width: 442,
+    height: 215,
+    defaultTextX: 1550,
+    defaultTextY: 329,
+    defaultTextWidth: 193,
+    defaultTextHeight: 55,
+    hoverX: 1149,
+    hoverY: 0,
+    hoverWidth: 771,
+    hoverHeight: 629,
   },
   {
     id: 'contact',
     title: '联系作者',
     subtitle: '扫码联系。',
-    icon: '/assets/main_menu/icon_联系作者.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/contact.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/contact.png',
-    gridLeft: 1334,
-    gridTop: 449,
+    defaultPlate: '/assets/main_menu/v2/default/contact_plate.png',
+    defaultText: '/assets/main_menu/v2/default/contact_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/contact_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/contact.png',
+    hoverPlate: '/assets/main_menu/v2/hover/contact_plate.png',
+    x: 1353,
+    y: 453,
+    width: 442,
+    height: 215,
+    defaultTextX: 1550,
+    defaultTextY: 588,
+    defaultTextWidth: 190,
+    defaultTextHeight: 56,
+    hoverX: 1149,
+    hoverY: 238,
+    hoverWidth: 771,
+    hoverHeight: 642,
   },
   {
     id: 'admin',
     title: '管理员测试',
     subtitle: '调试入口。',
-    icon: '/assets/main_menu/icon_管理员测试.png',
-    defaultRegion: '/assets/main_menu/regions/plate/default/admin.png',
-    hoverRegion: '/assets/main_menu/regions/plate/hover/admin.png',
-    gridLeft: 1334,
-    gridTop: 701,
+    defaultPlate: '/assets/main_menu/v2/default/admin_plate.png',
+    defaultText: '/assets/main_menu/v2/default/admin_text.png',
+    defaultIcon: '/assets/main_menu/v2/default/admin_icon.png',
+    hoverRegion: '/assets/main_menu/v2/hover/admin.png',
+    hoverPlate: '/assets/main_menu/v2/hover/admin_plate.png',
+    x: 1353,
+    y: 703,
+    width: 442,
+    height: 215,
+    defaultTextX: 1550,
+    defaultTextY: 838,
+    defaultTextWidth: 223,
+    defaultTextHeight: 55,
+    hoverX: 1149,
+    hoverY: 488,
+    hoverWidth: 771,
+    hoverHeight: 592,
   },
 ];
 
-const MENU_BUTTON_W = 446;
-const MENU_BUTTON_H = 219;
+const DEFAULT_BORDER = '/assets/main_menu/v2/default/border.png';
+const HOVER_DETAIL_ASSETS = [
+  '/assets/main_menu/v2/hover/continue_plate.png',
+  '/assets/main_menu/v2/hover/new_run_plate.png',
+  '/assets/main_menu/v2/hover/codex_plate.png',
+  '/assets/main_menu/v2/hover/settings_plate.png',
+  '/assets/main_menu/v2/hover/contact_plate.png',
+  '/assets/main_menu/v2/hover/admin_plate.png',
+  '/assets/main_menu/v2/hover/text_backplate.png',
+  '/assets/main_menu/v2/hover/gold_border.png',
+] as const;
+
+const QA_REFERENCE_ASSETS = [
+  '/assets/main_menu/v2/qa/default_no_text.png',
+  '/assets/main_menu/v2/qa/default_with_text.png',
+  '/assets/main_menu/v2/qa/hover_no_text.png',
+  '/assets/main_menu/v2/qa/hover_with_text.png',
+] as const;
+
+const toCanvasStyle = (x: number, y: number, width: number, height: number): React.CSSProperties => ({
+  left: `${(x / REF_W) * 100}%`,
+  top: `${(y / REF_H) * 100}%`,
+  width: `${(width / REF_W) * 100}%`,
+  height: `${(height / REF_H) * 100}%`,
+});
 
 const formatMegabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 const LOADING_STAGE_LABELS = {
@@ -274,10 +381,7 @@ const MenuCard: React.FC<{
         .filter(Boolean)
         .join(' ')}
       style={{
-        left: `${(button.gridLeft / REF_W) * 100}%`,
-        top: `${(button.gridTop / REF_H) * 100}%`,
-        width: `${(MENU_BUTTON_W / REF_W) * 100}%`,
-        height: `${(MENU_BUTTON_H / REF_H) * 100}%`,
+        ...toCanvasStyle(button.x, button.y, button.width, button.height),
       }}
       aria-label={button.title}
     />
@@ -468,49 +572,74 @@ export const StartMenu: React.FC = () => {
             <div
               className="start-menu-page__background"
               style={{
-                backgroundImage: `url("${resolveAssetUrl('/assets/main_menu/background.png')}")`,
+                backgroundImage: `url("${resolveAssetUrl('/assets/main_menu/v2/background.png')}")`,
               }}
             />
             <img
-              className="start-menu-title-star start-menu-title-star--left"
-              src={resolveAssetUrl('/assets/main_menu/title_star_left.png')}
-              alt=""
-              aria-hidden="true"
-            />
-            <img
               className="start-menu-title-text"
-              src={resolveAssetUrl('/assets/main_menu/title_text.png')}
-              alt="五行辩证巡诊"
-            />
-            <img
-              className="start-menu-title-star start-menu-title-star--right"
-              src={resolveAssetUrl('/assets/main_menu/title_star_right.png')}
-              alt=""
-              aria-hidden="true"
+              src={resolveAssetUrl('/assets/main_menu/v2/title_text.png')}
+              alt="五行辨证巡诊"
             />
 
             {BUTTON_CONFIG.map((button) => {
               const enabled = !button.requiresSavedRun || hasSavedRun;
               const isHovered = hoveredBtn === button.id && enabled;
-              const gridStyle = {
-                left: `${(button.gridLeft / REF_W) * 100}%`,
-                top: `${(button.gridTop / REF_H) * 100}%`,
-                width: `${(MENU_BUTTON_W / REF_W) * 100}%`,
-                height: `${(MENU_BUTTON_H / REF_H) * 100}%`,
-              };
               return (
                 <React.Fragment key={button.id}>
                   <img
-                    src={resolveAssetUrl(isHovered ? button.hoverRegion : button.defaultRegion)}
+                    src={resolveAssetUrl(button.defaultPlate)}
                     alt=""
                     aria-hidden="true"
                     className={[
-                      'start-menu-button-overlay',
+                      'start-menu-button-plate',
                       enabled ? '' : 'start-menu-button-overlay--disabled',
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    style={gridStyle}
+                    style={toCanvasStyle(button.x, button.y, button.width, button.height)}
+                  />
+                  {button.width !== 424 || button.height !== 197 ? (
+                    <img
+                      src={resolveAssetUrl(DEFAULT_BORDER)}
+                      alt=""
+                      aria-hidden="true"
+                      className={[
+                        'start-menu-button-border',
+                        enabled ? '' : 'start-menu-button-overlay--disabled',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      style={toCanvasStyle(button.x + 9, button.y + 9, 424, 197)}
+                    />
+                  ) : null}
+                  <img
+                    src={resolveAssetUrl(button.defaultText)}
+                    alt=""
+                    aria-hidden="true"
+                    className={[
+                      'start-menu-button-text',
+                      enabled ? '' : 'start-menu-button-overlay--disabled',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={toCanvasStyle(
+                      button.defaultTextX,
+                      button.defaultTextY,
+                      button.defaultTextWidth,
+                      button.defaultTextHeight,
+                    )}
+                  />
+                  <img
+                    src={resolveAssetUrl(button.hoverRegion)}
+                    alt=""
+                    aria-hidden="true"
+                    className={[
+                      'start-menu-button-hover',
+                      isHovered ? 'start-menu-button-hover--visible' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={toCanvasStyle(button.hoverX, button.hoverY, button.hoverWidth, button.hoverHeight)}
                   />
                   <MenuCard
                     button={button}
@@ -521,6 +650,21 @@ export const StartMenu: React.FC = () => {
                 </React.Fragment>
               );
             })}
+
+            <div className="start-menu-preload-assets" aria-hidden="true">
+              {BUTTON_CONFIG.map((button) => (
+                <React.Fragment key={`${button.id}-preload`}>
+                  <img src={resolveAssetUrl(button.defaultIcon)} alt="" />
+                  <img src={resolveAssetUrl(button.hoverPlate)} alt="" />
+                </React.Fragment>
+              ))}
+              {HOVER_DETAIL_ASSETS.map((asset) => (
+                <img key={asset} src={resolveAssetUrl(asset)} alt="" />
+              ))}
+              {QA_REFERENCE_ASSETS.map((asset) => (
+                <img key={asset} src={resolveAssetUrl(asset)} alt="" />
+              ))}
+            </div>
 
             <AnimatePresence>
               {assetLoadingProgress.visible && (
@@ -898,6 +1042,7 @@ export const StartMenu: React.FC = () => {
       <AnimatePresence>
         {newRunStage !== 'closed' ? (
           <ConstitutionIntroOverlay
+            key="constitution-intro-overlay"
             stage={newRunStage}
             options={CONSTITUTIONS}
             onSkip={() => setNewRunStage('select')}
@@ -909,6 +1054,7 @@ export const StartMenu: React.FC = () => {
         <AnimatePresence>
           {showPasswordPrompt ? (
             <motion.div
+              key="admin-password-prompt"
               className="synthesis-bench-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

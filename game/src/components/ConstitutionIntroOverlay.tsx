@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { CARD_LIBRARY } from '../data/cards';
 import type { Constitution } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
 
-export const CONSTITUTION_CINEMATIC_MS = 2200;
-export const CONSTITUTION_REDUCED_MOTION_MS = 220;
+export const CONSTITUTION_CINEMATIC_MS = 3600;
+export const CONSTITUTION_REDUCED_MOTION_MS = 2800;
 
 export type ConstitutionIntroStage = 'cinematic' | 'select';
 
@@ -30,224 +28,361 @@ interface ConstitutionIntroOverlayProps {
   onSelect: (constitution: Constitution) => void;
 }
 
-type CardTone = 'emerald' | 'crimson' | 'amber';
-
-interface PacketCardModel {
-  id: string;
-  name: string;
-  image: string;
-  flashStart: number | null;
-  flashEnd: number | null;
-}
-
-interface PacketModel {
-  id: string;
-  tone: CardTone;
-  cards: PacketCardModel[];
-}
-
+const ASSET_BASE = '/assets/constitution_select';
+const PAGE_SIZE = 3;
+const REF_W = 1920;
+const REF_H = 1080;
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-const EASE_IN = [0.4, 0, 1, 1] as const;
-const FALLBACK_CARD_IMAGE = '/assets/cards_player/1.png';
+const EASE_IN_OUT = [0.45, 0, 0.2, 1] as const;
 
-const PACKET_TONES: CardTone[] = ['emerald', 'crimson', 'amber'];
-
-const SHOWCASE_PACKET_CARD_IDS = [
-  ['mahuang', 'chuanxiong', 'huanglian', 'chenpi'],
-  ['huangqi', 'danggui', 'guizhi', 'baishao'],
-  ['danshen', 'yiyi', 'jinyinhua', 'xiaochaihu'],
+const CARD_SLOTS = [
+  { left: 407, top: 388, width: 354, height: 477 },
+  { left: 801, top: 388, width: 354, height: 477 },
+  { left: 1198, top: 388, width: 354, height: 477 },
 ] as const;
 
-const FLASH_WINDOWS = [
-  [
-    { start: 0.24, end: 0.38 },
-    { start: 0.38, end: 0.5 },
-    { start: 0.5, end: 0.6 },
-    null,
-  ],
-  [
-    { start: 0.3, end: 0.44 },
-    { start: 0.44, end: 0.56 },
-    null,
-    null,
-  ],
-  [
-    { start: 0.34, end: 0.48 },
-    { start: 0.48, end: 0.58 },
-    { start: 0.58, end: 0.68 },
-    null,
-  ],
+const CENTERED_SINGLE_CARD_SLOT = { left: 783, top: 388, width: 354, height: 477 } as const;
+
+const DEAL_SLOTS = [
+  { x: 584, y: 626 },
+  { x: 978, y: 626 },
+  { x: 1375, y: 626 },
 ] as const;
 
-const SELECT_CARD_CLASSES = [
-  'md:-rotate-[3deg]',
-  'md:rotate-[1deg]',
-  'md:rotate-[3deg]',
+const CARD_BACKS = [
+  { x: 188, y: 141, rotate: -8, delay: 0.28 },
+  { x: 198, y: 136, rotate: -4, delay: 0.36 },
+  { x: 208, y: 132, rotate: 0, delay: 0.44 },
+  { x: 218, y: 136, rotate: 4, delay: 0.52 },
+  { x: 228, y: 141, rotate: 8, delay: 0.6 },
 ] as const;
 
-const SHOWCASE_PACKETS: PacketModel[] = SHOWCASE_PACKET_CARD_IDS.map((packetIds, packetIndex) => ({
-  id: `packet-${packetIndex + 1}`,
-  tone: PACKET_TONES[packetIndex],
-  cards: packetIds.map((cardId, cardIndex) => {
-    const card = CARD_LIBRARY[cardId];
-    const flashWindow = FLASH_WINDOWS[packetIndex][cardIndex];
-
-    return {
-      id: cardId,
-      name: card.name,
-      image: resolveAssetUrl(card.image ?? FALLBACK_CARD_IMAGE),
-      flashStart: flashWindow?.start ?? null,
-      flashEnd: flashWindow?.end ?? null,
-    };
-  }),
-}));
-
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = React.useState(false);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia(query);
-    const onChange = () => setMatches(mediaQuery.matches);
-
-    onChange();
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', onChange);
-      return () => mediaQuery.removeEventListener('change', onChange);
-    }
-
-    mediaQuery.addListener(onChange);
-    return () => mediaQuery.removeListener(onChange);
-  }, [query]);
-
-  return matches;
+function percent(value: number, base: number) {
+  return `${(value / base) * 100}%`;
 }
 
-function getDealtCardInitial(index: number, isMobile: boolean) {
-  if (isMobile) {
-    return {
-      x: 0,
-      y: -190,
-      rotate: index === 1 ? 0 : index === 0 ? -7 : 7,
-      scale: 0.9,
-    };
+function toSlotStyle(slot: { left: number; top: number; width: number; height: number }): React.CSSProperties {
+  return {
+    left: percent(slot.left, REF_W),
+    top: percent(slot.top, REF_H),
+    width: percent(slot.width, REF_W),
+    height: percent(slot.height, REF_H),
+  };
+}
+
+function getCardSlot(index: number, count: number) {
+  if (count === 1) {
+    return CENTERED_SINGLE_CARD_SLOT;
   }
 
-  return [
-    { x: 308, y: -238, rotate: 16, scale: 0.9 },
-    { x: 0, y: -252, rotate: 3, scale: 0.92 },
-    { x: -308, y: -238, rotate: -15, scale: 0.9 },
-  ][index]!;
+  return CARD_SLOTS[index] ?? CARD_SLOTS[0];
 }
 
-const ShuffleCard: React.FC<{
-  card: PacketCardModel;
-  tone: CardTone;
-  packetIndex: number;
-  cardIndex: number;
-}> = ({ card, tone, packetIndex, cardIndex }) => {
-  const reducedMotion = useReducedMotion();
-  const cardStyle = {
-    '--constitution-card-offset': `${cardIndex}`,
-    zIndex: 12 - cardIndex,
-  } as React.CSSProperties;
+const AssetImage: React.FC<{
+  src: string;
+  className: string;
+  alt?: string;
+}> = ({ src, className, alt = '' }) => (
+  <img src={resolveAssetUrl(src)} alt={alt} aria-hidden={alt ? undefined : true} className={className} draggable={false} />
+);
 
-  const flashStart = card.flashStart ?? 0;
-  const flashEnd = card.flashEnd ?? 0;
-  const frontMotion = reducedMotion || card.flashStart === null
-    ? { opacity: 0, rotateY: -180, y: 0 }
-    : {
-        opacity: [0, 0, 0.98, 0.98, 0],
-        rotateY: [-180, -180, -10, 0, -180],
-        y: [0, 0, -10 - cardIndex * 2, -10 - cardIndex * 2, 0],
-      };
-
-  const frontTransition = reducedMotion || card.flashStart === null
-    ? { duration: 0 }
-    : {
-        duration: 1.88,
-        delay: 0.14 + packetIndex * 0.04,
-        times: [0, flashStart - 0.06, flashStart, flashEnd, flashEnd + 0.06],
-        ease: EASE_OUT,
-      };
-
-  return (
-    <div className={cn('constitution-shuffle-card', `constitution-shuffle-card--${tone}`)} style={cardStyle}>
-      <div className="constitution-shuffle-card__shadow" />
-      <div className="constitution-shuffle-card__back">
-        <div className="constitution-shuffle-card__back-inner">
-          <div className="constitution-shuffle-card__sigil" />
-          <div className="constitution-shuffle-card__back-copy">五行医道</div>
-        </div>
-      </div>
-      <motion.div
-        className="constitution-shuffle-card__front"
-        initial={{ opacity: 0, rotateY: -180, y: 0 }}
-        animate={frontMotion}
-        transition={frontTransition}
-      >
-        <img src={card.image} alt={card.name} className="constitution-shuffle-card__front-image" />
-      </motion.div>
+const CanvasShell: React.FC<{
+  children: React.ReactNode;
+  onBackgroundClick?: () => void;
+}> = ({ children, onBackgroundClick }) => (
+  <div className="constitution-ui" onClick={onBackgroundClick}>
+    <div className="constitution-ui__canvas">
+      <AssetImage src={`${ASSET_BASE}/background.png`} className="constitution-ui__background" />
+      {children}
     </div>
-  );
-};
-
-const DeckPacket: React.FC<{
-  packet: PacketModel;
-  packetIndex: number;
-  isMobile: boolean;
-}> = ({ packet, packetIndex, isMobile }) => {
-  const reducedMotion = useReducedMotion();
-  const choreographyClass = `${isMobile ? 'mobile' : 'desktop'}-${packetIndex + 1}`;
-
-  return (
-    <div
-      className={cn(
-        'constitution-deck-packet-shell',
-        `constitution-deck-packet-shell--${choreographyClass}`,
-        reducedMotion && 'constitution-deck-packet-shell--reduced',
-      )}
-      style={{ zIndex: 30 - packetIndex }}
-    >
-      <div
-        className={cn(
-          'constitution-deck-packet',
-          `constitution-deck-packet--${packet.tone}`,
-          `constitution-deck-packet--${choreographyClass}`,
-          reducedMotion && 'constitution-deck-packet--reduced',
-        )}
-      >
-        {packet.cards.map((card, cardIndex) => (
-          <ShuffleCard key={card.id} card={card} tone={packet.tone} packetIndex={packetIndex} cardIndex={cardIndex} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const DeckRemnant: React.FC = () => (
-  <div className="constitution-remnant-deck" aria-hidden="true">
-    {[0, 1, 2, 3, 4].map((index) => (
-      <div
-        key={index}
-        className="constitution-remnant-deck__card"
-        style={
-          {
-            '--constitution-remnant-index': `${index}`,
-          } as React.CSSProperties
-        }
-      >
-        <div className="constitution-remnant-deck__back">
-          <div className="constitution-remnant-deck__sigil" />
-        </div>
-      </div>
-    ))}
   </div>
 );
+
+const SelectHeader: React.FC = () => (
+  <>
+    <AssetImage src={`${ASSET_BASE}/deck_icon.png`} className="constitution-ui__deck-icon" />
+    <div className="constitution-ui__heading">
+      <div className="constitution-ui__kicker">
+        <span className="constitution-ui__sparkles" aria-hidden="true">
+          ✦
+        </span>
+        体质择定
+      </div>
+      <h2 className="constitution-ui__title">选择体质</h2>
+      <p className="constitution-ui__subtitle">体质决定起手被动与牌组方向，选定后直接进入第一幕。</p>
+    </div>
+  </>
+);
+
+const BackToMenuButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button type="button" className="constitution-ui__back-button" onClick={onClick} aria-label="返回主菜单">
+    <AssetImage src={`${ASSET_BASE}/back_to_menu.png`} className="constitution-ui__back-image" />
+  </button>
+);
+
+const ConstitutionCard: React.FC<{
+  option: ConstitutionOption;
+  slotIndex: number;
+  slotCount: number;
+  onSelect: (constitution: Constitution) => void;
+}> = ({ option, slotIndex, slotCount, onSelect }) => {
+  const isLocked = option.locked;
+  const slot = getCardSlot(slotIndex, slotCount);
+  const style = toSlotStyle(slot);
+
+  return (
+    <motion.button
+      key={option.id}
+      type="button"
+      className={cn('constitution-ui-card', isLocked && 'constitution-ui-card--locked')}
+      style={style}
+      onClick={isLocked ? undefined : () => onSelect(option.id)}
+      aria-label={isLocked ? `${option.title}，未解锁` : `选择${option.title}`}
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -18 }}
+      transition={{ duration: 0.28, delay: slotIndex * 0.06, ease: EASE_OUT }}
+      whileTap={isLocked ? undefined : { scale: 0.985 }}
+    >
+      <span className="constitution-ui-card__default">
+        <span className="constitution-ui-card__art-shell">
+          <img
+            src={resolveAssetUrl(option.image)}
+            alt=""
+            aria-hidden="true"
+            className="constitution-ui-card__art"
+            draggable={false}
+            onError={(event) => {
+              const target = event.currentTarget;
+              target.style.display = 'none';
+            }}
+          />
+          <span className="constitution-ui-card__shade" />
+          <span className="constitution-ui-card__inner-line" />
+        </span>
+        <span className="constitution-ui-card__default-copy">
+          <span className="constitution-ui-card__name">{isLocked ? '???' : option.title}</span>
+          <span className="constitution-ui-card__subtitle">{isLocked ? '完成更多巡诊后解锁' : option.subtitle}</span>
+          <span className="constitution-ui-card__button">
+            <AssetImage src={`${ASSET_BASE}/choice_button_frame.png`} className="constitution-ui-card__button-frame" />
+            <span className="constitution-ui-card__button-label">{isLocked ? '未解锁' : option.passive}</span>
+          </span>
+        </span>
+      </span>
+
+      <span className="constitution-ui-card__hover">
+        <AssetImage src={`${ASSET_BASE}/hover_frame.png`} className="constitution-ui-card__hover-frame" />
+        <span className="constitution-ui-card__detail">{isLocked ? '完成更多巡诊后解锁。' : option.detail}</span>
+        <span className="constitution-ui-card__hover-copy">
+          <span className="constitution-ui-card__hover-name">{isLocked ? '???' : option.title}</span>
+          <span className="constitution-ui-card__hover-subtitle">{isLocked ? '未解锁' : option.subtitle}</span>
+          <span className="constitution-ui-card__button constitution-ui-card__button--hover">
+            <AssetImage src={`${ASSET_BASE}/choice_button_frame.png`} className="constitution-ui-card__button-frame" />
+            <span className="constitution-ui-card__button-label">{isLocked ? '未解锁' : option.passive}</span>
+          </span>
+        </span>
+      </span>
+    </motion.button>
+  );
+};
+
+const Pagination: React.FC<{
+  page: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+}> = ({ page, totalPages, onPrev, onNext }) => {
+  const isFirst = page === 0;
+  const isLast = page >= totalPages - 1;
+
+  return (
+    <div className="constitution-ui-pagination">
+      <AssetImage src={`${ASSET_BASE}/page_controls_hover.png`} className="constitution-ui-pagination__hover-strip" />
+      <button
+        type="button"
+        className="constitution-ui-pagination__button constitution-ui-pagination__button--left"
+        onClick={onPrev}
+        disabled={isFirst}
+        aria-label="上一页体质"
+      >
+        <AssetImage src={`${ASSET_BASE}/page_left.png`} className="constitution-ui-pagination__icon" />
+      </button>
+      <div className="constitution-ui-pagination__count" aria-live="polite">
+        {page + 1} / {totalPages}
+      </div>
+      <button
+        type="button"
+        className="constitution-ui-pagination__button constitution-ui-pagination__button--right"
+        onClick={onNext}
+        disabled={isLast}
+        aria-label="下一页体质"
+      >
+        <AssetImage src={`${ASSET_BASE}/page_right.png`} className="constitution-ui-pagination__icon" />
+      </button>
+    </div>
+  );
+};
+
+const ShuffleBackCard: React.FC<{
+  index: number;
+  x: number;
+  y: number;
+  rotate: number;
+  delay: number;
+  reducedMotion: boolean;
+}> = ({ index, x, y, rotate, delay, reducedMotion }) => (
+  <motion.div
+    className="constitution-cinematic-cardback"
+    style={{
+      left: percent(198, REF_W),
+      top: percent(124, REF_H),
+      width: percent(180, REF_W),
+      height: percent(243, REF_H),
+      zIndex: 10 + index,
+    }}
+    initial={{ opacity: 0, x: 0, y: 0, rotate: 0, scale: 0.98 }}
+    animate={
+      reducedMotion
+        ? { opacity: 0.72, x: 0, y: 0, rotate: 0, scale: 1 }
+        : {
+            opacity: [0, 1, 1, 1, 0.78],
+            x: [0, x - 198, 492 + index * 24, x - 198, 0],
+            y: [0, y - 124, 274 + Math.sin(index) * 30, y - 124, 0],
+            rotate: [0, rotate, 18 - index * 9, rotate, index * 1.5],
+            scale: [0.96, 1, 1.02, 1, 0.98],
+          }
+    }
+    transition={
+      reducedMotion
+        ? { duration: 0.18, ease: EASE_OUT }
+        : { duration: 2.2, delay, times: [0, 0.24, 0.54, 0.78, 1], ease: EASE_IN_OUT }
+    }
+  >
+    <AssetImage src={`${ASSET_BASE}/deck_icon.png`} className="constitution-cinematic-cardback__image" />
+  </motion.div>
+);
+
+const DealtPreviewCard: React.FC<{
+  option: ConstitutionOption;
+  index: number;
+  reducedMotion: boolean;
+}> = ({ option, index, reducedMotion }) => (
+  <motion.div
+    className="constitution-cinematic-preview"
+    style={{
+      left: percent(200, REF_W),
+      top: percent(126, REF_H),
+      width: percent(220, REF_W),
+      height: percent(296, REF_H),
+      zIndex: 30 + index,
+    }}
+    initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.68 }}
+    animate={
+      reducedMotion
+        ? { opacity: 0.86, x: DEAL_SLOTS[index].x - 200, y: DEAL_SLOTS[index].y - 126, rotateY: 0, rotate: 0, scale: 1 }
+        : {
+            opacity: [0, 0.18, 1, 1, 1],
+            x: [0, 118 + index * 18, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200],
+            y: [0, 134 + index * 10, DEAL_SLOTS[index].y - 126, DEAL_SLOTS[index].y - 126, DEAL_SLOTS[index].y - 126],
+            rotateY: [-180, -112, 0, 0, 0],
+            rotate: [-8, index === 0 ? -11 : index === 2 ? 11 : 0, index === 0 ? -2 : index === 2 ? 2 : 0, 0, 0],
+            scale: [0.68, 0.82, 1, 1, 1],
+          }
+    }
+    transition={
+      reducedMotion
+        ? { duration: 0.32, delay: index * 0.08, ease: EASE_OUT }
+        : { duration: 2.45, delay: 0.68 + index * 0.16, times: [0, 0.2, 0.42, 0.78, 1], ease: EASE_OUT }
+    }
+  >
+    <div className="constitution-cinematic-preview__surface">
+      <img src={resolveAssetUrl(option.image)} alt="" aria-hidden="true" className="constitution-cinematic-preview__art" />
+      <div className="constitution-cinematic-preview__label">{option.title}</div>
+    </div>
+  </motion.div>
+);
+
+const CinematicStage: React.FC<{
+  options: ConstitutionOption[];
+  onSkip: () => void;
+}> = ({ options, onSkip }) => {
+  const reducedMotion = Boolean(useReducedMotion());
+  const previewOptions = options.slice(0, PAGE_SIZE);
+
+  return (
+    <CanvasShell>
+      <button type="button" className="constitution-cinematic__skip" onClick={onSkip}>
+        跳过
+      </button>
+      <AssetImage src={`${ASSET_BASE}/deck_icon.png`} className="constitution-cinematic__source-deck" />
+      <div className="constitution-cinematic__copy">
+        <div className="constitution-cinematic__kicker">体质择定</div>
+        <h2 className="constitution-cinematic__title">切牌起局</h2>
+        <p className="constitution-cinematic__subtitle">洗牌、切牌、发牌，择定这一轮巡诊的起手方向。</p>
+      </div>
+
+      {CARD_BACKS.map((card, index) => (
+        <ShuffleBackCard key={index} index={index} reducedMotion={reducedMotion} {...card} />
+      ))}
+
+      {previewOptions.map((option, index) => (
+        <DealtPreviewCard key={option.id} option={option} index={index} reducedMotion={reducedMotion} />
+      ))}
+    </CanvasShell>
+  );
+};
+
+const SelectStage: React.FC<{
+  options: ConstitutionOption[];
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+  onClose: () => void;
+  onSelect: (constitution: Constitution) => void;
+}> = ({ options, page, setPage, onClose, onSelect }) => {
+  const totalPages = Math.ceil(options.length / PAGE_SIZE);
+  const currentOptions = options.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  React.useEffect(() => {
+    if (page <= totalPages - 1) {
+      return;
+    }
+    setPage(Math.max(0, totalPages - 1));
+  }, [page, setPage, totalPages]);
+
+  return (
+    <CanvasShell onBackgroundClick={onClose}>
+      <div className="constitution-ui__content" onClick={(event) => event.stopPropagation()}>
+        <SelectHeader />
+        <BackToMenuButton onClick={onClose} />
+        <motion.div
+          key={page}
+          className="constitution-ui__cards"
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT }}
+        >
+          {currentOptions.map((option, index) => (
+            <ConstitutionCard
+              key={option.id}
+              option={option}
+              slotIndex={index}
+              slotCount={currentOptions.length}
+              onSelect={onSelect}
+            />
+          ))}
+        </motion.div>
+        {totalPages > 1 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPrev={() => setPage((current) => Math.max(0, current - 1))}
+            onNext={() => setPage((current) => Math.min(totalPages - 1, current + 1))}
+          />
+        )}
+      </div>
+    </CanvasShell>
+  );
+};
 
 export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> = ({
   stage,
@@ -256,229 +391,67 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
   onClose,
   onSelect,
 }) => {
-  const reducedMotion = useReducedMotion();
-  const isMobile = useMediaQuery('(max-width: 768px)');
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 3;
-  const totalPages = Math.ceil(options.length / PAGE_SIZE);
-  const currentOptions = options.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
+      if (event.key === 'Escape') {
+        if (stage === 'cinematic') {
+          onSkip();
+          return;
+        }
+        onClose();
         return;
       }
 
-      if (stage === 'cinematic') {
-        onSkip();
+      if (stage !== 'select') {
         return;
       }
 
-      onClose();
+      const totalPages = Math.ceil(options.length / PAGE_SIZE);
+      if (event.key === 'ArrowLeft') {
+        setPage((current) => Math.max(0, current - 1));
+      } else if (event.key === 'ArrowRight') {
+        setPage((current) => Math.min(totalPages - 1, current + 1));
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, onSkip, stage]);
+  }, [onClose, onSkip, options.length, stage]);
 
   return (
     <motion.div
-      className="constitution-flow custom-scrollbar"
+      className="constitution-flow"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.24, ease: EASE_OUT }}
-      onClick={stage === 'select' ? onClose : undefined}
+      transition={{ duration: 0.22, ease: EASE_OUT }}
     >
-      <div className="constitution-flow__vignette" />
-      <div className="constitution-flow__grain" />
-      <div className="constitution-flow__halo constitution-flow__halo--top" />
-      <div className="constitution-flow__halo constitution-flow__halo--bottom" />
-
-      <div className="constitution-flow__shell">
-        <div className="constitution-flow__controls">
-          {stage === 'cinematic' ? (
-            <button type="button" className="constitution-flow__text-action" onClick={onSkip}>
-              跳过
-            </button>
-          ) : (
-            <button type="button" className="constitution-flow__icon-action" onClick={onClose} aria-label="关闭体质选择">
-              <X size={18} />
-            </button>
-          )}
-        </div>
-
-        <AnimatePresence mode="wait" initial={false}>
-          {stage === 'cinematic' ? (
-            <motion.div
-              key="cinematic"
-              className="constitution-shuffle-stage"
-              onClick={(event) => event.stopPropagation()}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -18, transition: { duration: 0.16, ease: EASE_IN } }}
-              transition={{ duration: 0.28, ease: EASE_OUT }}
-            >
-              <div className="constitution-shuffle-stage__deck">
-                {SHOWCASE_PACKETS.map((packet, packetIndex) => (
-                  <DeckPacket key={packet.id} packet={packet} packetIndex={packetIndex} isMobile={isMobile} />
-                ))}
-              </div>
-
-              <motion.div
-                className="constitution-shuffle-stage__copy"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: reducedMotion ? 0.18 : 0.28,
-                  delay: reducedMotion ? 0.04 : 1.58,
-                  ease: EASE_OUT,
-                }}
-              >
-                <div className="constitution-shuffle-stage__kicker">五行起局</div>
-                <h2 className="constitution-shuffle-stage__title">切牌起局</h2>
-                <p className="constitution-shuffle-stage__subtitle">
-                  三张体质牌会从整叠牌中依次发出，决定你这一轮巡诊的起手方向与五行节奏。
-                </p>
-              </motion.div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="select"
-              className="constitution-select-stage"
-              onClick={(event) => event.stopPropagation()}
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -18 }}
-              transition={{ duration: 0.32, ease: EASE_OUT }}
-            >
-              <div className="constitution-select-stage__hero">
-                <motion.div
-                  className="constitution-select-stage__remnant"
-                  initial={{ opacity: 0, y: 42, scale: 0.92 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.28, ease: EASE_OUT }}
-                >
-                  <DeckRemnant />
-                </motion.div>
-
-                <motion.div
-                  className="constitution-select-stage__heading"
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.28, delay: 0.06, ease: EASE_OUT }}
-                >
-                  <div className="constitution-select-stage__kicker">
-                    <Sparkles size={14} />
-                    体质择定
-                  </div>
-                  <h2 className="constitution-select-stage__title">选择体质</h2>
-                  <p className="constitution-select-stage__subtitle">
-                    体质决定起手被动与牌组方向，选定后直接进入第一幕。
-                  </p>
-                </motion.div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={page}
-                  className="constitution-select-stage__grid"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.22, ease: EASE_OUT }}
-                >
-                  {currentOptions.map((option, index) => {
-                    const initialMotion = getDealtCardInitial(index, isMobile);
-                    const isLocked = option.locked;
-
-                    return (
-                      <motion.button
-                        key={option.id}
-                        type="button"
-                        onClick={isLocked ? undefined : () => onSelect(option.id)}
-                        className={cn(
-                          'constitution-choice-card group',
-                          `constitution-choice-card--${PACKET_TONES[index]}`,
-                          SELECT_CARD_CLASSES[index],
-                          isLocked && 'opacity-50 cursor-not-allowed saturate-0',
-                        )}
-                          initial={{
-                            opacity: 0,
-                            x: initialMotion.x,
-                            y: initialMotion.y,
-                            rotate: initialMotion.rotate,
-                            scale: initialMotion.scale,
-                          }}
-                          animate={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
-                          transition={{
-                            duration: 0.38,
-                            delay: 0.12 + index * 0.09,
-                            ease: EASE_OUT,
-                          }}
-                          whileHover={reducedMotion || isLocked ? undefined : { y: -4, scale: 1.008 }}
-                          whileTap={reducedMotion || isLocked ? undefined : { scale: 0.988 }}
-                        >
-                          <div className="constitution-choice-card__frame" />
-                          {!isLocked && <div className="constitution-choice-card__sheen" />}
-                          <div className="constitution-choice-card__art">
-                            <img
-                              src={resolveAssetUrl(option.image)}
-                              alt={option.title}
-                              className="constitution-choice-card__image"
-                              onError={(event) => {
-                                const target = event.target as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                          <div className="constitution-choice-card__body">
-                            <div className="constitution-choice-card__name">
-                              {isLocked ? '???' : option.title}
-                            </div>
-                            <p className="constitution-choice-card__subtitle">
-                              {isLocked ? '完成更多巡诊后解锁' : option.subtitle}
-                            </p>
-                            <div className="constitution-choice-card__badge">
-                              {isLocked ? '未解锁' : option.passive}
-                            </div>
-                            <p className="constitution-choice-card__detail">
-                              {isLocked ? '' : option.detail}
-                            </p>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </motion.div>
-                </AnimatePresence>
-
-              {totalPages > 1 && (
-                <div className="mt-5 flex items-center justify-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                    className="constitution-flow__icon-action rounded-full p-3 disabled:opacity-30"
-                  >
-                    <ChevronLeft size={22} />
-                  </button>
-                  <span className="text-sm font-semibold tracking-[0.2em] text-amber-200/70">
-                    {page + 1} / {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                    disabled={page >= totalPages - 1}
-                    className="constitution-flow__icon-action rounded-full p-3 disabled:opacity-30"
-                  >
-                    <ChevronRight size={22} />
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {stage === 'cinematic' ? (
+          <motion.div
+            key="cinematic"
+            className="constitution-flow__stage"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.18, ease: EASE_IN_OUT } }}
+          >
+            <CinematicStage options={options} onSkip={onSkip} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="select"
+            className="constitution-flow__stage"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.24, ease: EASE_OUT }}
+          >
+            <SelectStage options={options} page={page} setPage={setPage} onClose={onClose} onSelect={onSelect} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -5,7 +5,7 @@ import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
 
 export const CONSTITUTION_CINEMATIC_MS = 3600;
-export const CONSTITUTION_REDUCED_MOTION_MS = 2800;
+export const CONSTITUTION_REDUCED_MOTION_MS = 3400;
 
 export type ConstitutionIntroStage = 'cinematic' | 'select';
 
@@ -243,7 +243,13 @@ const ShuffleBackCard: React.FC<{
     initial={{ opacity: 0, x: 0, y: 0, rotate: 0, scale: 0.98 }}
     animate={
       reducedMotion
-        ? { opacity: 0.72, x: 0, y: 0, rotate: 0, scale: 1 }
+        ? {
+            opacity: [0, 0.88, 0.78],
+            x: [0, x - 198, 0],
+            y: [0, y - 124, 0],
+            rotate: [0, rotate * 0.55, index * 1.5],
+            scale: [0.98, 1, 0.98],
+          }
         : {
             opacity: [0, 1, 1, 1, 0.78],
             x: [0, x - 198, 492 + index * 24, x - 198, 0],
@@ -254,7 +260,7 @@ const ShuffleBackCard: React.FC<{
     }
     transition={
       reducedMotion
-        ? { duration: 0.18, ease: EASE_OUT }
+        ? { duration: 1.35, delay: delay * 0.45, times: [0, 0.55, 1], ease: EASE_IN_OUT }
         : { duration: 2.2, delay, times: [0, 0.24, 0.54, 0.78, 1], ease: EASE_IN_OUT }
     }
   >
@@ -279,7 +285,14 @@ const DealtPreviewCard: React.FC<{
     initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.68 }}
     animate={
       reducedMotion
-        ? { opacity: 0.86, x: DEAL_SLOTS[index].x - 200, y: DEAL_SLOTS[index].y - 126, rotateY: 0, rotate: 0, scale: 1 }
+        ? {
+            opacity: [0, 0.5, 0.92],
+            x: [0, 116 + index * 18, DEAL_SLOTS[index].x - 200],
+            y: [0, 152 + index * 10, DEAL_SLOTS[index].y - 126],
+            rotateY: [-18, -8, 0],
+            rotate: [-3, index === 0 ? -4 : index === 2 ? 4 : 0, 0],
+            scale: [0.82, 0.9, 1],
+          }
         : {
             opacity: [0, 0.18, 1, 1, 1],
             x: [0, 118 + index * 18, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200],
@@ -291,7 +304,7 @@ const DealtPreviewCard: React.FC<{
     }
     transition={
       reducedMotion
-        ? { duration: 0.32, delay: index * 0.08, ease: EASE_OUT }
+        ? { duration: 1.45, delay: 0.52 + index * 0.14, times: [0, 0.38, 1], ease: EASE_OUT }
         : { duration: 2.45, delay: 0.68 + index * 0.16, times: [0, 0.2, 0.42, 0.78, 1], ease: EASE_OUT }
     }
   >
@@ -428,7 +441,7 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: EASE_OUT }}
     >
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="wait">
         {stage === 'cinematic' ? (
           <motion.div
             key="cinematic"

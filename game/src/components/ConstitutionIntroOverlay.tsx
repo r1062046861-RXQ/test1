@@ -4,8 +4,8 @@ import type { Constitution } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
 
-export const CONSTITUTION_CINEMATIC_MS = 3600;
-export const CONSTITUTION_REDUCED_MOTION_MS = 3400;
+export const CONSTITUTION_CINEMATIC_MS = 2850;
+export const CONSTITUTION_REDUCED_MOTION_MS = 2450;
 
 export type ConstitutionIntroStage = 'cinematic' | 'select';
 
@@ -45,18 +45,18 @@ const CENTERED_SINGLE_CARD_SLOT = { left: 783, top: 388, width: 354, height: 477
 
 const CINEMATIC_SOURCE_DECK = { left: 164, top: 116, width: 282, height: 380 } as const;
 const CINEMATIC_SHUFFLE_CARD = { left: 196, top: 132, width: 244, height: 329 } as const;
-const CINEMATIC_PREVIEW_START = { left: 222, top: 152, width: 268, height: 360 } as const;
+const CINEMATIC_PREVIEW_START = { left: 222, top: 152, width: 354, height: 477 } as const;
 
 const DEAL_SLOTS = [
-  { x: 528, y: 578 },
-  { x: 826, y: 578 },
-  { x: 1124, y: 578 },
+  { x: 407, y: 388 },
+  { x: 801, y: 388 },
+  { x: 1198, y: 388 },
 ] as const;
 
 const DEAL_ARCS = [
-  { x: 300, y: 182, rotate: -10 },
-  { x: 370, y: 190, rotate: 0 },
-  { x: 440, y: 198, rotate: 10 },
+  { x: 282, y: 220, rotate: -10 },
+  { x: 350, y: 234, rotate: 0 },
+  { x: 418, y: 248, rotate: 10 },
 ] as const;
 
 const CARD_BACKS = [
@@ -321,7 +321,7 @@ const DealtPreviewCard: React.FC<{
         height: percent(CINEMATIC_PREVIEW_START.height, REF_H),
         zIndex: 30 + index,
       }}
-      initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.52 }}
+      initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.42 }}
       animate={
         reducedMotion
           ? {
@@ -330,7 +330,7 @@ const DealtPreviewCard: React.FC<{
               y: [0, arc.y - CINEMATIC_PREVIEW_START.top + 44, endY],
               rotateY: [-20, -8, 0],
               rotate: [-3, arc.rotate * 0.45, 0],
-              scale: [0.72, 0.86, 1],
+              scale: [0.58, 0.78, 1],
             }
           : {
               opacity: [0, 0.24, 1, 1, 1],
@@ -338,13 +338,13 @@ const DealtPreviewCard: React.FC<{
               y: [0, arc.y - CINEMATIC_PREVIEW_START.top, endY, endY, endY],
               rotateY: [-180, -112, 0, 0, 0],
               rotate: [-8, arc.rotate, index === 0 ? -2 : index === 2 ? 2 : 0, 0, 0],
-              scale: [0.52, 0.78, 1, 1, 1],
+              scale: [0.42, 0.68, 1, 1, 1],
             }
       }
       transition={
         reducedMotion
-          ? { duration: 1.55, delay: 0.54 + index * 0.12, times: [0, 0.42, 1], ease: EASE_OUT }
-          : { duration: 2.08, delay: 0.52 + index * 0.1, times: [0, 0.24, 0.5, 0.66, 1], ease: EASE_OUT }
+          ? { duration: 1.44, delay: 0.48 + index * 0.1, times: [0, 0.42, 1], ease: EASE_OUT }
+          : { duration: 1.9, delay: 0.48 + index * 0.1, times: [0, 0.24, 0.5, 0.66, 1], ease: EASE_OUT }
       }
     >
       <div className="constitution-cinematic-preview__surface">

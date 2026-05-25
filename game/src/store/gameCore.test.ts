@@ -883,6 +883,23 @@ describe('shared game core', () => {
     });
   });
 
+  it('黄芩清肺作为合成药材也可以在战斗中打出', () => {
+    const card = makeCard('huangqin', 'playable-herb');
+    const player = makePlayer({
+      energy: 0,
+      hand: [card],
+    });
+    const enemy = makeEnemy('wind_cold_guest');
+
+    const result = resolveCardPlay(makeState(player, [enemy]), card.id, enemy.id, () => undefined);
+
+    expect(result).not.toBeNull();
+    expect(result!.energyCost).toBe(0);
+    expect(result!.enemies[0].currentHp).toBe(enemy.maxHp - 4);
+    expect(getEnemyStacks(result!.enemies[0], 'heat_evil')).toBe(1);
+    expect(result!.player.discardPile.some((entry) => entry.id === card.id)).toBe(true);
+  });
+
   it('所有可打出卡牌的 effectId 都有核心实现，装备和占位不可打出', () => {
     const handledEffectIds = new Set([
       'draw_discard',
@@ -903,6 +920,7 @@ describe('shared game core', () => {
       'danggui_effect',
       'revive_buff',
       'mahuang_effect',
+      'huangqin_effect',
       'dahuang_effect',
       'damage_cleanse_buff',
       'buff_yin',

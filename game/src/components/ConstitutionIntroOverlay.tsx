@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { CARD_LIBRARY } from '../data/cards';
 import type { Constitution } from '../types';
 import { cn } from '../utils/cn';
 import { resolveAssetUrl } from '../utils/assets';
 
-export const CONSTITUTION_CINEMATIC_MS = 2850;
-export const CONSTITUTION_REDUCED_MOTION_MS = 2450;
+export const CONSTITUTION_CINEMATIC_MS = 2200;
+export const CONSTITUTION_REDUCED_MOTION_MS = 220;
 
 export type ConstitutionIntroStage = 'cinematic' | 'select';
 
@@ -34,6 +35,24 @@ const REF_W = 1920;
 const REF_H = 1080;
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 const EASE_IN_OUT = [0.45, 0, 0.2, 1] as const;
+const EASE_IN = [0.4, 0, 1, 1] as const;
+const FALLBACK_CARD_IMAGE = '/assets/cards_player/1.png';
+
+type CardTone = 'emerald' | 'crimson' | 'amber';
+
+interface PacketCardModel {
+  id: string;
+  name: string;
+  image: string;
+  flashStart: number | null;
+  flashEnd: number | null;
+}
+
+interface PacketModel {
+  id: string;
+  tone: CardTone;
+  cards: PacketCardModel[];
+}
 
 const CARD_SLOTS = [
   { left: 407, top: 388, width: 354, height: 477 },
@@ -43,29 +62,51 @@ const CARD_SLOTS = [
 
 const CENTERED_SINGLE_CARD_SLOT = { left: 783, top: 388, width: 354, height: 477 } as const;
 
-const CINEMATIC_SOURCE_DECK = { left: 164, top: 116, width: 282, height: 380 } as const;
-const CINEMATIC_SHUFFLE_CARD = { left: 196, top: 132, width: 244, height: 329 } as const;
-const CINEMATIC_PREVIEW_START = { left: 222, top: 152, width: 354, height: 477 } as const;
+const PACKET_TONES: CardTone[] = ['emerald', 'crimson', 'amber'];
 
-const DEAL_SLOTS = [
-  { x: 407, y: 388 },
-  { x: 801, y: 388 },
-  { x: 1198, y: 388 },
+const SHOWCASE_PACKET_CARD_IDS = [
+  ['mahuang', 'chuanxiong', 'huanglian', 'chenpi'],
+  ['huangqi', 'danggui', 'guizhi', 'baishao'],
+  ['danshen', 'yiyi', 'jinyinhua', 'xiaochaihu'],
 ] as const;
 
-const DEAL_ARCS = [
-  { x: 282, y: 220, rotate: -10 },
-  { x: 350, y: 234, rotate: 0 },
-  { x: 418, y: 248, rotate: 10 },
+const FLASH_WINDOWS = [
+  [
+    { start: 0.24, end: 0.38 },
+    { start: 0.38, end: 0.5 },
+    { start: 0.5, end: 0.6 },
+    null,
+  ],
+  [
+    { start: 0.3, end: 0.44 },
+    { start: 0.44, end: 0.56 },
+    null,
+    null,
+  ],
+  [
+    { start: 0.34, end: 0.48 },
+    { start: 0.48, end: 0.58 },
+    { start: 0.58, end: 0.68 },
+    null,
+  ],
 ] as const;
 
-const CARD_BACKS = [
-  { fanX: 146, fanY: 150, fanRotate: -15, cutX: 368, cutY: 156, cutRotate: -18, delay: 0.14 },
-  { fanX: 164, fanY: 134, fanRotate: -8, cutX: 410, cutY: 142, cutRotate: -8, delay: 0.22 },
-  { fanX: 192, fanY: 124, fanRotate: -1, cutX: 452, cutY: 150, cutRotate: 2, delay: 0.3 },
-  { fanX: 224, fanY: 130, fanRotate: 7, cutX: 494, cutY: 166, cutRotate: 12, delay: 0.38 },
-  { fanX: 254, fanY: 150, fanRotate: 15, cutX: 536, cutY: 186, cutRotate: 22, delay: 0.46 },
-] as const;
+const SHOWCASE_PACKETS: PacketModel[] = SHOWCASE_PACKET_CARD_IDS.map((packetIds, packetIndex) => ({
+  id: `packet-${packetIndex + 1}`,
+  tone: PACKET_TONES[packetIndex],
+  cards: packetIds.map((cardId, cardIndex) => {
+    const card = CARD_LIBRARY[cardId];
+    const flashWindow = FLASH_WINDOWS[packetIndex][cardIndex];
+
+    return {
+      id: cardId,
+      name: card.name,
+      image: resolveAssetUrl(card.image ?? FALLBACK_CARD_IMAGE),
+      flashStart: flashWindow?.start ?? null,
+      flashEnd: flashWindow?.end ?? null,
+    };
+  }),
+}));
 
 function percent(value: number, base: number) {
   return `${(value / base) * 100}%`;
@@ -86,6 +127,31 @@ function getCardSlot(index: number, count: number) {
   }
 
   return CARD_SLOTS[index] ?? CARD_SLOTS[0];
+}
+
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(query);
+    const onChange = () => setMatches(mediaQuery.matches);
+
+    onChange();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onChange);
+      return () => mediaQuery.removeEventListener('change', onChange);
+    }
+
+    mediaQuery.addListener(onChange);
+    return () => mediaQuery.removeListener(onChange);
+  }, [query]);
+
+  return matches;
 }
 
 const AssetImage: React.FC<{
@@ -241,158 +307,145 @@ const Pagination: React.FC<{
   );
 };
 
-const ShuffleBackCard: React.FC<{
-  index: number;
-  fanX: number;
-  fanY: number;
-  fanRotate: number;
-  cutX: number;
-  cutY: number;
-  cutRotate: number;
-  delay: number;
-  reducedMotion: boolean;
-}> = ({ index, fanX, fanY, fanRotate, cutX, cutY, cutRotate, delay, reducedMotion }) => (
-  <motion.div
-    className="constitution-cinematic-cardback"
-    style={{
-      left: percent(CINEMATIC_SHUFFLE_CARD.left, REF_W),
-      top: percent(CINEMATIC_SHUFFLE_CARD.top, REF_H),
-      width: percent(CINEMATIC_SHUFFLE_CARD.width, REF_W),
-      height: percent(CINEMATIC_SHUFFLE_CARD.height, REF_H),
-      zIndex: 10 + index,
-    }}
-    initial={{ opacity: 0, x: 0, y: 0, rotate: 0, scale: 0.98 }}
-    animate={
-      reducedMotion
-        ? {
-            opacity: [0, 0.88, 0.78],
-            x: [0, (fanX - CINEMATIC_SHUFFLE_CARD.left) * 0.72, 0],
-            y: [0, (fanY - CINEMATIC_SHUFFLE_CARD.top) * 0.72, 0],
-            rotate: [0, fanRotate * 0.38, index * 1.4],
-            scale: [0.98, 1, 0.98],
-          }
-        : {
-            opacity: [0, 1, 1, 1, 0.8],
-            x: [
-              0,
-              fanX - CINEMATIC_SHUFFLE_CARD.left,
-              cutX - CINEMATIC_SHUFFLE_CARD.left,
-              fanX - CINEMATIC_SHUFFLE_CARD.left,
-              0,
-            ],
-            y: [
-              0,
-              fanY - CINEMATIC_SHUFFLE_CARD.top,
-              cutY - CINEMATIC_SHUFFLE_CARD.top,
-              fanY - CINEMATIC_SHUFFLE_CARD.top,
-              0,
-            ],
-            rotate: [0, fanRotate, cutRotate, fanRotate * 0.55, index * 1.2],
-            scale: [0.96, 1.04, 1.08, 1.02, 0.98],
-          }
-    }
-    transition={
-      reducedMotion
-        ? { duration: 1.35, delay: delay * 0.45, times: [0, 0.55, 1], ease: EASE_IN_OUT }
-        : { duration: 2.2, delay, times: [0, 0.24, 0.54, 0.78, 1], ease: EASE_IN_OUT }
-    }
-  >
-    <AssetImage src={`${ASSET_BASE}/deck_icon.png`} className="constitution-cinematic-cardback__image" />
-  </motion.div>
-);
+const ShuffleCard: React.FC<{
+  card: PacketCardModel;
+  tone: CardTone;
+  packetIndex: number;
+  cardIndex: number;
+}> = ({ card, tone, packetIndex, cardIndex }) => {
+  const reducedMotion = useReducedMotion();
+  const cardStyle = {
+    '--constitution-card-offset': `${cardIndex}`,
+    zIndex: 12 - cardIndex,
+  } as React.CSSProperties;
 
-const DealtPreviewCard: React.FC<{
-  option: ConstitutionOption;
-  index: number;
-  reducedMotion: boolean;
-}> = ({ option, index, reducedMotion }) => {
-  const slot = DEAL_SLOTS[index];
-  const arc = DEAL_ARCS[index];
-  const endX = slot.x - CINEMATIC_PREVIEW_START.left;
-  const endY = slot.y - CINEMATIC_PREVIEW_START.top;
+  const flashStart = card.flashStart ?? 0;
+  const flashEnd = card.flashEnd ?? 0;
+  const frontMotion =
+    reducedMotion || card.flashStart === null
+      ? { opacity: 0, rotateY: -180, y: 0 }
+      : {
+          opacity: [0, 0, 0.98, 0.98, 0],
+          rotateY: [-180, -180, -10, 0, -180],
+          y: [0, 0, -10 - cardIndex * 2, -10 - cardIndex * 2, 0],
+        };
+
+  const frontTransition =
+    reducedMotion || card.flashStart === null
+      ? { duration: 0 }
+      : {
+          duration: 1.88,
+          delay: 0.14 + packetIndex * 0.04,
+          times: [0, flashStart - 0.06, flashStart, flashEnd, flashEnd + 0.06],
+          ease: EASE_OUT,
+        };
 
   return (
-    <motion.div
-      className="constitution-cinematic-preview"
-      style={{
-        left: percent(CINEMATIC_PREVIEW_START.left, REF_W),
-        top: percent(CINEMATIC_PREVIEW_START.top, REF_H),
-        width: percent(CINEMATIC_PREVIEW_START.width, REF_W),
-        height: percent(CINEMATIC_PREVIEW_START.height, REF_H),
-        zIndex: 30 + index,
-      }}
-      initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.42 }}
-      animate={
-        reducedMotion
-          ? {
-              opacity: [0, 0.55, 0.96],
-              x: [0, arc.x - CINEMATIC_PREVIEW_START.left, endX],
-              y: [0, arc.y - CINEMATIC_PREVIEW_START.top + 44, endY],
-              rotateY: [-20, -8, 0],
-              rotate: [-3, arc.rotate * 0.45, 0],
-              scale: [0.58, 0.78, 1],
-            }
-          : {
-              opacity: [0, 0.24, 1, 1, 1],
-              x: [0, arc.x - CINEMATIC_PREVIEW_START.left, endX, endX, endX],
-              y: [0, arc.y - CINEMATIC_PREVIEW_START.top, endY, endY, endY],
-              rotateY: [-180, -112, 0, 0, 0],
-              rotate: [-8, arc.rotate, index === 0 ? -2 : index === 2 ? 2 : 0, 0, 0],
-              scale: [0.42, 0.68, 1, 1, 1],
-            }
-      }
-      transition={
-        reducedMotion
-          ? { duration: 1.44, delay: 0.48 + index * 0.1, times: [0, 0.42, 1], ease: EASE_OUT }
-          : { duration: 1.9, delay: 0.48 + index * 0.1, times: [0, 0.24, 0.5, 0.66, 1], ease: EASE_OUT }
-      }
-    >
-      <div className="constitution-cinematic-preview__surface">
-        <img src={resolveAssetUrl(option.image)} alt="" aria-hidden="true" className="constitution-cinematic-preview__art" />
-        <div className="constitution-cinematic-preview__label">{option.title}</div>
+    <div className={cn('constitution-shuffle-card', `constitution-shuffle-card--${tone}`)} style={cardStyle}>
+      <div className="constitution-shuffle-card__shadow" />
+      <div className="constitution-shuffle-card__back">
+        <div className="constitution-shuffle-card__back-inner">
+          <div className="constitution-shuffle-card__sigil" />
+          <div className="constitution-shuffle-card__back-copy">五行医道</div>
+        </div>
       </div>
-    </motion.div>
+      <motion.div
+        className="constitution-shuffle-card__front"
+        initial={{ opacity: 0, rotateY: -180, y: 0 }}
+        animate={frontMotion}
+        transition={frontTransition}
+      >
+        <img src={card.image} alt={card.name} className="constitution-shuffle-card__front-image" />
+      </motion.div>
+    </div>
+  );
+};
+
+const DeckPacket: React.FC<{
+  packet: PacketModel;
+  packetIndex: number;
+  isMobile: boolean;
+}> = ({ packet, packetIndex, isMobile }) => {
+  const reducedMotion = useReducedMotion();
+  const choreographyClass = `${isMobile ? 'mobile' : 'desktop'}-${packetIndex + 1}`;
+
+  return (
+    <div
+      className={cn(
+        'constitution-deck-packet-shell',
+        `constitution-deck-packet-shell--${choreographyClass}`,
+        reducedMotion && 'constitution-deck-packet-shell--reduced',
+      )}
+      style={{ zIndex: 30 - packetIndex }}
+    >
+      <div
+        className={cn(
+          'constitution-deck-packet',
+          `constitution-deck-packet--${packet.tone}`,
+          `constitution-deck-packet--${choreographyClass}`,
+          reducedMotion && 'constitution-deck-packet--reduced',
+        )}
+      >
+        {packet.cards.map((card, cardIndex) => (
+          <ShuffleCard key={card.id} card={card} tone={packet.tone} packetIndex={packetIndex} cardIndex={cardIndex} />
+        ))}
+      </div>
+    </div>
   );
 };
 
 const CinematicStage: React.FC<{
-  options: ConstitutionOption[];
   onSkip: () => void;
-}> = ({ options, onSkip }) => {
-  const reducedMotion = Boolean(useReducedMotion());
-  const previewOptions = options.slice(0, PAGE_SIZE);
+}> = ({ onSkip }) => {
+  const reducedMotion = useReducedMotion();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   return (
-    <CanvasShell>
-      <button type="button" className="constitution-cinematic__skip" onClick={onSkip}>
-        跳过
-      </button>
-      <AssetImage
-        src={`${ASSET_BASE}/deck_icon.png`}
-        className="constitution-cinematic__source-deck"
-        style={{
-          left: percent(CINEMATIC_SOURCE_DECK.left, REF_W),
-          top: percent(CINEMATIC_SOURCE_DECK.top, REF_H),
-          width: percent(CINEMATIC_SOURCE_DECK.width, REF_W),
-          height: percent(CINEMATIC_SOURCE_DECK.height, REF_H),
-          filter:
-            'drop-shadow(0 28px 46px rgba(0, 0, 0, 0.56)) drop-shadow(0 0 24px rgba(224, 184, 96, 0.16))',
-        }}
-      />
-      <div className="constitution-cinematic__copy">
-        <div className="constitution-cinematic__kicker">体质择定</div>
-        <h2 className="constitution-cinematic__title">切牌起局</h2>
-        <p className="constitution-cinematic__subtitle">洗牌、切牌、发牌，择定这一轮巡诊的起手方向。</p>
+    <>
+      <div className="constitution-flow__vignette" />
+      <div className="constitution-flow__grain" />
+      <div className="constitution-flow__halo constitution-flow__halo--top" />
+      <div className="constitution-flow__halo constitution-flow__halo--bottom" />
+
+      <div className="constitution-flow__shell">
+        <div className="constitution-flow__controls">
+          <button type="button" className="constitution-flow__text-action" onClick={onSkip}>
+            跳过
+          </button>
+        </div>
+
+        <motion.div
+          className="constitution-shuffle-stage"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -18, transition: { duration: 0.16, ease: EASE_IN } }}
+          transition={{ duration: 0.28, ease: EASE_OUT }}
+        >
+          <div className="constitution-shuffle-stage__deck">
+            {SHOWCASE_PACKETS.map((packet, packetIndex) => (
+              <DeckPacket key={packet.id} packet={packet} packetIndex={packetIndex} isMobile={isMobile} />
+            ))}
+          </div>
+
+          <motion.div
+            className="constitution-shuffle-stage__copy"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: reducedMotion ? 0.18 : 0.28,
+              delay: reducedMotion ? 0.04 : 1.58,
+              ease: EASE_OUT,
+            }}
+          >
+            <div className="constitution-shuffle-stage__kicker">五行起局</div>
+            <h2 className="constitution-shuffle-stage__title">切牌起局</h2>
+            <p className="constitution-shuffle-stage__subtitle">
+              三张体质牌会从整叠牌中依次发出，决定你这一轮巡诊的起手方向与五行节奏。
+            </p>
+          </motion.div>
+        </motion.div>
       </div>
-
-      {CARD_BACKS.map((card, index) => (
-        <ShuffleBackCard key={index} index={index} reducedMotion={reducedMotion} {...card} />
-      ))}
-
-      {previewOptions.map((option, index) => (
-        <DealtPreviewCard key={option.id} option={option} index={index} reducedMotion={reducedMotion} />
-      ))}
-    </CanvasShell>
+    </>
   );
 };
 
@@ -486,13 +539,17 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
 
   return (
     <motion.div
-      className="constitution-flow"
+      className={cn(
+        'constitution-flow',
+        stage === 'cinematic' && 'constitution-flow--legacy-cinematic custom-scrollbar',
+        stage === 'select' && 'constitution-flow--select',
+      )}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22, ease: EASE_OUT }}
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         {stage === 'cinematic' ? (
           <motion.div
             key="cinematic"
@@ -501,16 +558,16 @@ export const ConstitutionIntroOverlay: React.FC<ConstitutionIntroOverlayProps> =
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.18, ease: EASE_IN_OUT } }}
           >
-            <CinematicStage options={options} onSkip={onSkip} />
+            <CinematicStage onSkip={onSkip} />
           </motion.div>
         ) : (
           <motion.div
             key="select"
             className="constitution-flow__stage"
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.24, ease: EASE_OUT }}
+            transition={{ duration: 0.12, ease: EASE_OUT }}
           >
             <SelectStage options={options} page={page} setPage={setPage} onClose={onClose} onSelect={onSelect} />
           </motion.div>

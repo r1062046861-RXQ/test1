@@ -182,7 +182,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
     id: 'continue',
     requiresSavedRun: true,
     title: '继续巡诊',
-    subtitle: '回到地图。',
+    subtitle: '回到地图',
     defaultPlate: '/assets/main_menu/v2/default/continue_plate.png',
     defaultText: '/assets/main_menu/v2/default/continue_text.png',
     defaultIcon: '/assets/main_menu/v2/default/continue_icon.png',
@@ -204,7 +204,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
   {
     id: 'new_run',
     title: '重新巡诊',
-    subtitle: '重新选择体质。',
+    subtitle: '重新选择体质',
     defaultPlate: '/assets/main_menu/v2/default/new_run_plate.png',
     defaultText: '/assets/main_menu/v2/default/new_run_text.png',
     defaultIcon: '/assets/main_menu/v2/default/new_run_icon.png',
@@ -226,7 +226,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
   {
     id: 'codex',
     title: '图鉴总览',
-    subtitle: '查看已收集的药材等。',
+    subtitle: '查看已收集的药材等',
     defaultPlate: '/assets/main_menu/v2/default/codex_plate.png',
     defaultText: '/assets/main_menu/v2/default/codex_text.png',
     defaultIcon: '/assets/main_menu/v2/default/codex_icon.png',
@@ -248,7 +248,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
   {
     id: 'settings',
     title: '功能设置',
-    subtitle: '调整显示。',
+    subtitle: '调整显示',
     defaultPlate: '/assets/main_menu/v2/default/settings_plate.png',
     defaultText: '/assets/main_menu/v2/default/settings_text.png',
     defaultIcon: '/assets/main_menu/v2/default/settings_icon.png',
@@ -270,7 +270,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
   {
     id: 'contact',
     title: '联系作者',
-    subtitle: '扫码联系。',
+    subtitle: '扫码联系',
     defaultPlate: '/assets/main_menu/v2/default/contact_plate.png',
     defaultText: '/assets/main_menu/v2/default/contact_text.png',
     defaultIcon: '/assets/main_menu/v2/default/contact_icon.png',
@@ -292,7 +292,7 @@ const BUTTON_CONFIG: MenuButtonDef[] = [
   {
     id: 'admin',
     title: '管理员测试',
-    subtitle: '调试入口。',
+    subtitle: '调试入口',
     defaultPlate: '/assets/main_menu/v2/default/admin_plate.png',
     defaultText: '/assets/main_menu/v2/default/admin_text.png',
     defaultIcon: '/assets/main_menu/v2/default/admin_icon.png',
@@ -323,13 +323,6 @@ const HOVER_DETAIL_ASSETS = [
   '/assets/main_menu/v2/hover/admin_plate.png',
   '/assets/main_menu/v2/hover/text_backplate.png',
   '/assets/main_menu/v2/hover/gold_border.png',
-] as const;
-
-const QA_REFERENCE_ASSETS = [
-  '/assets/main_menu/v2/qa/default_no_text.png',
-  '/assets/main_menu/v2/qa/default_with_text.png',
-  '/assets/main_menu/v2/qa/hover_no_text.png',
-  '/assets/main_menu/v2/qa/hover_with_text.png',
 ] as const;
 
 const toCanvasStyle = (x: number, y: number, width: number, height: number): React.CSSProperties => ({
@@ -659,9 +652,6 @@ export const StartMenu: React.FC = () => {
                 </React.Fragment>
               ))}
               {HOVER_DETAIL_ASSETS.map((asset) => (
-                <img key={asset} src={resolveAssetUrl(asset)} alt="" />
-              ))}
-              {QA_REFERENCE_ASSETS.map((asset) => (
                 <img key={asset} src={resolveAssetUrl(asset)} alt="" />
               ))}
             </div>

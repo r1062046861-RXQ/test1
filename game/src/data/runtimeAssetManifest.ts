@@ -31,18 +31,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "critical"
   },
   {
-    "path": "/assets/author_qr/ren-xuanqi-placeholder.svg",
-    "bytes": 2950,
-    "stage": "static"
-  },
-  {
     "path": "/assets/author_qr/ren-xuanqi.jpg",
     "bytes": 117281,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/author_qr/wang-yi-placeholder.svg",
-    "bytes": 2777,
     "stage": "static"
   },
   {
@@ -58,11 +48,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
     "path": "/assets/background_map_act2.png",
     "bytes": 197952,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_map.png",
-    "bytes": 8545,
     "stage": "static"
   },
   {
@@ -371,18 +356,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_formula_placeholders/banxia_houpu_tang.svg",
-    "bytes": 1433,
-    "stage": "static"
-  },
-  {
     "path": "/assets/cards_formula_placeholders/gegen_tang.png",
     "bytes": 57115,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_formula_placeholders/gegen_tang.svg",
-    "bytes": 1431,
     "stage": "static"
   },
   {
@@ -391,18 +366,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_formula_placeholders/jiaotai_wan.svg",
-    "bytes": 1432,
-    "stage": "static"
-  },
-  {
     "path": "/assets/cards_formula_placeholders/lizhong_wan.png",
     "bytes": 60204,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_formula_placeholders/lizhong_wan.svg",
-    "bytes": 1432,
     "stage": "static"
   },
   {
@@ -416,11 +381,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_formula_placeholders/maxing_shigan_tang.svg",
-    "bytes": 1434,
-    "stage": "static"
-  },
-  {
     "path": "/assets/cards_formula_placeholders/sijunzi_tang.png",
     "bytes": 56473,
     "stage": "static"
@@ -431,11 +391,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_formula_placeholders/suanzaoren_tang.svg",
-    "bytes": 1431,
-    "stage": "static"
-  },
-  {
     "path": "/assets/cards_formula_placeholders/xiaochaihu_tang.png",
     "bytes": 44157,
     "stage": "static"
@@ -443,11 +398,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
     "path": "/assets/cards_formula_placeholders/xiaoqinglong_tang.png",
     "bytes": 76404,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_formula_placeholders/xiaoqinglong_tang.svg",
-    "bytes": 1433,
     "stage": "static"
   },
   {
@@ -613,11 +563,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   {
     "path": "/assets/cards_player/36.png",
     "bytes": 71566,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/cards_player/37.png",
-    "bytes": 52899,
     "stage": "static"
   },
   {
@@ -1131,8 +1076,158 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_special/formula_placeholder.svg",
-    "bytes": 2389,
+    "path": "/assets/combat/v2/act_frame.png",
+    "bytes": 4135,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/back_map_button.png",
+    "bytes": 8448,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/background.png",
+    "bytes": 2480708,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/combat_log_panel.png",
+    "bytes": 57996,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/deck_frame_icon.png",
+    "bytes": 6556,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/discard_frame_icon.png",
+    "bytes": 6157,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/divider_line.png",
+    "bytes": 345,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/draw_frame_icon.png",
+    "bytes": 6710,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/draw_per_turn_frame_icon.png",
+    "bytes": 2020,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/end_turn_button.png",
+    "bytes": 33981,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/equipment_icon.png",
+    "bytes": 2336,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/equipment_tab_frame.png",
+    "bytes": 6330,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/gold_frame_icon.png",
+    "bytes": 7332,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/green_bar.png",
+    "bytes": 1310,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/hand_frame_icon.png",
+    "bytes": 2508,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/hp_bar_frame.png",
+    "bytes": 13515,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/hp_icon.png",
+    "bytes": 5731,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/intent_icon.png",
+    "bytes": 3195,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/passive_panel.png",
+    "bytes": 52512,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/passive_tab_frame.png",
+    "bytes": 2518,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/passive_unselected_marker.png",
+    "bytes": 1354,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/pathogen_icon.png",
+    "bytes": 3149,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/player_health_panel.png",
+    "bytes": 37144,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/player_resource_panel.png",
+    "bytes": 43261,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/qi_icon.png",
+    "bytes": 6966,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/red_bar.png",
+    "bytes": 7387,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/status_icon_1.png",
+    "bytes": 5328,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/status_icon_2.png",
+    "bytes": 4789,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/status_icon_3.png",
+    "bytes": 5470,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/turn_player_frame.png",
+    "bytes": 4219,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/turn_resource_frame.png",
+    "bytes": 4049,
     "stage": "static"
   },
   {
@@ -1217,7 +1312,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/intro/enter_main_menu.png",
-    "bytes": 51417,
+    "bytes": 50967,
     "stage": "static"
   },
   {
@@ -1261,251 +1356,6 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/main_menu/background.png",
-    "bytes": 1308281,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_功能设置_hover.png",
-    "bytes": 224573,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_功能设置选项.png",
-    "bytes": 138277,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_图鉴总览_hover.png",
-    "bytes": 207710,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_图鉴总览选项.png",
-    "bytes": 127152,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_管理员测试_hover.png",
-    "bytes": 197639,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_管理员测试选项.png",
-    "bytes": 122522,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_继续巡诊_hover.png",
-    "bytes": 208912,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_继续巡诊选项.png",
-    "bytes": 123808,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_联系作者_hover.png",
-    "bytes": 184297,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_联系作者选项.png",
-    "bytes": 112683,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_重新巡诊_hover.png",
-    "bytes": 229175,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/button_重新巡诊选项.png",
-    "bytes": 137508,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_功能设置.png",
-    "bytes": 5222,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_图鉴总览.png",
-    "bytes": 4352,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_管理员测试.png",
-    "bytes": 4349,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_继续巡诊.png",
-    "bytes": 4079,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_联系作者.png",
-    "bytes": 5077,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/icon_重新巡诊.png",
-    "bytes": 4161,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/reference_hover.png",
-    "bytes": 2090471,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/reference.png",
-    "bytes": 1705926,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/admin.png",
-    "bytes": 98707,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/codex.png",
-    "bytes": 104775,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/contact.png",
-    "bytes": 89048,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/continue.png",
-    "bytes": 101096,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/new_run.png",
-    "bytes": 115943,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/default/settings.png",
-    "bytes": 115406,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/admin.png",
-    "bytes": 165084,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/codex.png",
-    "bytes": 179596,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/contact.png",
-    "bytes": 149393,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/continue.png",
-    "bytes": 179126,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/new_run.png",
-    "bytes": 200718,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/hover/settings.png",
-    "bytes": 197791,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/admin.png",
-    "bytes": 126908,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/codex.png",
-    "bytes": 131156,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/contact.png",
-    "bytes": 118996,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/continue.png",
-    "bytes": 119771,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/new_run.png",
-    "bytes": 142155,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/default/settings.png",
-    "bytes": 138671,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/admin.png",
-    "bytes": 186987,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/codex.png",
-    "bytes": 209205,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/contact.png",
-    "bytes": 168822,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/continue.png",
-    "bytes": 202084,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/new_run.png",
-    "bytes": 230185,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/regions/plate/hover/settings.png",
-    "bytes": 230418,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/text_plate.png",
-    "bytes": 18590,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/title_star_left.png",
-    "bytes": 385,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/title_star_right.png",
-    "bytes": 383,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/title_text.png",
-    "bytes": 7027,
-    "stage": "static"
-  },
-  {
     "path": "/assets/main_menu/v2/background.png",
     "bytes": 2443789,
     "stage": "static"
@@ -1522,7 +1372,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/admin_text.png",
-    "bytes": 8574,
+    "bytes": 7296,
     "stage": "static"
   },
   {
@@ -1542,7 +1392,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/codex_text.png",
-    "bytes": 8963,
+    "bytes": 8303,
     "stage": "static"
   },
   {
@@ -1557,7 +1407,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/contact_text.png",
-    "bytes": 9463,
+    "bytes": 8369,
     "stage": "static"
   },
   {
@@ -1572,7 +1422,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/continue_text.png",
-    "bytes": 8982,
+    "bytes": 7567,
     "stage": "static"
   },
   {
@@ -1587,7 +1437,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/new_run_text.png",
-    "bytes": 9182,
+    "bytes": 7897,
     "stage": "static"
   },
   {
@@ -1602,7 +1452,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/default/settings_text.png",
-    "bytes": 9968,
+    "bytes": 8681,
     "stage": "static"
   },
   {
@@ -1612,7 +1462,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/admin.png",
-    "bytes": 176109,
+    "bytes": 261571,
     "stage": "static"
   },
   {
@@ -1622,7 +1472,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/codex.png",
-    "bytes": 193664,
+    "bytes": 262804,
     "stage": "static"
   },
   {
@@ -1632,7 +1482,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/contact.png",
-    "bytes": 161746,
+    "bytes": 241618,
     "stage": "static"
   },
   {
@@ -1642,7 +1492,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/continue.png",
-    "bytes": 195108,
+    "bytes": 265351,
     "stage": "static"
   },
   {
@@ -1657,7 +1507,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/new_run.png",
-    "bytes": 217172,
+    "bytes": 280154,
     "stage": "static"
   },
   {
@@ -1667,7 +1517,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/main_menu/v2/hover/settings.png",
-    "bytes": 204313,
+    "bytes": 262979,
     "stage": "static"
   },
   {
@@ -1676,43 +1526,68 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/main_menu/v2/qa/default_no_text.png",
-    "bytes": 2599495,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/v2/qa/default_with_text.png",
-    "bytes": 2635999,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/v2/qa/hover_no_text.png",
-    "bytes": 2854598,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/main_menu/v2/qa/hover_with_text.png",
-    "bytes": 2879054,
-    "stage": "static"
-  },
-  {
     "path": "/assets/main_menu/v2/title_text.png",
     "bytes": 4238,
     "stage": "static"
   },
   {
-    "path": "/assets/background_combat_act1.png",
-    "bytes": 202508,
+    "path": "/assets/map/v2/boss_lamp_complete.png",
+    "bytes": 3742,
     "stage": "static"
   },
   {
-    "path": "/assets/background_combat_act2.png",
-    "bytes": 187332,
+    "path": "/assets/map/v2/boss_lamp_pending.png",
+    "bytes": 3286,
     "stage": "static"
   },
   {
-    "path": "/assets/background_combat_act3.png",
-    "bytes": 199369,
+    "path": "/assets/map/v2/boss_progress_plate.png",
+    "bytes": 5394,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/right_divider.png",
+    "bytes": 336,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/route_frame.png",
+    "bytes": 115234,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/route_hint_icon.png",
+    "bytes": 2151,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/route_hint_panel.png",
+    "bytes": 3219,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/route_title_divider.png",
+    "bytes": 2783,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/stat_energy.png",
+    "bytes": 23536,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/stat_floor.png",
+    "bytes": 22660,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/stat_gold.png",
+    "bytes": 24263,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/map/v2/stat_hp.png",
+    "bytes": 26259,
     "stage": "static"
   },
   {
@@ -1817,4 +1692,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 191112626;
+export const TOTAL_RUNTIME_ASSET_BYTES = 172079303;

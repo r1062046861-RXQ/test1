@@ -1,9 +1,24 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-14
+更新日期：2026-05-25
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
+
+## 0. DeepSeek 接手铁律
+
+本项目接下来会交给 Trae 里的 DeepSeek 继续做。请按下面的硬规则执行，少猜测，多确认。
+
+1. 每次只改一个页面或一个系统，不要跨页面大重构。
+2. 动手前必须先运行 `git status --short`。当前工作区已有 UI 替换改动，不要回滚、覆盖或清理不是你刚写的内容。
+3. 改 UI 前必须先读目标组件、`game/src/index.css` 里的相关 class、对应资源目录、`game/src/data/runtimeAssetManifest.ts`。
+4. 不要把规则逻辑写进 React 组件。规则、数值、掉落、地图生成优先在 `shared/` 或 `game/src/store/gameStore.ts` 处理。
+5. 不要复制终端里的乱码中文。用支持 UTF-8 的编辑器看源码和文档。
+6. 不要删除 `game/public/assets/`、`未使用/`、`game/node_modules/`。
+7. 改运行时图片资源后必须执行 `cd game && npm run assets:manifest`。
+8. 提交前必须至少执行 `cd game && npm test -- --run` 和 `cd game && npm run build`。
+9. UI 替换必须遵守 `1920×1080参考坐标系`、`资源拼装`、`同尺寸同锚点原地换图`、`manifest同步刷新`。
+10. 如果效果图和切片资源不齐，以统一网格和现有 v2 资源为准，不要靠移动文字或按钮去追旧截图偏差。
 
 ## 1. 项目定位
 
@@ -82,6 +97,8 @@ wechatgame/
       utils/                  # 资源 URL、图片预载、ID 等工具
       data/                   # 图鉴与运行时资源 manifest
     public/assets/            # 运行时资源（图片 manifest + 音频）
+      combat/v2/              # 战斗 v2 资源拼装切片
+      map/v2/                 # 地图 v2 资源拼装切片
     scripts/                  # 资源 manifest 生成脚本
 ```
 
@@ -99,14 +116,14 @@ wechatgame/
 | 事件 | 1 条主线（分叉 3 幕）+ 11 条支线，含 `eventLog`/`eventMarkers` 持久化 |
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
-| 语音/音频 | BGM 10 首 + 环境音 5 个 + SFX 12 个，已压缩至 96kbps/64kbps |
-| `public/assets` 总量 | 281 个文件，约 181 MiB（约 190 MB）；其中图片预加载 manifest 为 254 项，约 152 MiB，不含音频 |
+| 语音/音频 | BGM、环境音、SFX 等音频资源当前约 36 MiB |
+| `public/assets` 总量 | 当前工作区约 436 个文件，约 290 MiB；已包含主菜单、地图 v2、战斗 v2 等 UI 替换资源 |
 
 运行时资源按目录统计：
 
 | 目录 | 文件数 | 体积 |
 | --- | ---: | ---: |
-| `audio` | 27 | 约 28 MB（BGM 96kbps/环境音 64kbps 压缩后） |
+| `audio` | 28 | 约 36.2 MB |
 | `author_qr` | 4 | 约 0.3 MB |
 | `cards_enemy` | 65 | 约 142 MB |
 | `cards_equipment` | 11 | 约 1.1 MB |
@@ -115,8 +132,11 @@ wechatgame/
 | `cards_player` | 85 | 约 5.3 MB |
 | `cards_replacement_placeholders` | 48 | 约 1.1 MB |
 | `cards_special` | 1 | 约 0.002 MB（已删除 3 张无用卡图） |
+| `combat` | 33 | 约 2.7 MB（战斗 v2 切片与背景） |
 | `constitutions` | 9 | 约 0.6 MB |
-| `main_menu` | 22 | 约 2.2 MB（主菜单设计图背景、按钮切片、悬停态、图标、标题文字） |
+| `intro` | 11 | 约 3.6 MB |
+| `main_menu` | 90 | 约 94.7 MB（主菜单设计图背景、按钮切片、悬停态、图标、标题文字、区域切片） |
+| `map` | 12 | 约 0.2 MB（地图 v2 切片） |
 | 根目录背景图 | 10 | 约 1.9 MB（已压缩至 200KB 内） |
 
 新增背景资源（均已压缩至 200KB 内）：
@@ -158,10 +178,10 @@ wechatgame/
 | 阶段 | 组件 | 作用 |
 | --- | --- | --- |
 | `intro` | `IntroView` | 开场页 |
-| `start_menu` | `StartMenu` | 主菜单、资源加载进度、9 体质选择入口。当前使用 1920×1080 参考坐标系做资源拼装：背景单独 cover 填充，标题与 6 个按钮 plate 独立渲染，按钮默认态/hover 态在同一网格锚点原地换图。运行资源位于 `game/public/assets/main_menu/`。 |
+| `start_menu` | `StartMenu` | 主菜单、资源加载进度、9 体质选择入口。当前使用 1920×1080 参考坐标系做资源拼装：背景单独 cover 填充，标题与 6 个按钮 plate 独立渲染，按钮默认态/hover 态在同一网格锚点原地换图。运行资源位于 `game/public/assets/main_menu/`。当前按钮文字和 hover 图资源已有更新，不要重新按旧截图偏移 UI。 |
 | `card_codex` | `CardCodexView` | 图鉴，包括卡牌/敌人/术语 |
-| `map` | `MapView` | 地图节点选择 |
-| `combat` | `CombatView` | 战斗主界面 |
+| `map` | `MapView` | 地图节点选择。当前正在使用 v2 资源拼装界面，核心资源在 `game/public/assets/map/v2/`，核心 CSS 前缀是 `map-v2-*`，布局按 1920×1080 参考坐标系定位。 |
+| `combat` | `CombatView` | 战斗主界面。当前已重写为 v2 资源拼装界面，核心资源在 `game/public/assets/combat/v2/`，核心 CSS 前缀是 `combat-v2-*`。 |
 | `reward` | `RewardView` | 战斗奖励：3 张药材牌可选取/放弃，另展示本次装备掉落和真实药方蓝图奖励 |
 | `chest` | `ChestView` | 宝箱页存在；当前地图生成不产出宝箱节点 |
 | `rest` | `RestView` | 休息 |
@@ -171,6 +191,15 @@ wechatgame/
 | `victory` | 类型保留 | 当前无限地图没有正常胜利终点 |
 
 战斗外常驻 `SynthesisBench` 合成台入口在 `map / reward / shop / rest / event / chest` 显示，不在战斗、图鉴、开场和主菜单显示。合成台用于录入药方蓝图、查看材料拥有数量、选择具体药材实例并合成药方牌。
+
+当前工作区里地图页有一个特殊点：`MapView` 自己渲染 `<SynthesisBench />`，`App.tsx` 的地图分支不再通过 `<GameSurface synthesisBench>` 注入合成台。后续修改地图页时不要重复渲染两个合成台入口，也不要删掉地图页内的合成台入口。
+
+当前 UI 替换状态：
+
+- 主菜单 v2 已接入：`StartMenu.tsx` 使用 `game/public/assets/main_menu/` 下的 v2/default、v2/hover、regions 等资源；默认态与 hover 态必须同尺寸同锚点原地换图。
+- 地图 v2 正在接入：`MapView.tsx` 使用 `map-v2-*` 样式和 `game/public/assets/map/v2/` 切片，包括路径框、首领进度、统计图标、提示框。
+- 战斗 v2 正在接入：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括玩家资源面板、生命面板、敌人卡框、手牌底座、战斗记录、结束回合按钮。
+- `game/src/data/runtimeAssetManifest.ts` 已随当前资源变化更新；继续改运行时资源后必须重新执行 `npm run assets:manifest`。
 
 ## 7. 体质系统
 
@@ -407,6 +436,12 @@ wechatgame/
 
 运行时资源目录：`game/public/assets`
 
+当前 UI 替换新增资源目录：
+
+- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 33 个文件，包含 `background.png`、玩家资源/生命面板、敌人卡框、手牌底座、按钮和状态图标。
+- `game/public/assets/map/v2/`：地图 v2 资源拼装切片，当前约 12 个文件，包含路线框、首领进度、提示面板和统计图标。
+- `game/public/assets/main_menu/`：主菜单 v2 资源、按钮文字和 hover 图资源已有更新，不要按旧截图重新偏移文字或 icon。
+
 关键工具：
 
 - `game/scripts/generateAssetManifest.mjs`
@@ -418,6 +453,7 @@ wechatgame/
 
 当前资源 manifest 只覆盖运行时图片预加载资源，分三阶段：`critical -> static -> gif`。音频不纳入图片 manifest。
 主页进度条使用 `useRuntimeAssetLoadingProgress()`，当前总进度分母只统计实际预加载的 `critical/static` 阶段资源，`gif` 阶段不再计入首屏加载总量，避免加载条长期卡在未预载资源上。
+`runtimeAssetManifest.ts` 已随当前 UI 资源变化更新；如果资源文件数量或路径继续变化，必须重新生成 manifest，不要手写大段 manifest。
 
 资源变更注意：
 
@@ -474,6 +510,9 @@ npm run build
 - 部分源码中文字符串在某些终端里会显示乱码。不要把终端中的乱码复制进新文档或 UI 文案；应使用支持 UTF-8 的编辑器确认，或直接按产品语义重写干净中文。
 - `shared/` 是规则和数据核心，`game/` 是 Web 表现层。不要把规则直接写死到 React 组件里。
 - `game/src/index.css` 很大，UI 调整前应先搜索已有 class，避免重复造样式系统。
+- 当前 UI v2 主要 class 前缀是 `map-v2-*` 和 `combat-v2-*`。改地图或战斗时优先沿用这些前缀，不要再新建一套并行 UI 系统。
+- `CombatView.tsx` 当前已重写为资源拼装界面；如果战斗出牌、选敌、结束回合异常，先检查 v2 组件是否仍正确调用 `playCard`、`selectEnemy`、`endTurn`、`completeCombat`。
+- `MapView.tsx` 当前已重写为资源拼装界面；如果节点不可点击或 Boss 通道异常，先检查 `startCombat(node.id)`、`combatWinsThisCycle`、`getBossUnlockWinsRequired()` 是否仍按原逻辑使用。
 - 敌方 GIF 是最大性能风险。新增动图前必须压缩并更新 manifest。
 - `npm run build` 当前通过，但主 JS chunk 约 582 kB，后续做功能增长时需要留意拆包或按需加载。
 - `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；GIF 与 poster 当前是主链路，不要误删 fallback。
@@ -521,6 +560,20 @@ npm run build
 3. 需要压缩 GIF 时使用现有导入脚本。
 4. 执行 `cd game && npm run assets:manifest`。
 5. 检查 `runtimeAssetManifest.test.ts`。
+
+## 18.5 下一步 UI 替换任务验收清单
+
+每次继续替换主菜单、地图、战斗或其他页面 UI 后，至少检查下面事项：
+
+- 1920×1080 截图检查：无左侧白边、无顶部白边、背景 cover 填满 viewport，不拉伸。
+- 默认态、hover 态、active 态：按钮、文字、icon 不产生 1px 级位移。
+- 浏览器控制台无资源 404。
+- 地图节点可点击；普通节点能进入对应页面；Boss 通道仍需 3 场战斗胜利后解锁。
+- 战斗可正常选敌、出牌、结束回合、返回地图；管理员体质仍可跳过战斗并正常领取奖励。
+- 地图页合成台入口仍可用，不遮挡“手牌一览”按钮，不重复出现两个入口。
+- 改资源后执行 `cd game && npm run assets:manifest`。
+- 提交前执行 `cd game && npm test -- --run` 和 `cd game && npm run build`。
+- 自动化检查 UI 时优先调用 `window.render_game_to_text()`，不要只凭截图猜状态。
 
 ## 19. Unity 迁移准备
 
@@ -573,6 +626,11 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
+| 战斗 v2 资源拼装接入 | `CombatView.tsx` 已重写为资源拼装界面，使用 `game/public/assets/combat/v2/` 资源与 `combat-v2-*` 样式；保留出牌、选敌、结束回合、返回地图、管理员跳过战斗等原有流程入口。 |
+| 地图 v2 资源拼装接入 | `MapView.tsx` 已重写为资源拼装界面，使用 `game/public/assets/map/v2/` 资源与 `map-v2-*` 样式；保留地图节点点击、Boss 3 胜解锁、手牌一览等原有流程。 |
+| 地图页合成台入口调整 | `MapView` 自己渲染 `<SynthesisBench />`；`App.tsx` 的地图分支不再通过 `<GameSurface synthesisBench>` 注入，后续不要重复渲染两个合成台入口。 |
+| 运行时资源 manifest 更新 | `game/src/data/runtimeAssetManifest.ts` 已随当前主菜单、地图 v2、战斗 v2 资源变化更新；继续改 `game/public/assets` 后必须重新执行 `npm run assets:manifest`。 |
+| 主菜单文字与 hover 图资源更新 | `game/public/assets/main_menu/v2/default/*_text.png` 与 `game/public/assets/main_menu/v2/hover/*.png` 已更新；不要为了贴旧效果图而移动按钮文字或 icon。 |
 | 路径战斗轮换 v2.4 | 每层 2/3 列事件/商店 + 1/3 战斗，`lastCombatCol` 轮换确保单列不连战 |
 | 事件线性队列 | 三兄弟 Act1→Act2→Act3 不可插队；`eventQueue` 预洗牌+`__mainline_act*`注入 |
 | 管理员密码 | 密码 260208 保护管理员面板和体质入口，支持 localstorage 记住密码 |

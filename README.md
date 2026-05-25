@@ -8,6 +8,16 @@
 
 ---
 
+## Trae / DeepSeek 接手提示
+
+1. 先读 `AI_HANDOFF.md`，再动代码；不要只看本 README。
+2. 动手前先运行 `git status --short`。当前工作区已有 UI 替换改动，不能擅自回滚、覆盖或清理。
+3. 终端中文可能乱码。文档和 UI 文案必须用 UTF-8 编辑器确认，不要复制终端乱码。
+4. UI 替换必须遵守：`1920×1080参考坐标系`、`资源拼装`、`同尺寸同锚点原地换图`、`manifest同步刷新`。
+5. 一次只改一个页面或一个系统；改完跑 `npm test -- --run` 和 `npm run build`。
+
+---
+
 ## 快速启动
 
 ```powershell
@@ -41,7 +51,7 @@ wechatgame/
 │   │   ├── services/          # 音频 + 资源加载服务
 │   │   ├── utils/             # 资源路径、ID 生成、图片预载
 │   │   └── index.css          # 主要视觉系统（很大，先搜索再改）
-│   ├── public/assets/         # 运行时资源（281个文件，约181MiB；图片manifest 254项）
+│   ├── public/assets/         # 运行时资源（当前工作区约436个文件，约290MiB）
 │   └── package.json
 ├── .github/workflows/pages.yml # GitHub Pages 自动部署
 ├── AI_HANDOFF.md              # 完整交接文档
@@ -64,7 +74,7 @@ wechatgame/
 | 全部卡牌图片已替换为真实素材 | ✅ |
 | 24 张卡牌名称已完成全局统一重命名（药材名+功效） | ✅ |
 | 背景图全部换新（战斗/地图/休憩/药房/合成台），压缩至200KB内 | ✅ |
-| 音频全部压缩至约29MB；图片预加载 manifest 约152MiB，总资源约181MiB | ✅ |
+| 音频目录当前约36MiB；运行时资源当前工作区约290MiB | ✅ |
 | 主页加载条按实际预加载资源（critical/static）统计进度，不再把未预载 GIF 计入总量 | ✅ |
 | 字体优化（宋体/Songti SC，macOS兼容） | ✅ |
 | 战斗UI去琥珀色，按幕次主题配色（天蓝/玫红/紫清） | ✅ |
@@ -81,6 +91,10 @@ wechatgame/
 | 无限地图 + Boss 独立通道（需3场战斗解锁） | ✅ |
 | 商店价格倍率系统 | ✅ |
 | 本地持久化存档 | ✅ |
+| 主菜单 v2 资源拼装已接入：默认态/hover 态同尺寸同锚点原地换图 | ✅ |
+| 地图 v2 正在使用 `game/public/assets/map/v2/` 与 `map-v2-*` 样式 | 进行中 |
+| 战斗 v2 正在使用 `game/public/assets/combat/v2/` 与 `combat-v2-*` 样式 | 进行中 |
+| 地图页合成台入口由 `MapView` 自己渲染，不再由 `GameSurface synthesisBench` 注入 | ✅ |
 
 ---
 
@@ -131,6 +145,9 @@ wechatgame/
 | 改事件数据/效果 | `shared/data/events.ts` → `SIDE_EVENTS[]` / `getMainlineActData()` |
 | 改游戏流程、掉落、合成台状态 | `game/src/store/gameStore.ts` |
 | 改 UI / 页面 | `game/src/components/` + `game/src/index.css` |
+| 改主菜单 UI | `game/src/components/StartMenu.tsx` + `game/public/assets/main_menu/` |
+| 改地图 v2 UI | `game/src/components/MapView.tsx` + `map-v2-*` CSS + `game/public/assets/map/v2/` |
+| 改战斗 v2 UI | `game/src/components/CombatView.tsx` + `combat-v2-*` CSS + `game/public/assets/combat/v2/` |
 | 改运行时资源 | `game/public/assets/`，改后执行 `npm run assets:manifest` |
 | 加测试 | `game/src/store/gameCore.test.ts`（规则），`game/src/store/gameStore.test.ts`（流程） |
 
@@ -182,12 +199,14 @@ React 18 · TypeScript 5 · Vite 5 · Zustand 4 · Framer Motion 11 · Tailwind 
 
 ## 后续 AI 工作建议
 
-1. 先读 `AI_HANDOFF.md`，再读相关源码。
-2. 修改规则先改 `shared/core/gameCore.ts`，再改数据文案和测试。
-3. 修改 UI 先搜索 `game/src/index.css` 中的已有 class，并先读 `AI_HANDOFF.md` 的“UI 替换关键词规范”。
-4. 修改资源后执行 `npm run assets:manifest`。
-5. 不要把规则逻辑写进 React 组件；规则放在 `shared/` 下。
-6. 文本显示乱码不要复制终端输出，用能识别 UTF-8 的编辑器看源码。
+1. 先运行 `git status --short`，确认当前未提交改动；不要回滚不是你写的 UI 替换成果。
+2. 先读 `AI_HANDOFF.md`，再读相关源码。
+3. 修改规则先改 `shared/core/gameCore.ts`，再改数据文案和测试。
+4. 修改 UI 先搜索 `game/src/index.css` 中的已有 class，并先读 `AI_HANDOFF.md` 的“UI 替换关键词规范”。
+5. 地图和战斗当前分别使用 `map-v2-*`、`combat-v2-*` 样式；不要重新按旧截图偏移 UI。
+6. 修改资源后执行 `npm run assets:manifest`。
+7. 不要把规则逻辑写进 React 组件；规则放在 `shared/` 下。
+8. 文本显示乱码不要复制终端输出，用能识别 UTF-8 的编辑器看源码。
 
 ---
 

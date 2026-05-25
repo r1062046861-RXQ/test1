@@ -1,5 +1,5 @@
 export * from '../../../shared/baseTypes';
-import type { Constitution, GamePhase, MapLayer, Player, Enemy } from '../../../shared/baseTypes';
+import type { Constitution, EnemyIntent, GamePhase, MapLayer, Player, Enemy } from '../../../shared/baseTypes';
 
 export type EnemyActionPhase = 'idle' | 'windup' | 'lunge' | 'impact' | 'recover';
 export type PlayerImpactKind = 'hp' | 'block' | 'mixed';
@@ -7,6 +7,7 @@ export type PlayerImpactKind = 'hp' | 'block' | 'mixed';
 export interface EnemyActionCue {
   enemyId: string;
   phase: EnemyActionPhase;
+  intentType: EnemyIntent['type'];
   token: number;
 }
 

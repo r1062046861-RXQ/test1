@@ -593,10 +593,11 @@ export const useGameStore = create<GameStore>()(
         enemyId: string,
         phase: EnemyActionPhase,
         token: number,
+        intentType: EnemyActionCue['intentType'],
         playerImpactCue: PlayerImpactCue | null = null,
       ) => {
         set({
-          enemyActionCue: { enemyId, phase, token },
+          enemyActionCue: { enemyId, phase, token, intentType },
           playerImpactCue,
         });
       };
@@ -623,11 +624,11 @@ export const useGameStore = create<GameStore>()(
         const startOffset = index * (ENEMY_ATTACK_TOTAL_MS + ENEMY_ACTION_CHAIN_GAP_MS);
 
         scheduleTask(startOffset, () => {
-          setEnemyActionCue(action.enemyId, 'windup', token, null);
+          setEnemyActionCue(action.enemyId, 'windup', token, action.intent.type, null);
         });
 
         scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS, () => {
-          setEnemyActionCue(action.enemyId, 'lunge', token);
+          setEnemyActionCue(action.enemyId, 'lunge', token, action.intent.type);
         });
 
         scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS, () => {
@@ -635,7 +636,7 @@ export const useGameStore = create<GameStore>()(
             player: action.player,
             enemies: action.enemies,
             selectedEnemyId: action.selectedEnemyId,
-            enemyActionCue: { enemyId: action.enemyId, phase: 'impact', token },
+            enemyActionCue: { enemyId: action.enemyId, phase: 'impact', token, intentType: action.intent.type },
             playerImpactCue: action.impactKind
               ? { token, kind: action.impactKind }
               : null,
@@ -643,7 +644,7 @@ export const useGameStore = create<GameStore>()(
         });
 
         scheduleTask(startOffset + ENEMY_ATTACK_WINDUP_MS + ENEMY_ATTACK_LUNGE_MS + ENEMY_ATTACK_IMPACT_MS, () => {
-          setEnemyActionCue(action.enemyId, 'recover', token);
+          setEnemyActionCue(action.enemyId, 'recover', token, action.intent.type);
         });
       };
 

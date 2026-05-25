@@ -131,6 +131,8 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
   const handleCardClick = (card: (typeof player.hand)[number]) => {
     if (player.energy < card.cost || card.unplayable || playingCardId) return;
 
+    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    onLongHoverCard?.(null);
     setPlayingCardId(card.id);
     window.setTimeout(() => {
       if (card.target === 'single_enemy') {
@@ -219,6 +221,7 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
                 interactive={!isPlaying}
                 hoverLift={false}
                 layoutVariant="hand"
+                descriptionModalEnabled={false}
                 visualTone={
                   isPlaying
                     ? 'focus'

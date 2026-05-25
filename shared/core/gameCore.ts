@@ -1113,6 +1113,20 @@ export const resolveCardPlay = (
         applyAttackDamage(damage);
       }
       break;
+    case 'huangqin_effect':
+      if (targetEnemy) {
+        applyAttackDamage(card.effectValue || 4);
+        applyDebuffToEnemy(targetEnemy, {
+          id: 'heat_evil',
+          name: '热邪',
+          type: 'debuff',
+          stacks: card.secondaryValue || 1,
+          canStack: true,
+          description: '回合结束受到伤害',
+        });
+        log(`黄芩清肺：${targetEnemy.name} 获得热邪`);
+      }
+      break;
     case 'dahuang_effect':
       if (targetEnemy) {
         applyAttackDamage(card.effectValue || 0);

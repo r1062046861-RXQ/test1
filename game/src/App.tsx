@@ -1,18 +1,18 @@
-import { useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { useGameStore } from './store/gameStore';
 import { StartMenu } from './components/StartMenu';
 import { IntroView } from './components/IntroView';
-import { MapView } from './components/MapView';
-import { CombatView } from './components/CombatView';
-import { RewardView } from './components/RewardView';
-import { RestView } from './components/RestView';
-import { ShopView } from './components/ShopView';
-import { EventView } from './components/EventView';
-import { ChestView } from './components/ChestView';
-import { CardCodexView } from './components/CardCodexView';
-import { SynthesisBench } from './components/SynthesisBench';
 import { ensureRuntimeAssetLoadingStarted } from './hooks/useRuntimeAssetLoadingProgress';
 import { useBgmAutoSwitch } from './hooks/useAudio';
+
+const MapView = lazy(() => import('./components/MapView').then((module) => ({ default: module.MapView })));
+const CombatView = lazy(() => import('./components/CombatView').then((module) => ({ default: module.CombatView })));
+const RewardView = lazy(() => import('./components/RewardView').then((module) => ({ default: module.RewardView })));
+const RestView = lazy(() => import('./components/RestView').then((module) => ({ default: module.RestView })));
+const ShopView = lazy(() => import('./components/ShopView').then((module) => ({ default: module.ShopView })));
+const EventView = lazy(() => import('./components/EventView').then((module) => ({ default: module.EventView })));
+const ChestView = lazy(() => import('./components/ChestView').then((module) => ({ default: module.ChestView })));
+const CardCodexView = lazy(() => import('./components/CardCodexView').then((module) => ({ default: module.CardCodexView })));
 
 const CanvasProbe = () => (
   <canvas
@@ -21,12 +21,17 @@ const CanvasProbe = () => (
   />
 );
 
-const GameSurface = ({ children, synthesisBench = false }: { children: ReactNode; synthesisBench?: boolean }) => (
+const GameSurface = ({ children }: { children: ReactNode }) => (
   <div style={{ fontSize: 'var(--app-font-size)' }} className="w-full h-full">
     <CanvasProbe />
     {children}
-    {synthesisBench ? <SynthesisBench /> : null}
   </div>
+);
+
+const LazySurface = ({ children }: { children: ReactNode }) => (
+  <GameSurface>
+    <Suspense fallback={null}>{children}</Suspense>
+  </GameSurface>
 );
 
 function App() {
@@ -134,65 +139,65 @@ function App() {
 
   if (phase === 'map') {
     return (
-        <GameSurface synthesisBench>
+        <LazySurface>
             <MapView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'card_codex') {
     return (
-        <GameSurface>
+        <LazySurface>
             <CardCodexView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'combat') {
     return (
-        <GameSurface>
+        <LazySurface>
             <CombatView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'reward') {
     return (
-        <GameSurface>
+        <LazySurface>
             <RewardView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'chest') {
     return (
-        <GameSurface>
+        <LazySurface>
             <ChestView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'rest') {
     return (
-        <GameSurface>
+        <LazySurface>
             <RestView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'shop') {
     return (
-        <GameSurface>
+        <LazySurface>
             <ShopView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 
   if (phase === 'event') {
     return (
-        <GameSurface>
+        <LazySurface>
             <EventView />
-        </GameSurface>
+        </LazySurface>
     );
   }
 

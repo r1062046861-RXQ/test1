@@ -15,6 +15,10 @@ const CRITICAL_ASSET_PATHS = new Set([
 
 const toPosixPath = (value) => value.split(path.sep).join('/');
 
+const isExcludedRuntimeAsset = (assetPath) =>
+  assetPath.startsWith('/assets/main_menu/v2/qa/') ||
+  /^\/assets\/main_menu\/reference(?:_hover)?\.png$/i.test(assetPath);
+
 const walk = (dirPath) => {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   const files = [];
@@ -62,6 +66,7 @@ const assetFiles = walk(assetRoot)
       stage: getAssetStage(assetPath),
     };
   })
+  .filter((entry) => !isExcludedRuntimeAsset(entry.path))
   .sort((left, right) => {
     const stageOrder = { critical: 0, static: 1, gif: 2 };
     if (left.stage !== right.stage) return stageOrder[left.stage] - stageOrder[right.stage];

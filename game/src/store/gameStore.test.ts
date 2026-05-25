@@ -527,6 +527,38 @@ describe('Game Store', () => {
     expect(thirdCraft).toMatchObject({ ok: true, showPoem: true });
   });
 
+  it('keeps playable huangqin available as a formula ingredient', () => {
+    const store = useGameStore.getState();
+    store.startGame();
+    const blueprintId = 'blueprint_formula_placeholder_03';
+    const blueprint = FORMULA_BLUEPRINTS.find((entry) => entry.id === blueprintId)!;
+    expect(blueprint.ingredientCardIds).toContain('huangqin');
+    expect(getCardCategory(CARD_LIBRARY.huangqin)).toBe('herb');
+    expect(CARD_LIBRARY.huangqin.unplayable).not.toBe(true);
+
+    store.recordFormulaBlueprint(blueprintId);
+    const ingredientDeck = blueprint.ingredientCardIds.map((cardId, index) => ({
+      ...CARD_LIBRARY[cardId],
+      id: `huangqin_recipe_${cardId}_${index}`,
+    }));
+    useGameStore.setState({
+      phase: 'map',
+      player: {
+        ...useGameStore.getState().player,
+        deck: ingredientDeck,
+      },
+    });
+
+    const result = useGameStore
+      .getState()
+      .craftFormulaFromBlueprint(blueprintId, ingredientDeck.map((card) => card.id));
+
+    expect(result).toMatchObject({
+      ok: true,
+      formulaCardId: blueprint.formulaCardId,
+    });
+  });
+
   it('rejects incomplete, duplicated, mismatched, and non-herb formula ingredients', () => {
     const store = useGameStore.getState();
     store.startGame();

@@ -344,7 +344,7 @@ const DealtPreviewCard: React.FC<{
       transition={
         reducedMotion
           ? { duration: 1.55, delay: 0.54 + index * 0.12, times: [0, 0.42, 1], ease: EASE_OUT }
-          : { duration: 2.48, delay: 0.66 + index * 0.13, times: [0, 0.22, 0.46, 0.78, 1], ease: EASE_OUT }
+          : { duration: 2.08, delay: 0.52 + index * 0.1, times: [0, 0.24, 0.5, 0.66, 1], ease: EASE_OUT }
       }
     >
       <div className="constitution-cinematic-preview__surface">

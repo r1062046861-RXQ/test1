@@ -43,18 +43,28 @@ const CARD_SLOTS = [
 
 const CENTERED_SINGLE_CARD_SLOT = { left: 783, top: 388, width: 354, height: 477 } as const;
 
+const CINEMATIC_SOURCE_DECK = { left: 164, top: 116, width: 282, height: 380 } as const;
+const CINEMATIC_SHUFFLE_CARD = { left: 196, top: 132, width: 244, height: 329 } as const;
+const CINEMATIC_PREVIEW_START = { left: 222, top: 152, width: 268, height: 360 } as const;
+
 const DEAL_SLOTS = [
-  { x: 584, y: 626 },
-  { x: 978, y: 626 },
-  { x: 1375, y: 626 },
+  { x: 528, y: 578 },
+  { x: 826, y: 578 },
+  { x: 1124, y: 578 },
+] as const;
+
+const DEAL_ARCS = [
+  { x: 300, y: 182, rotate: -10 },
+  { x: 370, y: 190, rotate: 0 },
+  { x: 440, y: 198, rotate: 10 },
 ] as const;
 
 const CARD_BACKS = [
-  { x: 188, y: 141, rotate: -8, delay: 0.28 },
-  { x: 198, y: 136, rotate: -4, delay: 0.36 },
-  { x: 208, y: 132, rotate: 0, delay: 0.44 },
-  { x: 218, y: 136, rotate: 4, delay: 0.52 },
-  { x: 228, y: 141, rotate: 8, delay: 0.6 },
+  { fanX: 146, fanY: 150, fanRotate: -15, cutX: 368, cutY: 156, cutRotate: -18, delay: 0.14 },
+  { fanX: 164, fanY: 134, fanRotate: -8, cutX: 410, cutY: 142, cutRotate: -8, delay: 0.22 },
+  { fanX: 192, fanY: 124, fanRotate: -1, cutX: 452, cutY: 150, cutRotate: 2, delay: 0.3 },
+  { fanX: 224, fanY: 130, fanRotate: 7, cutX: 494, cutY: 166, cutRotate: 12, delay: 0.38 },
+  { fanX: 254, fanY: 150, fanRotate: 15, cutX: 536, cutY: 186, cutRotate: 22, delay: 0.46 },
 ] as const;
 
 function percent(value: number, base: number) {
@@ -82,8 +92,16 @@ const AssetImage: React.FC<{
   src: string;
   className: string;
   alt?: string;
-}> = ({ src, className, alt = '' }) => (
-  <img src={resolveAssetUrl(src)} alt={alt} aria-hidden={alt ? undefined : true} className={className} draggable={false} />
+  style?: React.CSSProperties;
+}> = ({ src, className, alt = '', style }) => (
+  <img
+    src={resolveAssetUrl(src)}
+    alt={alt}
+    aria-hidden={alt ? undefined : true}
+    className={className}
+    draggable={false}
+    style={style}
+  />
 );
 
 const CanvasShell: React.FC<{
@@ -225,19 +243,22 @@ const Pagination: React.FC<{
 
 const ShuffleBackCard: React.FC<{
   index: number;
-  x: number;
-  y: number;
-  rotate: number;
+  fanX: number;
+  fanY: number;
+  fanRotate: number;
+  cutX: number;
+  cutY: number;
+  cutRotate: number;
   delay: number;
   reducedMotion: boolean;
-}> = ({ index, x, y, rotate, delay, reducedMotion }) => (
+}> = ({ index, fanX, fanY, fanRotate, cutX, cutY, cutRotate, delay, reducedMotion }) => (
   <motion.div
     className="constitution-cinematic-cardback"
     style={{
-      left: percent(198, REF_W),
-      top: percent(124, REF_H),
-      width: percent(180, REF_W),
-      height: percent(243, REF_H),
+      left: percent(CINEMATIC_SHUFFLE_CARD.left, REF_W),
+      top: percent(CINEMATIC_SHUFFLE_CARD.top, REF_H),
+      width: percent(CINEMATIC_SHUFFLE_CARD.width, REF_W),
+      height: percent(CINEMATIC_SHUFFLE_CARD.height, REF_H),
       zIndex: 10 + index,
     }}
     initial={{ opacity: 0, x: 0, y: 0, rotate: 0, scale: 0.98 }}
@@ -245,17 +266,29 @@ const ShuffleBackCard: React.FC<{
       reducedMotion
         ? {
             opacity: [0, 0.88, 0.78],
-            x: [0, x - 198, 0],
-            y: [0, y - 124, 0],
-            rotate: [0, rotate * 0.55, index * 1.5],
+            x: [0, (fanX - CINEMATIC_SHUFFLE_CARD.left) * 0.72, 0],
+            y: [0, (fanY - CINEMATIC_SHUFFLE_CARD.top) * 0.72, 0],
+            rotate: [0, fanRotate * 0.38, index * 1.4],
             scale: [0.98, 1, 0.98],
           }
         : {
-            opacity: [0, 1, 1, 1, 0.78],
-            x: [0, x - 198, 492 + index * 24, x - 198, 0],
-            y: [0, y - 124, 274 + Math.sin(index) * 30, y - 124, 0],
-            rotate: [0, rotate, 18 - index * 9, rotate, index * 1.5],
-            scale: [0.96, 1, 1.02, 1, 0.98],
+            opacity: [0, 1, 1, 1, 0.8],
+            x: [
+              0,
+              fanX - CINEMATIC_SHUFFLE_CARD.left,
+              cutX - CINEMATIC_SHUFFLE_CARD.left,
+              fanX - CINEMATIC_SHUFFLE_CARD.left,
+              0,
+            ],
+            y: [
+              0,
+              fanY - CINEMATIC_SHUFFLE_CARD.top,
+              cutY - CINEMATIC_SHUFFLE_CARD.top,
+              fanY - CINEMATIC_SHUFFLE_CARD.top,
+              0,
+            ],
+            rotate: [0, fanRotate, cutRotate, fanRotate * 0.55, index * 1.2],
+            scale: [0.96, 1.04, 1.08, 1.02, 0.98],
           }
     }
     transition={
@@ -272,48 +305,55 @@ const DealtPreviewCard: React.FC<{
   option: ConstitutionOption;
   index: number;
   reducedMotion: boolean;
-}> = ({ option, index, reducedMotion }) => (
-  <motion.div
-    className="constitution-cinematic-preview"
-    style={{
-      left: percent(200, REF_W),
-      top: percent(126, REF_H),
-      width: percent(220, REF_W),
-      height: percent(296, REF_H),
-      zIndex: 30 + index,
-    }}
-    initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.68 }}
-    animate={
-      reducedMotion
-        ? {
-            opacity: [0, 0.5, 0.92],
-            x: [0, 116 + index * 18, DEAL_SLOTS[index].x - 200],
-            y: [0, 152 + index * 10, DEAL_SLOTS[index].y - 126],
-            rotateY: [-18, -8, 0],
-            rotate: [-3, index === 0 ? -4 : index === 2 ? 4 : 0, 0],
-            scale: [0.82, 0.9, 1],
-          }
-        : {
-            opacity: [0, 0.18, 1, 1, 1],
-            x: [0, 118 + index * 18, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200, DEAL_SLOTS[index].x - 200],
-            y: [0, 134 + index * 10, DEAL_SLOTS[index].y - 126, DEAL_SLOTS[index].y - 126, DEAL_SLOTS[index].y - 126],
-            rotateY: [-180, -112, 0, 0, 0],
-            rotate: [-8, index === 0 ? -11 : index === 2 ? 11 : 0, index === 0 ? -2 : index === 2 ? 2 : 0, 0, 0],
-            scale: [0.68, 0.82, 1, 1, 1],
-          }
-    }
-    transition={
-      reducedMotion
-        ? { duration: 1.45, delay: 0.52 + index * 0.14, times: [0, 0.38, 1], ease: EASE_OUT }
-        : { duration: 2.45, delay: 0.68 + index * 0.16, times: [0, 0.2, 0.42, 0.78, 1], ease: EASE_OUT }
-    }
-  >
-    <div className="constitution-cinematic-preview__surface">
-      <img src={resolveAssetUrl(option.image)} alt="" aria-hidden="true" className="constitution-cinematic-preview__art" />
-      <div className="constitution-cinematic-preview__label">{option.title}</div>
-    </div>
-  </motion.div>
-);
+}> = ({ option, index, reducedMotion }) => {
+  const slot = DEAL_SLOTS[index];
+  const arc = DEAL_ARCS[index];
+  const endX = slot.x - CINEMATIC_PREVIEW_START.left;
+  const endY = slot.y - CINEMATIC_PREVIEW_START.top;
+
+  return (
+    <motion.div
+      className="constitution-cinematic-preview"
+      style={{
+        left: percent(CINEMATIC_PREVIEW_START.left, REF_W),
+        top: percent(CINEMATIC_PREVIEW_START.top, REF_H),
+        width: percent(CINEMATIC_PREVIEW_START.width, REF_W),
+        height: percent(CINEMATIC_PREVIEW_START.height, REF_H),
+        zIndex: 30 + index,
+      }}
+      initial={{ opacity: 0, x: 0, y: 0, rotateY: -180, rotate: -8, scale: 0.52 }}
+      animate={
+        reducedMotion
+          ? {
+              opacity: [0, 0.55, 0.96],
+              x: [0, arc.x - CINEMATIC_PREVIEW_START.left, endX],
+              y: [0, arc.y - CINEMATIC_PREVIEW_START.top + 44, endY],
+              rotateY: [-20, -8, 0],
+              rotate: [-3, arc.rotate * 0.45, 0],
+              scale: [0.72, 0.86, 1],
+            }
+          : {
+              opacity: [0, 0.24, 1, 1, 1],
+              x: [0, arc.x - CINEMATIC_PREVIEW_START.left, endX, endX, endX],
+              y: [0, arc.y - CINEMATIC_PREVIEW_START.top, endY, endY, endY],
+              rotateY: [-180, -112, 0, 0, 0],
+              rotate: [-8, arc.rotate, index === 0 ? -2 : index === 2 ? 2 : 0, 0, 0],
+              scale: [0.52, 0.78, 1, 1, 1],
+            }
+      }
+      transition={
+        reducedMotion
+          ? { duration: 1.55, delay: 0.54 + index * 0.12, times: [0, 0.42, 1], ease: EASE_OUT }
+          : { duration: 2.48, delay: 0.66 + index * 0.13, times: [0, 0.22, 0.46, 0.78, 1], ease: EASE_OUT }
+      }
+    >
+      <div className="constitution-cinematic-preview__surface">
+        <img src={resolveAssetUrl(option.image)} alt="" aria-hidden="true" className="constitution-cinematic-preview__art" />
+        <div className="constitution-cinematic-preview__label">{option.title}</div>
+      </div>
+    </motion.div>
+  );
+};
 
 const CinematicStage: React.FC<{
   options: ConstitutionOption[];
@@ -327,7 +367,18 @@ const CinematicStage: React.FC<{
       <button type="button" className="constitution-cinematic__skip" onClick={onSkip}>
         跳过
       </button>
-      <AssetImage src={`${ASSET_BASE}/deck_icon.png`} className="constitution-cinematic__source-deck" />
+      <AssetImage
+        src={`${ASSET_BASE}/deck_icon.png`}
+        className="constitution-cinematic__source-deck"
+        style={{
+          left: percent(CINEMATIC_SOURCE_DECK.left, REF_W),
+          top: percent(CINEMATIC_SOURCE_DECK.top, REF_H),
+          width: percent(CINEMATIC_SOURCE_DECK.width, REF_W),
+          height: percent(CINEMATIC_SOURCE_DECK.height, REF_H),
+          filter:
+            'drop-shadow(0 28px 46px rgba(0, 0, 0, 0.56)) drop-shadow(0 0 24px rgba(224, 184, 96, 0.16))',
+        }}
+      />
       <div className="constitution-cinematic__copy">
         <div className="constitution-cinematic__kicker">体质择定</div>
         <h2 className="constitution-cinematic__title">切牌起局</h2>

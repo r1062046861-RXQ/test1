@@ -56,18 +56,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/background_rest_act2.jpg",
-    "bytes": 156726,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_rest_act3.webp",
+    "path": "/assets/background_rest.webp",
     "bytes": 187386,
-    "stage": "static"
-  },
-  {
-    "path": "/assets/background_rest.png",
-    "bytes": 189650,
     "stage": "static"
   },
   {
@@ -1717,4 +1707,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 61772264;
+export const TOTAL_RUNTIME_ASSET_BYTES = 61425888;

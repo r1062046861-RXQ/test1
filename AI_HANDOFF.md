@@ -153,8 +153,7 @@ wechatgame/
 
 新增背景资源（关键大图已压缩到约 200KB 级别）：
 - `background_map_act1.png` / `background_map_act2.webp`：路径选择分幕背景
-- `background_rest.png`：休憩场景背景
-- `background_rest_act2.jpg`：第二幕休憩场景背景
+- `background_rest.webp`：所有幕共用的休憩场景背景
 - `background_shop.png`：药房场景背景
 - `bg_synthesis_1.png` / `bg_synthesis_2.png`：合成台双图随机展示
 

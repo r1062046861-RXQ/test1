@@ -311,23 +311,23 @@ wechatgame/
 | `wind_cold_guest` | 风寒客 | Act 1 普通 | 30 | `89.webp` |
 | `wind_heat_attack` | 风热袭 | Act 1 普通 | 28 | `90.webp` |
 | `damp_turbidity` | 湿浊缠 | Act 1 普通 | 35 | `91.webp` |
-| `external_combination` | 外感合病 | Act 1 精英 | 80 | `92.webp` |
-| `boss_wind_cold` | 风寒束表 | Act 1 Boss | 150 | `93.webp` |
-| `boss_liver_fire` | 肝火炽盛 | Act 1 Boss | 140 | `94.webp` |
-| `qi_blood_stasis` | 气滞血瘀者 | Act 2 普通 | 50 | `95.webp` |
-| `spleen_dampness` | 脾虚湿盛者 | Act 2 普通 | 55 | `96.webp` |
-| `heart_kidney_gap` | 心神不交者 | Act 2 普通 | 45 | `97.webp` |
-| `tanmengxinqiao` | 痰蒙心窍者 | Act 2 普通 | 52 | `83.webp` |
-| `phlegm_stasis` | 痰瘀互结 | Act 2 精英 | 120 | `98.webp` |
-| `boss_spleen_damp` | 脾虚湿困 | Act 2 Boss | 250 | `99.webp` |
+| `external_combination` | 斑斓厄兽 | Act 1 精英 | 80 | `92.webp` |
+| `boss_wind_cold` | 寒霜封卫 | Act 1 Boss | 150 | `93.webp` |
+| `boss_liver_fire` | 怒炎狂客 | Act 1 Boss | 140 | `94.webp` |
+| `qi_blood_stasis` | 紫荆囚徒 | Act 2 普通 | 50 | `95.webp` |
+| `spleen_dampness` | 臃肿肉山 | Act 2 普通 | 55 | `96.webp` |
+| `heart_kidney_gap` | 水火双生鬼 | Act 2 普通 | 45 | `97.webp` |
+| `tanmengxinqiao` | 迷心浊灵 | Act 2 普通 | 52 | `83.webp` |
+| `phlegm_stasis` | 顽石死骸 | Act 2 精英 | 120 | `98.webp` |
+| `boss_spleen_damp` | 沉沦泥怪 | Act 2 Boss | 250 | `99.webp` |
 | `damp_minion` | 水湿小怪 | Act 2 召唤单位 | 20 | `104.webp` |
-| `yin_yang_split` | 阴阳离决者 | Act 3 普通 | 70 | `100.webp` |
-| `chong_ren_instability` | 冲任不固者 | Act 3 普通 | 65 | `101.webp` |
-| `reruyingxue` | 热入营血者 | Act 3 普通 | 72 | `79.webp` |
-| `shenbunaqi` | 肾不纳气者 | Act 3 普通 | 68 | `80.webp` |
-| `yangmingfushi` | 阳明腑实者 | Act 3 普通 | 78 | `84.webp` |
-| `jueyin_complex` | 厥阴复杂症 | Act 3 精英 | 180 | `102.webp` |
-| `boss_five_elements` | 五行失调 | Act 3 Boss | 500 | `103.webp` |
+| `yin_yang_split` | 终焉虚影 | Act 3 普通 | 70 | `100.webp` |
+| `chong_ren_instability` | 散华残躯 | Act 3 普通 | 65 | `101.webp` |
+| `reruyingxue` | 沸血暗影 | Act 3 普通 | 72 | `79.webp` |
+| `shenbunaqi` | 夺息雾妖 | Act 3 普通 | 68 | `80.webp` |
+| `yangmingfushi` | 焦土巨汉 | Act 3 普通 | 78 | `84.webp` |
+| `jueyin_complex` | 紫渊幽影 | Act 3 精英 | 180 | `102.webp` |
+| `boss_five_elements` | 逆源修罗 | Act 3 Boss | 500 | `103.webp` |
 
 敌池分布：
 
@@ -509,7 +509,7 @@ npm run build
 - 药材/合成材料双身份：`黄芩清肺` 可打出，同时仍可作为药方蓝图材料。
 - 装备系统：掉落概率、装备不进手牌、11 种装备被动。
 - 体质规则：9 种体质被动。
-- Boss 行为：肝火炽盛、脾虚湿困、五行失调等。
+- Boss 行为：怒炎狂客、沉沦泥怪、逆源修罗等。
 - 召唤限制：同屏存活敌人最多 2 个。
 - Store 回归：出牌后 HP 变化必须正确落入 Zustand 状态。
 - 资源 manifest：总字节数、阶段分类、加载顺序。

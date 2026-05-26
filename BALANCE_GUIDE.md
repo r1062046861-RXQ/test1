@@ -50,9 +50,9 @@
 ## 第三轮敌人和装备曲线记录（2026-05-26）
 
 - 敌人双动增加强干扰限频：同一敌人连续行动时，不再允许强负面/强特殊意图接另一个强干扰意图。
-- 心神不交者、痰蒙心窍者的单次控制从复合负面改为单项负面，避免眩晕、禁格挡、少抽在一次行动内叠压。
-- 脾虚湿盛者的 `cost_up` 从 3 回合可叠加改为 2 回合不可叠加；仍保留湿邪与在场费用光环。
-- 肾不纳气者不再一次性叠加 `energy_drain`、`max_energy_down`、寒邪、虚弱；普通敌版本保留短期真气压制和寒邪。
+- 水火双生鬼、迷心浊灵的单次控制从复合负面改为单项负面，避免眩晕、禁格挡、少抽在一次行动内叠压。
+- 臃肿肉山的 `cost_up` 从 3 回合可叠加改为 2 回合不可叠加；仍保留湿邪与在场费用光环。
+- 夺息雾妖不再一次性叠加 `energy_drain`、`max_energy_down`、寒邪、虚弱；普通敌版本保留短期真气压制和寒邪。
 - `max_energy_down` 只影响下回合真气回复，不再永久降低 `maxEnergy`。
 - 装备战斗掉落改为按幕数分池：Act 1 只掉治未病/经络学说/天人相应，Act 2 增加整体观念/气血津液/正邪相争/藏象学说，Act 3 开放完整装备池。
 - 装备掉率按幕数收紧：Act 1 普通/精英/Boss 为 6%/15%/35%，Act 2 为 8%/18%/45%，Act 3 保持 10%/20%/50%。
@@ -431,37 +431,37 @@
 | wind_cold_guest | 风寒客 | 1 | common | 30 | 0 | attack | 5 |  | 寒邪侵袭 | wind_cold_guest |  |
 | wind_heat_attack | 风热袭 | 1 | common | 28 | 0 | attack | 3 |  | 热邪灼烧 | wind_heat_attack |  |
 | damp_turbidity | 湿浊缠 | 1 | common | 35 | 0 | debuff | 0 |  | 湿邪困脾 | damp_turbidity |  |
-| external_combination | 外感合病 | 1 | elite | 80 | 10 | special | 0 |  | 形态切换 | external_combination | {"form":"cold","formTurns":3} |
-| boss_wind_cold | 风寒束表 | 1 | boss | 150 | 0 | attack | 12 |  | 寒凝血瘀 | boss_wind_cold |  |
-| boss_liver_fire | 肝火炽盛 | 1 | boss | 140 | 0 | attack | 8 |  | 火旺伤阴 | boss_liver_fire |  |
-| qi_blood_stasis | 气滞血瘀者 | 2 | common | 50 | 5 | attack | 8 |  | 郁而作痛 | qi_blood_stasis |  |
-| spleen_dampness | 脾虚湿盛者 | 2 | common | 55 | 8 | debuff | 0 |  | 湿困中焦 | spleen_dampness |  |
-| heart_kidney_gap | 心神不交者 | 2 | common | 45 | 0 | debuff | 0 |  | 心悸不安 | heart_kidney_gap |  |
-| tanmengxinqiao | 痰蒙心窍者 | 2 | common | 52 | 0 | debuff | 0 |  | 痰蒙心窍 | tanmengxinqiao | {"turn":0} |
-| phlegm_stasis | 痰瘀互结 | 2 | elite | 120 | 15 | buff | 0 |  | 痰凝血瘀 | phlegm_stasis |  |
-| boss_spleen_damp | 脾虚湿困 | 2 | boss | 250 | 20 | special | 0 |  | 水湿不运 | boss_spleen_damp | {"turn":0} |
+| external_combination | 斑斓厄兽 | 1 | elite | 80 | 10 | special | 0 |  | 形态切换 | external_combination | {"form":"cold","formTurns":3} |
+| boss_wind_cold | 寒霜封卫 | 1 | boss | 150 | 0 | attack | 12 |  | 寒凝血瘀 | boss_wind_cold |  |
+| boss_liver_fire | 怒炎狂客 | 1 | boss | 140 | 0 | attack | 8 |  | 火旺伤阴 | boss_liver_fire |  |
+| qi_blood_stasis | 紫荆囚徒 | 2 | common | 50 | 5 | attack | 8 |  | 郁而作痛 | qi_blood_stasis |  |
+| spleen_dampness | 臃肿肉山 | 2 | common | 55 | 8 | debuff | 0 |  | 湿困中焦 | spleen_dampness |  |
+| heart_kidney_gap | 水火双生鬼 | 2 | common | 45 | 0 | debuff | 0 |  | 心悸不安 | heart_kidney_gap |  |
+| tanmengxinqiao | 迷心浊灵 | 2 | common | 52 | 0 | debuff | 0 |  | 痰蒙心窍 | tanmengxinqiao | {"turn":0} |
+| phlegm_stasis | 顽石死骸 | 2 | elite | 120 | 15 | buff | 0 |  | 痰凝血瘀 | phlegm_stasis |  |
+| boss_spleen_damp | 沉沦泥怪 | 2 | boss | 250 | 20 | special | 0 |  | 水湿不运 | boss_spleen_damp | {"turn":0} |
 | damp_minion | 水湿小怪 | 2 | 召唤 | 20 | 0 | debuff | 0 |  | 湿邪侵体 | damp_minion | {} |
-| yin_yang_split | 阴阳离决者 | 3 | common | 70 | 0 | special | 0 |  | 阴阳格拒 | yin_yang_split | {"form":"yin"} |
-| chong_ren_instability | 冲任不固者 | 3 | common | 65 | 0 | debuff | 0 |  | 崩漏不止 | chong_ren_instability |  |
-| reruyingxue | 热入营血者 | 3 | common | 72 | 0 | debuff | 0 |  | 热入营血 | reruyingxue | {"turn":0} |
-| shenbunaqi | 肾不纳气者 | 3 | common | 68 | 6 | debuff | 0 |  | 肾不纳气 | shenbunaqi | {"turn":0} |
-| yangmingfushi | 阳明腑实者 | 3 | common | 78 | 8 | special | 0 |  | 阳明腑实 | yangmingfushi | {"turn":0} |
-| jueyin_complex | 厥阴复杂症 | 3 | elite | 180 | 20 | debuff | 0 |  | 寒热错杂 | jueyin_complex | {"turn":0} |
-| boss_five_elements | 五行失调 | 3 | boss | 500 | 50 | special | 0 |  | 五行流转 | boss_five_elements | {"phase":"wood"} |
+| yin_yang_split | 终焉虚影 | 3 | common | 70 | 0 | special | 0 |  | 阴阳格拒 | yin_yang_split | {"form":"yin"} |
+| chong_ren_instability | 散华残躯 | 3 | common | 65 | 0 | debuff | 0 |  | 崩漏不止 | chong_ren_instability |  |
+| reruyingxue | 沸血暗影 | 3 | common | 72 | 0 | debuff | 0 |  | 热入营血 | reruyingxue | {"turn":0} |
+| shenbunaqi | 夺息雾妖 | 3 | common | 68 | 6 | debuff | 0 |  | 肾不纳气 | shenbunaqi | {"turn":0} |
+| yangmingfushi | 焦土巨汉 | 3 | common | 78 | 8 | special | 0 |  | 阳明腑实 | yangmingfushi | {"turn":0} |
+| jueyin_complex | 紫渊幽影 | 3 | elite | 180 | 20 | debuff | 0 |  | 寒热错杂 | jueyin_complex | {"turn":0} |
+| boss_five_elements | 逆源修罗 | 3 | boss | 500 | 50 | special | 0 |  | 五行流转 | boss_five_elements | {"phase":"wood"} |
 
 ### 敌池统计
 
 | 幕 | 层级 | 数量 | 平均 HP | HP 范围 | 平均初始格挡 | 敌人 |
 | --- | --- | --- | --- | --- | --- | --- |
 | act1 | common | 3 | 31 | 28-35 | 0 | 风寒客、风热袭、湿浊缠 |
-| act1 | elite | 1 | 80 | 80-80 | 10 | 外感合病 |
-| act1 | boss | 2 | 145 | 140-150 | 0 | 风寒束表、肝火炽盛 |
-| act2 | common | 4 | 50.5 | 45-55 | 3.3 | 气滞血瘀者、脾虚湿盛者、心神不交者、痰蒙心窍者 |
-| act2 | elite | 1 | 120 | 120-120 | 15 | 痰瘀互结 |
-| act2 | boss | 1 | 250 | 250-250 | 20 | 脾虚湿困 |
-| act3 | common | 5 | 70.6 | 65-78 | 2.8 | 阴阳离决者、冲任不固者、热入营血者、肾不纳气者、阳明腑实者 |
-| act3 | elite | 1 | 180 | 180-180 | 20 | 厥阴复杂症 |
-| act3 | boss | 1 | 500 | 500-500 | 50 | 五行失调 |
+| act1 | elite | 1 | 80 | 80-80 | 10 | 斑斓厄兽 |
+| act1 | boss | 2 | 145 | 140-150 | 0 | 寒霜封卫、怒炎狂客 |
+| act2 | common | 4 | 50.5 | 45-55 | 3.3 | 紫荆囚徒、臃肿肉山、水火双生鬼、迷心浊灵 |
+| act2 | elite | 1 | 120 | 120-120 | 15 | 顽石死骸 |
+| act2 | boss | 1 | 250 | 250-250 | 20 | 沉沦泥怪 |
+| act3 | common | 5 | 70.6 | 65-78 | 2.8 | 终焉虚影、散华残躯、沸血暗影、夺息雾妖、焦土巨汉 |
+| act3 | elite | 1 | 180 | 180-180 | 20 | 紫渊幽影 |
+| act3 | boss | 1 | 500 | 500-500 | 50 | 逆源修罗 |
 | act2 | summon | 1 | 20 | 20-20 | 0 | 水湿小怪 |
 
 ### 敌方行动次数规则

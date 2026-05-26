@@ -264,7 +264,7 @@ describe('Game Store', () => {
     expect(newState.currentNodeId).toBe('admin_enemy_boss_spleen_damp');
     expect(newState.map.length).toBe(14);
     expect(newState.enemies).toHaveLength(1);
-    expect(newState.enemies[0]?.name).toBe('脾虚湿困');
+    expect(newState.enemies[0]?.name).toBe('沉沦泥怪');
     expect(newState.player.constitution).toBe('balanced');
     expect(newState.player.hand.length).toBe(5);
   });

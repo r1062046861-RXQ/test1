@@ -41,7 +41,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Elite Act 1
   'external_combination': {
     id: 'external_combination',
-    name: '外感合病',
+    name: '斑斓厄兽',
     maxHp: 80,
     currentHp: 80,
     block: 10,
@@ -55,7 +55,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Boss Act 1
   'boss_wind_cold': {
     id: 'boss_wind_cold',
-    name: '风寒束表',
+    name: '寒霜封卫',
     maxHp: 150,
     currentHp: 150,
     block: 0,
@@ -67,7 +67,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'boss_liver_fire': {
     id: 'boss_liver_fire',
-    name: '肝火炽盛',
+    name: '怒炎狂客',
     maxHp: 140,
     currentHp: 140,
     block: 0,
@@ -81,7 +81,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // --- Act 2: Internal Dysfunction ---
   'qi_blood_stasis': {
     id: 'qi_blood_stasis',
-    name: '气滞血瘀者',
+    name: '紫荆囚徒',
     maxHp: 50,
     currentHp: 50,
     block: 5,
@@ -93,7 +93,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'spleen_dampness': {
     id: 'spleen_dampness',
-    name: '脾虚湿盛者',
+    name: '臃肿肉山',
     maxHp: 55,
     currentHp: 55,
     block: 8,
@@ -105,7 +105,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'heart_kidney_gap': {
     id: 'heart_kidney_gap',
-    name: '心神不交者',
+    name: '水火双生鬼',
     maxHp: 45,
     currentHp: 45,
     block: 0,
@@ -117,7 +117,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'tanmengxinqiao': {
     id: 'tanmengxinqiao',
-    name: '痰蒙心窍者',
+    name: '迷心浊灵',
     maxHp: 52,
     currentHp: 52,
     block: 0,
@@ -131,7 +131,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Elite Act 2
   'phlegm_stasis': {
     id: 'phlegm_stasis',
-    name: '痰瘀互结',
+    name: '顽石死骸',
     maxHp: 120,
     currentHp: 120,
     block: 15,
@@ -144,7 +144,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Boss Act 2
   'boss_spleen_damp': {
     id: 'boss_spleen_damp',
-    name: '脾虚湿困',
+    name: '沉沦泥怪',
     maxHp: 250,
     currentHp: 250,
     block: 20,
@@ -172,7 +172,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // --- Act 3: Five Elements ---
   'yin_yang_split': {
     id: 'yin_yang_split',
-    name: '阴阳离决者',
+    name: '终焉虚影',
     maxHp: 70,
     currentHp: 70,
     block: 0,
@@ -185,7 +185,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'chong_ren_instability': {
     id: 'chong_ren_instability',
-    name: '冲任不固者',
+    name: '散华残躯',
     maxHp: 65,
     currentHp: 65,
     block: 0,
@@ -197,7 +197,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'reruyingxue': {
     id: 'reruyingxue',
-    name: '热入营血者',
+    name: '沸血暗影',
     maxHp: 72,
     currentHp: 72,
     block: 0,
@@ -210,7 +210,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'shenbunaqi': {
     id: 'shenbunaqi',
-    name: '肾不纳气者',
+    name: '夺息雾妖',
     maxHp: 68,
     currentHp: 68,
     block: 6,
@@ -223,7 +223,7 @@ export const ENEMIES: Record<string, Enemy> = {
   },
   'yangmingfushi': {
     id: 'yangmingfushi',
-    name: '阳明腑实者',
+    name: '焦土巨汉',
     maxHp: 78,
     currentHp: 78,
     block: 8,
@@ -237,7 +237,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Elite Act 3
   'jueyin_complex': {
     id: 'jueyin_complex',
-    name: '厥阴复杂症',
+    name: '紫渊幽影',
     maxHp: 180,
     currentHp: 180,
     block: 20,
@@ -251,7 +251,7 @@ export const ENEMIES: Record<string, Enemy> = {
   // Final Boss
   'boss_five_elements': {
     id: 'boss_five_elements',
-    name: '五行失调',
+    name: '逆源修罗',
     maxHp: 500,
     currentHp: 500,
     block: 50,

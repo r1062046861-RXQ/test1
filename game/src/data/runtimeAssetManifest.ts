@@ -57,7 +57,7 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/background_rest.webp",
-    "bytes": 187386,
+    "bytes": 155476,
     "stage": "static"
   },
   {
@@ -1707,4 +1707,4 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 61425888;
+export const TOTAL_RUNTIME_ASSET_BYTES = 61393978;

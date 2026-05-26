@@ -7,8 +7,11 @@ import { resolveAssetBackground } from '../utils/assets';
 
 type RestMode = 'idle' | 'remove' | 'done';
 
-const getRestBackground = (currentAct: number) =>
-  currentAct === 2 ? '/assets/background_rest_act2.jpg' : '/assets/background_rest.png';
+const getRestBackground = (currentAct: number) => {
+  if (currentAct === 2) return '/assets/background_rest_act2.jpg';
+  if (currentAct === 3) return '/assets/background_rest_act3.webp';
+  return '/assets/background_rest.png';
+};
 
 export const RestView: React.FC = () => {
   const { player, currentAct, currentNodeId, healPlayer, removeCardById, completeNonCombat } = useGameStore();

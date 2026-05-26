@@ -94,6 +94,7 @@ const NODE_CENTER_OFFSET = 34;
 const getMapBackground = (currentAct: number) => {
   if (currentAct === 1) return '/assets/background_map_act1.png';
   if (currentAct === 2) return '/assets/background_map_act2.webp';
+  if (currentAct === 3) return '/assets/background_map_act3.webp';
   return '/assets/background_main_menu.png';
 };
 

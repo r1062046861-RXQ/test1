@@ -11,8 +11,11 @@ import { Hand } from './Hand';
 
 const COMBAT_ASSET = '/assets/combat/v2/';
 const asset = (name: string) => resolveAssetUrl(`${COMBAT_ASSET}${name}`);
-const getCombatBackground = (currentAct: number) =>
-  currentAct === 2 ? asset('background_act2.webp') : asset('background.webp');
+const getCombatBackground = (currentAct: number) => {
+  if (currentAct === 2) return asset('background_act2.webp');
+  if (currentAct === 3) return asset('background_act3.webp');
+  return asset('background.webp');
+};
 
 const ACT_LABELS: Record<number, string> = {
   1: '第一幕',

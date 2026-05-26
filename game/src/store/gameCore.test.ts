@@ -139,17 +139,27 @@ describe('shared game core', () => {
     expect(result).toBeNull();
   });
 
-  it('攻击牌按真实费用结算，费用惩罚也会作用于攻击牌', () => {
+  it('每回合首张攻击牌费用-1，费用惩罚仍会作用于攻击牌', () => {
     const mahuang = makeCard('mahuang', 'attack-cost');
     const firstEnemy = makeEnemy('wind_cold_guest');
     const player = makePlayer({
-      energy: 1,
+      energy: 0,
       hand: [mahuang],
     });
 
     const played = resolveCardPlay(makeState(player, [firstEnemy]), mahuang.id, firstEnemy.id, () => undefined);
     expect(played).not.toBeNull();
-    expect(played!.energyCost).toBe(1);
+    expect(played!.energyCost).toBe(0);
+
+    const laterAttackState = makeState({ ...player, hand: [makeCard('mahuang', 'later-cost')] }, [makeEnemy('wind_cold_guest')]);
+    laterAttackState.turnFlags.playedAttack = true;
+    const blockedLaterAttack = resolveCardPlay(
+      laterAttackState,
+      'mahuang_later-cost',
+      undefined,
+      () => undefined,
+    );
+    expect(blockedLaterAttack).toBeNull();
 
     const blockedBySpleen = resolveCardPlay(
       makeState({ ...player, hand: [makeCard('mahuang', 'spleen-cost')] }, [makeEnemy('spleen_dampness')]),
@@ -1091,7 +1101,8 @@ describe('shared game core', () => {
       () => undefined,
     );
     expect(longdanResult).not.toBeNull();
-    expect(longdanResult!.energyCost).toBe(2);
+    expect(CARD_LIBRARY.longdan.cost).toBe(2);
+    expect(longdanResult!.energyCost).toBe(1);
     expect(longdanResult!.enemies[0].currentHp).toBe(enemy.maxHp - 18);
 
     const banxia = makeCard('banxia', 'balance-banxia');
@@ -1103,7 +1114,8 @@ describe('shared game core', () => {
       () => undefined,
     );
     expect(banxiaResult).not.toBeNull();
-    expect(banxiaResult!.energyCost).toBe(2);
+    expect(CARD_LIBRARY.banxia.cost).toBe(2);
+    expect(banxiaResult!.energyCost).toBe(1);
     expect(getEnemyStacks(banxiaResult!.enemies[0], 'stun')).toBe(1);
     expect(banxiaResult!.enemies[0].statusEffects.find(status => status.id === 'stun')?.duration).toBe(1);
     expect(getEnemyStacks(banxiaResult!.enemies[1], 'stun')).toBe(1);
@@ -1140,6 +1152,7 @@ describe('shared game core', () => {
     expect(CARD_LIBRARY.sanqi.cost).toBe(1);
     expect(CARD_LIBRARY.chuanxiong.cost).toBe(1);
     expect(CARD_LIBRARY.baishao.cost).toBe(1);
+    expect(CARD_LIBRARY.chenpi.cost).toBe(0);
     expect(CARD_LIBRARY.zhishi.cost).toBe(1);
     expect(CARD_LIBRARY.rougui.cost).toBe(1);
     expect(CARD_LIBRARY.hegu.cost).toBe(1);
@@ -1159,6 +1172,54 @@ describe('shared game core', () => {
 
     expect(second).not.toBeNull();
     expect(second!.player.block).toBe(15);
+  });
+
+  it('第五轮进攻密度与手牌经济调整生效', () => {
+    expect(CARD_LIBRARY.xiaochaihu.cost).toBe(1);
+    expect(CARD_LIBRARY.baohe.cost).toBe(0);
+    expect(CARD_LIBRARY.baishao.secondaryValue).toBe(3);
+    expect(CARD_LIBRARY.hegu.secondaryValue).toBe(4);
+    expect(CARD_LIBRARY.suanzaoren.effectValue).toBe(4);
+    expect(CARD_LIBRARY.xiaoyao.effectValue).toBe(2);
+    expect(CARD_LIBRARY.xiaoyao.secondaryValue).toBe(1);
+
+    const enemy = makeEnemy('wind_cold_guest');
+    const baishao = makeCard('baishao', 'offense-weak');
+    const drawn = makeCard('gancao', 'offense-draw');
+    const baishaoResult = resolveCardPlay(
+      makeState(makePlayer({ energy: 0, hand: [baishao], drawPile: [drawn] }), [enemy]),
+      baishao.id,
+      enemy.id,
+      () => undefined,
+    );
+    expect(baishaoResult).not.toBeNull();
+    expect(baishaoResult!.energyCost).toBe(0);
+    expect(baishaoResult!.enemies[0].currentHp).toBe(enemy.maxHp - 3);
+    expect(getEnemyStacks(baishaoResult!.enemies[0], 'weak')).toBe(1);
+    expect(baishaoResult!.player.hand.some(card => card.name === drawn.name)).toBe(true);
+
+    const zhishi = makeCard('zhishi', 'flow');
+    const mahuang = makeCard('mahuang', 'flow-attack');
+    const flowFirst = applyPlay(
+      makeState(makePlayer({ energy: 1, hand: [zhishi, mahuang] }), [makeEnemy('wind_cold_guest')]),
+      zhishi.id,
+    );
+    expect(getStacks(flowFirst.state.player, 'next_attack_cost_reduction')).toBe(1);
+    const flowSecond = applyPlay(flowFirst.state, mahuang.id, flowFirst.state.enemies[0].id);
+    expect(flowSecond.state.enemies[0].currentHp).toBeLessThan(flowFirst.state.enemies[0].currentHp);
+
+    const buffedEnemy = makeEnemy('wind_cold_guest');
+    buffedEnemy.statusEffects = [{ id: 'strength', name: '力量', type: 'buff', stacks: 1, canStack: true, description: '攻击提高' }];
+    const xuefu = makeCard('xuefu', 'cleanse-hit');
+    const cleanseResult = resolveCardPlay(
+      makeState(makePlayer({ energy: 0, hand: [xuefu] }), [buffedEnemy]),
+      xuefu.id,
+      buffedEnemy.id,
+      () => undefined,
+    );
+    expect(cleanseResult).not.toBeNull();
+    expect(cleanseResult!.enemies[0].currentHp).toBe(buffedEnemy.maxHp - 3);
+    expect(cleanseResult!.enemies[0].statusEffects.some(status => status.type === 'buff')).toBe(false);
   });
 
   it('所有可打出卡牌的 effectId 都有核心实现，装备和占位不可打出', () => {

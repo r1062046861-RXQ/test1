@@ -178,7 +178,7 @@ export const IntroView: React.FC = () => {
           <div className="intro-page__canvas">
             <img
               className="intro-page__background"
-              src={resolveAssetUrl('/assets/intro/background.png')}
+              src={resolveAssetUrl('/assets/intro/background.webp')}
               alt=""
               aria-hidden="true"
             />

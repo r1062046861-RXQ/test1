@@ -62,9 +62,9 @@ afterEach(() => {
 
 describe('progressiveAssets', () => {
   it('normalizes animated and poster sources through the asset resolver', () => {
-    const sources = getProgressiveAssetSources('/assets/cards_enemy/91.gif', '/assets/cards_enemy/91-poster.png');
+    const sources = getProgressiveAssetSources('/assets/cards_enemy/91.webp', '/assets/cards_enemy/91-poster.png');
 
-    expect(sources.animatedSrc).toBe('/assets/cards_enemy/91.gif');
+    expect(sources.animatedSrc).toBe('/assets/cards_enemy/91.webp');
     expect(sources.posterSrc).toBe('/assets/cards_enemy/91-poster.png');
   });
 
@@ -72,21 +72,21 @@ describe('progressiveAssets', () => {
     vi.stubGlobal('fetch', vi.fn(async () => createFetchResponse([64, 64])));
 
     const [first, second] = await Promise.all([
-      preloadImageAsset('/assets/cards_enemy/91.gif', { expectedBytes: 128 }),
-      preloadImageAsset('/assets/cards_enemy/91.gif', { expectedBytes: 128 }),
+      preloadImageAsset('/assets/cards_enemy/91.webp', { expectedBytes: 128 }),
+      preloadImageAsset('/assets/cards_enemy/91.webp', { expectedBytes: 128 }),
     ]);
 
     expect(first).toBe(true);
     expect(second).toBe(true);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(isAssetPreloaded('/assets/cards_enemy/91.gif')).toBe(true);
+    expect(isAssetPreloaded('/assets/cards_enemy/91.webp')).toBe(true);
   });
 
   it('reports streaming progress while loading bytes via fetch', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => createFetchResponse([32, 48, 48])));
 
     const progressEvents: Array<{ loaded: number; total?: number }> = [];
-    const loaded = await preloadImageAsset('/assets/cards_enemy/90.gif', {
+    const loaded = await preloadImageAsset('/assets/cards_enemy/90.webp', {
       expectedBytes: 128,
       onProgress: (loadedBytes, totalBytes) => {
         progressEvents.push({ loaded: loadedBytes, total: totalBytes });
@@ -109,16 +109,16 @@ describe('progressiveAssets', () => {
     expect(FakeImage.created).toBe(1);
   });
 
-  it('primes poster and animated GIF together while reusing the same animated request', async () => {
+  it('primes poster and animated asset together while reusing the same animated request', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => createFetchResponse([64, 64])));
 
-    const first = await primeProgressiveAsset('/assets/cards_enemy/91.gif', '/assets/cards_enemy/91-poster.png');
-    const second = await primeProgressiveAsset('/assets/cards_enemy/91.gif', '/assets/cards_enemy/91-poster.png');
+    const first = await primeProgressiveAsset('/assets/cards_enemy/91.webp', '/assets/cards_enemy/91-poster.png');
+    const second = await primeProgressiveAsset('/assets/cards_enemy/91.webp', '/assets/cards_enemy/91-poster.png');
 
     expect(first).toBe(true);
     expect(second).toBe(true);
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(isAssetPreloaded('/assets/cards_enemy/91.gif')).toBe(true);
+    expect(isAssetPreloaded('/assets/cards_enemy/91.webp')).toBe(true);
     expect(isAssetPreloaded('/assets/cards_enemy/91-poster.png')).toBe(true);
   });
 });

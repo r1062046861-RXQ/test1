@@ -11,6 +11,8 @@ import { Hand } from './Hand';
 
 const COMBAT_ASSET = '/assets/combat/v2/';
 const asset = (name: string) => resolveAssetUrl(`${COMBAT_ASSET}${name}`);
+const getCombatBackground = (currentAct: number) =>
+  currentAct === 2 ? asset('background_act2.webp') : asset('background.webp');
 
 const ACT_LABELS: Record<number, string> = {
   1: '第一幕',
@@ -692,7 +694,7 @@ export const CombatView: React.FC = () => {
     <div className={`combat-v2 ${playerImpactClass}`}>
       <div className="combat-v2__viewport">
         <div className="combat-v2__canvas">
-          <img className="combat-v2__background" src={asset('background.png')} alt="" aria-hidden="true" />
+          <img className="combat-v2__background" src={getCombatBackground(currentAct)} alt="" aria-hidden="true" />
           <div className="combat-v2__vignette" />
 
           <div className="combat-v2-title">战斗</div>

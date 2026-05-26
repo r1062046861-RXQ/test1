@@ -8,7 +8,7 @@ import type { RuntimeAssetManifestEntry } from '../data/runtimeAssetManifest';
 const manifest: RuntimeAssetManifestEntry[] = [
   { path: '/assets/background_main_menu.png', bytes: 100, stage: 'critical' },
   { path: '/assets/cards_player/1.png', bytes: 80, stage: 'static' },
-  { path: '/assets/cards_enemy/91.gif', bytes: 120, stage: 'gif' },
+  { path: '/assets/cards_enemy/91.webp', bytes: 120, stage: 'gif' },
 ];
 
 describe('runtimeAssetLoadingController', () => {

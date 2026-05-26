@@ -5,6 +5,7 @@ import { cn } from '../utils/cn';
 import type { Card as CardType } from '../types';
 import { Card } from './Card';
 import { cardReleaseTransition, handHoverTransition, handSettleTransition } from './ui/motionPresets';
+import { getCardEnergyCost } from '../../../shared/core/gameCore';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
 
@@ -96,8 +97,10 @@ const getHandLayout = (count: number, viewportTier: CombatViewportTier): HandLay
 };
 
 export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHoverCard }) => {
-  const { player, playCard, selectedEnemyId } = useGameStore((state) => ({
+  const { player, enemies, turnFlags, playCard, selectedEnemyId } = useGameStore((state) => ({
     player: state.player,
+    enemies: state.enemies,
+    turnFlags: state.turnFlags,
     playCard: state.playCard,
     selectedEnemyId: state.selectedEnemyId,
   }));
@@ -129,7 +132,8 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
   const layout = useMemo(() => getHandLayout(player.hand.length, viewportTier), [player.hand.length, viewportTier]);
 
   const handleCardClick = (card: (typeof player.hand)[number]) => {
-    if (player.energy < card.cost || card.unplayable || playingCardId) return;
+    const effectiveCost = getCardEnergyCost(card, player, enemies, turnFlags);
+    if (player.energy < effectiveCost || card.unplayable || playingCardId) return;
 
     if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
     onLongHoverCard?.(null);
@@ -152,9 +156,10 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
 
       <AnimatePresence>
         {player.hand.map((card, index) => {
+          const effectiveCost = getCardEnergyCost(card, player, enemies, turnFlags);
           const isPlaying = playingCardId === card.id;
           const isHovered = hoveredCardId === card.id;
-          const isPlayable = player.energy >= card.cost && !card.unplayable && !playingCardId;
+          const isPlayable = player.energy >= effectiveCost && !card.unplayable && !playingCardId;
           const centerOffset = index - (player.hand.length - 1) / 2;
           const baseRotation = centerOffset * layout.angle;
           const baseYOffset = Math.abs(centerOffset) * layout.curve;
@@ -222,6 +227,7 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
                 hoverLift={false}
                 layoutVariant="hand"
                 descriptionModalEnabled={false}
+                displayCost={effectiveCost}
                 visualTone={
                   isPlaying
                     ? 'focus'

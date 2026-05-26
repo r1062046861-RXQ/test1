@@ -46,8 +46,13 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/background_map_act2.png",
-    "bytes": 197952,
+    "path": "/assets/background_map_act2.webp",
+    "bytes": 191618,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/background_rest_act2.jpg",
+    "bytes": 156726,
     "stage": "static"
   },
   {
@@ -1086,8 +1091,13 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/combat/v2/background.png",
-    "bytes": 2480708,
+    "path": "/assets/combat/v2/background_act2.webp",
+    "bytes": 203324,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/combat/v2/background.webp",
+    "bytes": 99794,
     "stage": "static"
   },
   {
@@ -1306,8 +1316,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/intro/background.png",
-    "bytes": 3439243,
+    "path": "/assets/intro/background.webp",
+    "bytes": 209500,
     "stage": "static"
   },
   {
@@ -1356,8 +1366,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/main_menu/v2/background.png",
-    "bytes": 2443789,
+    "path": "/assets/main_menu/v2/background.webp",
+    "bytes": 82496,
     "stage": "static"
   },
   {
@@ -1591,105 +1601,105 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/cards_enemy/100.gif",
-    "bytes": 7490346,
+    "path": "/assets/cards_enemy/100.webp",
+    "bytes": 1363382,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/101.gif",
-    "bytes": 7500045,
+    "path": "/assets/cards_enemy/101.webp",
+    "bytes": 1571212,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/102.gif",
-    "bytes": 6571275,
+    "path": "/assets/cards_enemy/102.webp",
+    "bytes": 2211994,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/103.gif",
-    "bytes": 7464473,
+    "path": "/assets/cards_enemy/103.webp",
+    "bytes": 2508206,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/104.gif",
-    "bytes": 7104281,
+    "path": "/assets/cards_enemy/104.webp",
+    "bytes": 1769350,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/79.gif",
-    "bytes": 6211648,
+    "path": "/assets/cards_enemy/79.webp",
+    "bytes": 1648112,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/80.gif",
-    "bytes": 7030623,
+    "path": "/assets/cards_enemy/80.webp",
+    "bytes": 2078244,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/83.gif",
-    "bytes": 7732330,
+    "path": "/assets/cards_enemy/83.webp",
+    "bytes": 1976154,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/84.gif",
-    "bytes": 7909742,
+    "path": "/assets/cards_enemy/84.webp",
+    "bytes": 2340648,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/89.gif",
-    "bytes": 6477528,
+    "path": "/assets/cards_enemy/89.webp",
+    "bytes": 2323258,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/90.gif",
-    "bytes": 6338620,
+    "path": "/assets/cards_enemy/90.webp",
+    "bytes": 1729196,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/91.gif",
-    "bytes": 5509004,
+    "path": "/assets/cards_enemy/91.webp",
+    "bytes": 1967024,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/92.gif",
-    "bytes": 7609041,
+    "path": "/assets/cards_enemy/92.webp",
+    "bytes": 1808174,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/93.gif",
-    "bytes": 7296541,
+    "path": "/assets/cards_enemy/93.webp",
+    "bytes": 1415214,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/94.gif",
-    "bytes": 7595132,
+    "path": "/assets/cards_enemy/94.webp",
+    "bytes": 1781476,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/95.gif",
-    "bytes": 7565553,
+    "path": "/assets/cards_enemy/95.webp",
+    "bytes": 2666034,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/96.gif",
-    "bytes": 7723379,
+    "path": "/assets/cards_enemy/96.webp",
+    "bytes": 1674596,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/97.gif",
-    "bytes": 7487919,
+    "path": "/assets/cards_enemy/97.webp",
+    "bytes": 3568826,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/98.gif",
-    "bytes": 7792533,
+    "path": "/assets/cards_enemy/98.webp",
+    "bytes": 1644176,
     "stage": "gif"
   },
   {
-    "path": "/assets/cards_enemy/99.gif",
-    "bytes": 7511146,
+    "path": "/assets/cards_enemy/99.webp",
+    "bytes": 2624920,
     "stage": "gif"
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 172079303;
+export const TOTAL_RUNTIME_ASSET_BYTES = 61210106;

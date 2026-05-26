@@ -1230,7 +1230,10 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const drawDown = state.player.statusEffects.find(s => s.id === 'draw_down')?.stacks ?? 0;
         const base = BASE_DRAW_PER_TURN + Math.min(state.bossKills, MAX_DRAW_PER_TURN - BASE_DRAW_PER_TURN);
-        const equipmentBonus = state.phase === 'combat' ? countEquipmentCapped(state.player, 'equipment_ziwuliuzhu') : 0;
+        const equipmentBonus =
+          state.phase === 'combat' && state.player.hand.length < 5
+            ? countEquipmentCapped(state.player, 'equipment_ziwuliuzhu')
+            : 0;
         const cap = equipmentBonus > 0 ? EQUIPMENT_DRAW_PER_TURN_CAP : MAX_DRAW_PER_TURN;
         return Math.max(0, Math.min(cap, base + equipmentBonus) - drawDown);
       },

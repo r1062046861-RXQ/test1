@@ -73,6 +73,33 @@ const getStatus = (entity: { statusEffects: StatusEffect[] }, id: string) =>
 const getStacks = (entity: { statusEffects: StatusEffect[] }, id: string) =>
   getStatus(entity, id)?.stacks || 0;
 
+export const getCardEnergyCost = (
+  card: Card,
+  player: Pick<Player, 'statusEffects'>,
+  enemies: Pick<Enemy, 'currentHp' | 'behavior' | 'meta'>[] = [],
+  turnFlags: Pick<TurnFlags, 'playedAttack'> = INITIAL_TURN_FLAGS
+) => {
+  let cost = card.cost;
+  const costReduction = getStacks(player, 'cost_reduction');
+  if (costReduction > 0) cost -= costReduction;
+  if (card.type === 'attack' && !turnFlags.playedAttack) cost -= 1;
+  if (card.type === 'attack') {
+    const nextAttackReduction = getStacks(player, 'next_attack_cost_reduction');
+    if (nextAttackReduction > 0) cost -= nextAttackReduction;
+  }
+  const costAura = getStacks(player, 'cost_up');
+  if (costAura > 0) cost += costAura;
+  const costUp = getStacks(player, 'cost_up_next');
+  if (costUp > 0) cost += 1;
+  if (enemies.some(enemy => enemy.currentHp > 0 && enemy.behavior === 'spleen_dampness')) {
+    cost += 1;
+  }
+  if (enemies.some(enemy => enemy.currentHp > 0 && enemy.behavior === 'boss_five_elements' && enemy.meta?.phase === 'earth')) {
+    cost += 1;
+  }
+  return Math.max(0, cost);
+};
+
 const getStrength = (entity: { statusEffects: StatusEffect[] }) =>
   getStacks(entity, 'strength') + getStacks(entity, 'temp_strength');
 
@@ -568,8 +595,6 @@ export const resolveCardPlay = (
   };
 
   const hasBossMetalPhase = newEnemies.some(enemy => enemy.behavior === 'boss_five_elements' && enemy.meta?.phase === 'metal');
-  const hasBossEarthPhase = newEnemies.some(enemy => enemy.behavior === 'boss_five_elements' && enemy.meta?.phase === 'earth');
-
   const findTargetIndex = (id?: string) => {
     const chosenId = id || state.selectedEnemyId;
     if (chosenId) {
@@ -579,29 +604,15 @@ export const resolveCardPlay = (
     return newEnemies.findIndex(e => e.currentHp > 0);
   };
 
-  const computeCardCost = () => {
-    let cost = card.cost;
-    const costReduction = getStacks(newPlayer, 'cost_reduction');
-    if (costReduction > 0) cost -= costReduction;
-    const costAura = getStacks(newPlayer, 'cost_up');
-    if (costAura > 0) cost += costAura;
-    const costUp = getStacks(newPlayer, 'cost_up_next');
-    if (costUp > 0) cost += 1;
-    if (newEnemies.some(enemy => enemy.currentHp > 0 && enemy.behavior === 'spleen_dampness')) {
-      cost += 1;
-    }
-    if (hasBossEarthPhase) cost += 1;
-    return {
-      cost: Math.max(0, cost),
-      consumeCostUp: costUp > 0
-    };
-  };
-
-  const { cost: baseCost, consumeCostUp } = computeCardCost();
-  const effectiveCost = baseCost;
+  const effectiveCost = getCardEnergyCost(card, newPlayer, newEnemies, state.turnFlags);
+  const consumeCostUp = getStacks(newPlayer, 'cost_up_next') > 0;
+  const consumeNextAttackCostReduction = card.type === 'attack' && getStacks(newPlayer, 'next_attack_cost_reduction') > 0;
   if (newPlayer.energy < effectiveCost) return null;
   if (consumeCostUp) {
     removeStatus(newPlayer, 'cost_up_next');
+  }
+  if (consumeNextAttackCostReduction) {
+    removeStatus(newPlayer, 'next_attack_cost_reduction');
   }
 
   const turnFlags = { ...state.turnFlags };
@@ -791,10 +802,11 @@ export const resolveCardPlay = (
     if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
       dmg += countRelicCapped(newPlayer, 'equipment_tianren');
     }
-    if (getStacks(newPlayer, 'attack_buff') > 0) {
-      dmg += 3;
+    const attackBonus = getStacks(newPlayer, 'attack_buff');
+    if (attackBonus > 0) {
+      dmg += attackBonus;
       removeStatus(newPlayer, 'attack_buff');
-      log(`[发散] 触发：额外造成3点伤害`);
+      log(`[发散] 触发：额外造成${attackBonus}点伤害`);
     }
     if (getStacks(newPlayer, 'weak') > 0) {
       dmg = Math.floor(dmg * 0.75);
@@ -1017,6 +1029,15 @@ export const resolveCardPlay = (
         description: '本回合攻击无视格挡',
         duration: 1,
       });
+      applyBuffToPlayer({
+        id: 'attack_buff',
+        name: '麻黄汤',
+        type: 'buff',
+        stacks: card.effectValue || 4,
+        canStack: false,
+        description: `下一次攻击伤害+${card.effectValue || 4}`,
+        duration: 1,
+      });
       drawCardsLocal(1);
       log('麻黄汤宣肺解表：本回合攻击无视格挡并抽牌');
       break;
@@ -1038,7 +1059,7 @@ export const resolveCardPlay = (
       log('银翘散辛凉解表：群体伤害、施加热邪并清除敌方正面状态');
       break;
     case 'buff_attack':
-      applyBuffToPlayer({ id: 'attack_buff', name: '发散', type: 'buff', stacks: 1, canStack: false, description: '下一次攻击伤害+3' });
+      applyBuffToPlayer({ id: 'attack_buff', name: '发散', type: 'buff', stacks: card.effectValue || 3, canStack: false, description: `下一次攻击伤害+${card.effectValue || 3}` });
       log(`下一次攻击伤害增加`);
       break;
     case 'aoe_damage_cleanse':
@@ -1056,6 +1077,7 @@ export const resolveCardPlay = (
       break;
     case 'debuff_weak_draw':
       if (targetEnemy) {
+        applyAttackDamage(card.secondaryValue || 3);
         applyDebuffToEnemy(targetEnemy, { id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
         log(`给予 ${targetEnemy.name} 虚弱`);
       }
@@ -1070,7 +1092,7 @@ export const resolveCardPlay = (
     case 'heal_draw_block':
       applyHealToPlayer(newPlayer, card.effectValue || 0);
       applyBlock(card.secondaryValue || 0);
-      drawCardsLocal(2);
+      drawCardsLocal(1);
       log(`恢复生命，获得格挡并抽牌`);
       break;
     case 'aoe_debuff_heat':
@@ -1286,6 +1308,7 @@ export const resolveCardPlay = (
       break;
     case 'sleep_debuff':
       if (targetEnemy) {
+        applyAttackDamage(card.effectValue || 4);
         applyDebuffToEnemy(targetEnemy, { id: 'stun', name: '困倦', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
         log(`使 ${targetEnemy.name} 困倦`);
       }
@@ -1305,6 +1328,7 @@ export const resolveCardPlay = (
         drawCardsLocal(1);
         log(`已出攻击牌，额外抽牌`);
       }
+      applyBuffToPlayer({ id: 'next_attack_cost_reduction', name: '枳实行气', type: 'buff', stacks: 1, canStack: false, description: '本回合下一张攻击牌消耗-1', duration: 1 });
       break;
     case 'aoe_damage_cleanse_heat':
       applyAoeDamage(card.effectValue || 0);
@@ -1324,6 +1348,7 @@ export const resolveCardPlay = (
       break;
     case 'attack_pierce_all':
       applyBuffToPlayer({ id: 'pierce_all', name: '麻黄汤', type: 'buff', stacks: 1, canStack: false, description: '攻击无视格挡', duration: 1 });
+      applyBuffToPlayer({ id: 'attack_buff', name: '细辛通窍', type: 'buff', stacks: card.effectValue || 3, canStack: false, description: `下一次攻击伤害+${card.effectValue || 3}`, duration: 1 });
       log(`本回合攻击无视格挡`);
       break;
     case 'heal_block':
@@ -1333,8 +1358,9 @@ export const resolveCardPlay = (
       break;
     case 'cleanse_draw':
       removeDebuffs(newPlayer);
-      drawCardsLocal(card.effectValue || 3);
-      log(`清除负面状态并抽牌`);
+      drawCardsLocal(card.effectValue || 2);
+      removeRandomCard();
+      log(`清除负面状态并抽弃`);
       break;
     case 'yin_block':
       {
@@ -1357,8 +1383,16 @@ export const resolveCardPlay = (
       log(`对所有敌人造成伤害并施加热邪`);
       break;
     case 'cleanse_enemy_buffs':
-      removeAllEnemyBuffs();
-      log(`清除敌人所有正面状态`);
+      {
+        let removed = 0;
+        newEnemies.forEach(enemy => {
+          const removableBuffs = enemy.statusEffects.filter(s => s.type === 'buff' && !isConstitutionPassive(s));
+          removed += removableBuffs.length;
+          removeEnemyBuffs(enemy);
+        });
+        applyAoeDamage(Math.max(3, removed * (card.effectValue || 3)));
+        log(`清除敌人所有正面状态`);
+      }
       break;
     case 'cleanse_self_heal':
       removeDebuffs(newPlayer);
@@ -1430,10 +1464,18 @@ export const resolveCardPlay = (
       break;
     }
     case 'draw_to_hand':
-      while (newPlayer.hand.length < 5) {
-        const before = newPlayer.hand.length;
-        drawCardsLocal(1);
-        if (newPlayer.hand.length === before) break;
+      {
+        const getPlayableHandSize = () => newPlayer.hand.filter(c => c.id !== cardId).length;
+        if (getPlayableHandSize() < 5) {
+          while (getPlayableHandSize() < 5) {
+            const before = newPlayer.hand.length;
+            drawCardsLocal(1);
+            if (newPlayer.hand.length === before) break;
+          }
+        } else {
+          drawCardsLocal(1);
+          removeRandomCard();
+        }
       }
       log(`补充手牌`);
       break;
@@ -1472,6 +1514,7 @@ export const resolveCardPlay = (
       break;
     case 'apply_weak':
       if (targetEnemy) {
+        applyAttackDamage(card.secondaryValue || 4);
         applyDebuffToEnemy(targetEnemy, { id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: card.effectValue || 2 });
         log(`给予 ${targetEnemy.name} 虚弱`);
       }

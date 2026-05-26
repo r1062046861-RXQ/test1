@@ -5,6 +5,7 @@ import { CARD_LIBRARY, isHerbCard } from '../data/cards';
 import { FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
 import { ActionButton, Panel, SectionTitle } from './ui/PageShell';
 import { Check, ScrollText, X } from 'lucide-react';
+import { ensureOffensiveOffer } from '../utils/cardBalance';
 
 export const RewardView: React.FC = () => {
   const {
@@ -31,12 +32,13 @@ export const RewardView: React.FC = () => {
 
   useEffect(() => {
     const pool = [...availableCards];
-    const picked: string[] = [];
-    while (picked.length < 3 && pool.length > 0) {
+    const pickedCards: typeof availableCards = [];
+    while (pickedCards.length < 3 && pool.length > 0) {
       const index = Math.floor(Math.random() * pool.length);
-      picked.push(pool.splice(index, 1)[0].id);
+      pickedCards.push(pool.splice(index, 1)[0]);
     }
-    setRewardIds(picked);
+    const balancedPicked = ensureOffensiveOffer(pickedCards, availableCards, player.deck);
+    setRewardIds(balancedPicked.map(card => card.id));
     setTaken(new Set());
     setRejected(new Set());
     setBlueprintTaken(false);
@@ -98,8 +100,8 @@ export const RewardView: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="chapter-kicker">战斗奖励</div>
-            <h2 className="text-3xl font-bold text-amber-50 mt-1">战利品</h2>
-            <p className="text-sm text-stone-300 mt-1">选择需要的卡牌加入牌组，或拒绝继续。</p>
+            <h2 className="text-3xl font-bold text-stone-950 mt-1">战利品</h2>
+            <p className="text-sm text-stone-700 mt-1">选择需要的卡牌加入牌组，或拒绝继续。</p>
           </div>
           {!allRewardsResolved ? (
             <ActionButton variant="secondary" onClick={handleSkipAll}>

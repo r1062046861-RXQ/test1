@@ -446,12 +446,14 @@ describe('Game Store', () => {
     expect(byId('side_qixue').options[0].effects).toContainEqual({ type: 'maxHpChange', value: -2 });
   });
 
-  it('子午流注让非首回合补牌上限提高到6', () => {
+  it('子午流注只在手牌少于5张时额外补牌', () => {
+    const basePlayer = useGameStore.getState().player;
     useGameStore.setState({
       phase: 'combat',
       bossKills: 3,
       player: {
-        ...useGameStore.getState().player,
+        ...basePlayer,
+        hand: [],
         relics: [
           {
             id: 'equipment_ziwuliuzhu',
@@ -470,6 +472,21 @@ describe('Game Store', () => {
     });
 
     expect(useGameStore.getState().getDrawPerTurn()).toBe(6);
+
+    useGameStore.setState({
+      player: {
+        ...useGameStore.getState().player,
+        hand: [
+          CARD_LIBRARY.gancao,
+          CARD_LIBRARY.chenpi,
+          CARD_LIBRARY.shanzha,
+          CARD_LIBRARY.huangqin,
+          CARD_LIBRARY.mahuang,
+        ],
+      },
+    });
+
+    expect(useGameStore.getState().getDrawPerTurn()).toBe(5);
   });
 
   it('装备的战斗开始格挡和地图治疗会触发装备被动', () => {
@@ -554,7 +571,7 @@ describe('Game Store', () => {
 
     store.startAdminEnemyChallenge('damp_turbidity');
 
-    expect(primeSpy).toHaveBeenCalledWith('/assets/cards_enemy/91.gif', '/assets/cards_enemy/91-poster.png');
+    expect(primeSpy).toHaveBeenCalledWith('/assets/cards_enemy/91.webp', '/assets/cards_enemy/91-poster.png');
   });
 
   it('formula blueprints use ready full recipes and formula cards stay out of normal pools', () => {

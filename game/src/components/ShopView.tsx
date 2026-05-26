@@ -5,6 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { Card } from './Card';
 import { ActionButton, Badge, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
+import { ensureOffensiveOffer } from '../utils/cardBalance';
 
 type TabKey = 'buy' | 'sell' | 'combine' | 'decompose';
 
@@ -60,7 +61,7 @@ export const ShopView: React.FC = () => {
       return count < 10;
     });
     const shuffled = pool.sort(() => Math.random() - 0.5);
-    const picked = shuffled.slice(0, 4);
+    const picked = ensureOffensiveOffer(shuffled.slice(0, 4), pool, player.deck);
     const discountIdx = Math.floor(Math.random() * picked.length);
     setBuySlots(picked.map((c, i) => {
       const basePrice = Math.ceil((c.rarity === 'rare' ? 80 : c.rarity === 'uncommon' ? 50 : 30) * priceMultiplier);
@@ -191,21 +192,28 @@ export const ShopView: React.FC = () => {
               <p className="text-stone-300 mt-4">牌组为空，无可出售的牌。</p>
             ) : (
               <div className="grid grid-cols-4 gap-4 mt-3 max-h-[55vh] overflow-y-auto ornate-scroll p-1 justify-items-center">
-                {player.deck.map((card) => (
-                  <div key={card.id} className="relative group">
-                    <Card card={card} interactive={false} hoverLift={false} />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 rounded-[22px]">
-                      <ActionButton
-                        variant="danger"
-                        className="text-sm"
-                        disabled={sellCount >= MAX_SELL_PER_VISIT}
-                        onClick={() => sellCard(card.id)}
-                      >
-                        +{SELL_PRICE[card.rarity] || 15} 金
-                      </ActionButton>
+                {player.deck.map((card) => {
+                  const templateId = getTemplateCardId(card);
+                  const ownedCount = templateId ? (deckCounts[templateId]?.count ?? 1) : 1;
+                  return (
+                    <div key={card.id} className="relative group">
+                      <div className="absolute right-2 top-2 z-20 rounded-full border border-amber-200/35 bg-stone-950/75 px-2 py-0.5 text-[11px] font-bold text-amber-100 shadow-lg">
+                        x{ownedCount}
+                      </div>
+                      <Card card={card} interactive={false} hoverLift={false} />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 rounded-[22px]">
+                        <ActionButton
+                          variant="danger"
+                          className="text-sm"
+                          disabled={sellCount >= MAX_SELL_PER_VISIT}
+                          onClick={() => sellCard(card.id)}
+                        >
+                          +{SELL_PRICE[card.rarity] || 15} 金
+                        </ActionButton>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

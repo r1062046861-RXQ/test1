@@ -18,6 +18,7 @@ interface CardProps {
   layoutVariant?: 'default' | 'hand' | 'reward' | 'codex';
   descriptionModalEnabled?: boolean;
   className?: string;
+  displayCost?: number;
 }
 
 const TYPE_LABELS = {
@@ -69,6 +70,7 @@ export const Card: React.FC<CardProps> = ({
   layoutVariant = 'default',
   descriptionModalEnabled = true,
   className,
+  displayCost,
 }) => {
   const [imageError, setImageError] = React.useState(false);
   const [showTextModal, setShowTextModal] = React.useState(false);
@@ -258,7 +260,7 @@ export const Card: React.FC<CardProps> = ({
         <div className="combat-card__header relative z-10">
           <div className="combat-card__header-row">
             <div className={cn('combat-card__cost', costTheme[card.type])}>
-              {cardCategory === 'equipment' ? '装' : card.cost}
+              {cardCategory === 'equipment' ? '装' : (displayCost ?? card.cost)}
             </div>
 
             <div className="combat-card__title-pill">

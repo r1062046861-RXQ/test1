@@ -38,7 +38,7 @@ npm run build      # 构建 → game/dist/
 - 运行依赖：Windows 11 自带 PowerShell；不需要 Node.js、npm、Python 或联网
 - 注意：游玩时不要关闭弹出的本地服务器窗口；关闭窗口即停止游戏
 
-离线包里的 `web/` 是 `game/dist/` 的复制产物，体积约 202MB，不提交到 GitHub；需要更新离线版时先执行 `cd game && npm run build`，再把 `game/dist/` 复制到 `offline-windows/web/` 并重新压缩。
+离线包里的 `web/` 是 `game/dist/` 的复制产物，当前约 96.7MiB；根目录 zip 约 95.7MiB，均不提交到 GitHub。需要更新离线版时先执行 `cd game && npm run build`，再把 `game/dist/` 复制到 `offline-windows/web/` 并重新压缩。
 
 ---
 
@@ -63,7 +63,7 @@ wechatgame/
 │   │   ├── services/          # 音频 + 资源加载服务
 │   │   ├── utils/             # 资源路径、ID 生成、图片预载
 │   │   └── index.css          # 主要视觉系统（很大，先搜索再改）
-│   ├── public/assets/         # 运行时资源（当前工作区约358个文件，约202MiB）
+│   ├── public/assets/         # 运行时资源（当前工作区约360个文件，约96MiB）
 │   └── package.json
 ├── .github/workflows/pages.yml # GitHub Pages 自动部署
 ├── AI_HANDOFF.md              # 完整交接文档
@@ -86,9 +86,10 @@ wechatgame/
 | Act 1/2/3 管理员可选章节进入 | ✅ |
 | 全部卡牌图片已替换为真实素材 | ✅ |
 | 24 张卡牌名称已完成全局统一重命名（药材名+功效） | ✅ |
-| 背景图全部换新（战斗/地图/休憩/药房/合成台），压缩至200KB内 | ✅ |
-| 音频目录当前约35.6MiB；运行时资源当前工作区约202MiB | ✅ |
-| 主页加载条按实际预加载资源（critical/static）统计进度，不再把未预载 GIF 计入总量 | ✅ |
+| 背景图全部换新（战斗/地图/休憩/药房/合成台），关键大图已转 WebP 并压缩到约 200KB 级别 | ✅ |
+| 敌人动画已由大体积 GIF 转为 480px 宽动画 WebP，`cards_enemy` 目录约 43.3MiB | ✅ |
+| 音频目录当前约35.6MiB；运行时资源当前工作区约95.9MiB，图片 manifest 约58.4MiB | ✅ |
+| 主页加载条按实际预加载资源（critical/static）统计进度，不再把延后加载的敌人动画计入总量 | ✅ |
 | 字体优化（宋体/Songti SC，macOS兼容） | ✅ |
 | 战斗UI去琥珀色，按幕次主题配色（天蓝/玫红/紫清） | ✅ |
 | 体质选择前动画已恢复为旧版真实卡面“小包洗牌”抽牌过场 | ✅ |
@@ -198,7 +199,7 @@ npm run build
 **GitHub Pages**（自动）：
 - push 到 `main` 分支 → `.github/workflows/pages.yml` 自动构建部署。
 - 代码必须通过 `npm run build` 才能部署。
-- 最近一次已确认线上发布：`aefeb0e`（2026-05-26），GitHub Pages 工作流通过，`https://test1.renxuanqi.top` 返回 200；后续推送以 GitHub Actions 最新运行结果为准。
+- 最近一次线上发布以后续 `main` 分支 GitHub Actions 最新运行结果为准；`https://test1.renxuanqi.top` 由 GitHub Pages 自动更新。
 
 **Windows 离线包**（本机交付）：
 - `offline-windows/open-game.cmd` + `open-game.ps1` 使用 Windows PowerShell 内置能力启动本地 HTTP 服务。

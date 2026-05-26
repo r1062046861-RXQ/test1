@@ -69,6 +69,7 @@ Windows 11 离线交付：
 - 本机压缩包：`wuxing-yidao-offline-windows.zip`
 - 新电脑双击：`offline-windows/open-game.cmd`
 - 运行依赖：Windows 11 自带 PowerShell；不需要 Node.js、npm、Python 或网络
+- 当前本机离线 `web/` 约 96.7 MiB，根目录 zip 约 95.7 MiB
 - `offline-windows/open-game.ps1` 内置一个只监听 `127.0.0.1` 的静态 HTTP 服务器，默认从 5173 开始找空闲端口，并自动打开浏览器
 - `offline-windows/web/` 是 `game/dist/` 的复制产物，和 zip 一样已加入 `.gitignore`，不要提交到 GitHub；需要更新离线包时重新 `cd game && npm run build` 后复制 `game/dist` 到 `offline-windows/web`
 
@@ -126,7 +127,8 @@ wechatgame/
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
 | 语音/音频 | BGM、环境音、SFX 等音频资源当前约 35.6 MiB |
-| `public/assets` 总量 | 当前工作区约 358 个文件，约 202 MiB；已包含主菜单、地图 v2、战斗 v2 等 UI 替换资源 |
+| `public/assets` 总量 | 当前工作区约 360 个文件，约 95.9 MiB；敌人动画和大背景已完成 WebP 压缩 |
+| 图片 manifest | 当前约 338 条图片资源，`TOTAL_RUNTIME_ASSET_BYTES` 约 58.4 MiB；音频不计入 manifest |
 
 运行时资源按目录统计：
 
@@ -134,24 +136,25 @@ wechatgame/
 | --- | ---: | ---: |
 | `audio` | 20 | 约 35.6 MB |
 | `author_qr` | 2 | 约 0.3 MB |
-| `cards_enemy` | 65 | 约 142 MB |
+| `cards_enemy` | 65 | 约 43.3 MB（敌人动画为 480px 宽动画 WebP，另保留 poster/fallback） |
 | `cards_equipment` | 11 | 约 1.1 MB |
 | `cards_formula_placeholders` | 12 | 约 0.7 MB |
 | `cards_herb_placeholders` | 1 | 约 0.04 MB |
 | `cards_player` | 84 | 约 5.0 MB |
 | `cards_replacement_placeholders` | 48 | 约 1.1 MB |
 | `cards_special` | 0 | 0 MB（旧占位图已清理） |
-| `combat` | 31 | 约 2.7 MB（战斗 v2 切片与背景） |
+| `combat` | 32 | 约 0.6 MB（战斗 v2 切片与 WebP 背景） |
 | `constitutions` | 9 | 约 0.6 MB |
 | `constitution_select` | 8 | 约 0.4 MB |
-| `intro` | 11 | 约 3.6 MB |
-| `main_menu` | 37 | 约 7.3 MB（主菜单 v2 运行资源和字体子集；旧大字体与 QA 截图已清理） |
+| `intro` | 11 | 约 0.6 MB |
+| `main_menu` | 37 | 约 5.0 MB（主菜单 v2 运行资源和字体子集；旧大字体与 QA 截图已清理） |
 | `map` | 12 | 约 0.2 MB（地图 v2 切片） |
-| 根目录背景图 | 10 | 约 1.9 MB（已压缩至 200KB 内） |
+| 根目录背景图 | 8 | 约 1.4 MB（Act 2 地图背景已转 WebP） |
 
-新增背景资源（均已压缩至 200KB 内）：
-- `background_map_act1.png` / `background_map_act2.png`：路径选择分幕背景
+新增背景资源（关键大图已压缩到约 200KB 级别）：
+- `background_map_act1.png` / `background_map_act2.webp`：路径选择分幕背景
 - `background_rest.png`：休憩场景背景
+- `background_rest_act2.jpg`：第二幕休憩场景背景
 - `background_shop.png`：药房场景背景
 - `bg_synthesis_1.png` / `bg_synthesis_2.png`：合成台双图随机展示
 
@@ -300,32 +303,32 @@ wechatgame/
 
 源文件：`shared/data/enemies.ts`
 
-当前有 20 个敌人，全部有 GIF 与 poster。`damp_minion` 是正式敌人数据，但只作为召唤单位，不进入普通敌池和管理员单挑列表。
+当前有 20 个敌人，全部有动画 WebP 与 poster。`damp_minion` 是正式敌人数据，但只作为召唤单位，不进入普通敌池和管理员单挑列表。
 
 敌人列表：
 
 | ID | 中文语义 | 幕 / 类型 | HP | 图片 |
 | --- | --- | --- | ---: | --- |
-| `wind_cold_guest` | 风寒客 | Act 1 普通 | 30 | `89.gif` |
-| `wind_heat_attack` | 风热袭 | Act 1 普通 | 28 | `90.gif` |
-| `damp_turbidity` | 湿浊缠 | Act 1 普通 | 35 | `91.gif` |
-| `external_combination` | 外感合病 | Act 1 精英 | 80 | `92.gif` |
-| `boss_wind_cold` | 风寒束表 | Act 1 Boss | 150 | `93.gif` |
-| `boss_liver_fire` | 肝火炽盛 | Act 1 Boss | 140 | `94.gif` |
-| `qi_blood_stasis` | 气滞血瘀者 | Act 2 普通 | 50 | `95.gif` |
-| `spleen_dampness` | 脾虚湿盛者 | Act 2 普通 | 55 | `96.gif` |
-| `heart_kidney_gap` | 心神不交者 | Act 2 普通 | 45 | `97.gif` |
-| `tanmengxinqiao` | 痰蒙心窍者 | Act 2 普通 | 52 | `83.gif` |
-| `phlegm_stasis` | 痰瘀互结 | Act 2 精英 | 120 | `98.gif` |
-| `boss_spleen_damp` | 脾虚湿困 | Act 2 Boss | 250 | `99.gif` |
-| `damp_minion` | 水湿小怪 | Act 2 召唤单位 | 20 | `104.gif` |
-| `yin_yang_split` | 阴阳离决者 | Act 3 普通 | 70 | `100.gif` |
-| `chong_ren_instability` | 冲任不固者 | Act 3 普通 | 65 | `101.gif` |
-| `reruyingxue` | 热入营血者 | Act 3 普通 | 72 | `79.gif` |
-| `shenbunaqi` | 肾不纳气者 | Act 3 普通 | 68 | `80.gif` |
-| `yangmingfushi` | 阳明腑实者 | Act 3 普通 | 78 | `84.gif` |
-| `jueyin_complex` | 厥阴复杂症 | Act 3 精英 | 180 | `102.gif` |
-| `boss_five_elements` | 五行失调 | Act 3 Boss | 500 | `103.gif` |
+| `wind_cold_guest` | 风寒客 | Act 1 普通 | 30 | `89.webp` |
+| `wind_heat_attack` | 风热袭 | Act 1 普通 | 28 | `90.webp` |
+| `damp_turbidity` | 湿浊缠 | Act 1 普通 | 35 | `91.webp` |
+| `external_combination` | 外感合病 | Act 1 精英 | 80 | `92.webp` |
+| `boss_wind_cold` | 风寒束表 | Act 1 Boss | 150 | `93.webp` |
+| `boss_liver_fire` | 肝火炽盛 | Act 1 Boss | 140 | `94.webp` |
+| `qi_blood_stasis` | 气滞血瘀者 | Act 2 普通 | 50 | `95.webp` |
+| `spleen_dampness` | 脾虚湿盛者 | Act 2 普通 | 55 | `96.webp` |
+| `heart_kidney_gap` | 心神不交者 | Act 2 普通 | 45 | `97.webp` |
+| `tanmengxinqiao` | 痰蒙心窍者 | Act 2 普通 | 52 | `83.webp` |
+| `phlegm_stasis` | 痰瘀互结 | Act 2 精英 | 120 | `98.webp` |
+| `boss_spleen_damp` | 脾虚湿困 | Act 2 Boss | 250 | `99.webp` |
+| `damp_minion` | 水湿小怪 | Act 2 召唤单位 | 20 | `104.webp` |
+| `yin_yang_split` | 阴阳离决者 | Act 3 普通 | 70 | `100.webp` |
+| `chong_ren_instability` | 冲任不固者 | Act 3 普通 | 65 | `101.webp` |
+| `reruyingxue` | 热入营血者 | Act 3 普通 | 72 | `79.webp` |
+| `shenbunaqi` | 肾不纳气者 | Act 3 普通 | 68 | `80.webp` |
+| `yangmingfushi` | 阳明腑实者 | Act 3 普通 | 78 | `84.webp` |
+| `jueyin_complex` | 厥阴复杂症 | Act 3 精英 | 180 | `102.webp` |
+| `boss_five_elements` | 五行失调 | Act 3 Boss | 500 | `103.webp` |
 
 敌池分布：
 
@@ -454,7 +457,7 @@ wechatgame/
 
 当前 UI 替换新增资源目录：
 
-- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 31 个文件，包含 `background.png`、玩家资源/生命面板、被动/装备面板、按钮、血条和状态图标。
+- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 32 个文件，包含 `background.webp`、`background_act2.webp`、玩家资源/生命面板、被动/装备面板、按钮、血条和状态图标。
 - `game/public/assets/map/v2/`：地图 v2 资源拼装切片，当前约 12 个文件，包含路线框、首领进度、提示面板和统计图标。
 - `game/public/assets/main_menu/`：主菜单 v2 运行资源、按钮文字、hover 图和字体子集；旧大字体、旧区域切片和 QA 截图已清理，不要按旧截图重新偏移文字或 icon。
 
@@ -467,14 +470,14 @@ wechatgame/
 - `game/src/utils/progressiveAssets.ts`
 - `game/src/hooks/useProgressiveAssetSource.ts`
 
-当前资源 manifest 只覆盖运行时图片预加载资源，分三阶段：`critical -> static -> gif`。音频不纳入图片 manifest。
-主页进度条使用 `useRuntimeAssetLoadingProgress()`，当前总进度分母只统计实际预加载的 `critical/static` 阶段资源，`gif` 阶段不再计入首屏加载总量，避免加载条长期卡在未预载资源上。
+当前资源 manifest 只覆盖运行时图片预加载资源，分三阶段：`critical -> static -> gif`。音频不纳入图片 manifest；`gif` 阶段当前也承载敌人动画 WebP，作为延后加载阶段名称保留。
+主页进度条使用 `useRuntimeAssetLoadingProgress()`，当前总进度分母只统计实际预加载的 `critical/static` 阶段资源，`gif` 阶段不再计入首屏加载总量，避免加载条长期卡在延后加载的敌人动画上。
 `runtimeAssetManifest.ts` 已随当前 UI 资源变化更新；如果资源文件数量或路径继续变化，必须重新生成 manifest，不要手写大段 manifest。
 
 资源变更注意：
 
 - 改动运行时图片后执行 `cd game && npm run assets:manifest`。
-- 敌方 GIF 目标：600x800，单个运行时 GIF 小于等于 8,000,000 bytes。
+- 敌方动画目标：优先使用 480px 宽动画 WebP + poster；新增动图必须压缩并重新生成 manifest，不要再提交大体积 GIF。
 - 根目录原始素材已经整理到 `未使用/`，不是运行时目录，不应自动删除。
 
 ## 15. 测试
@@ -534,9 +537,9 @@ npm run build
 - 战斗手牌当前依赖旧版 `Hand` 组件和 `viewportTier`，不要恢复已删除的 `CombatHandV2` 占位手牌。
 - `ConstitutionIntroOverlay.tsx` 的体质选择前动画已恢复为旧版真实卡面“小包洗牌”过场，`CONSTITUTION_CINEMATIC_MS` 为 2200ms；体质选择页本身仍保留当前新版。
 - `MapView.tsx` 当前已重写为资源拼装界面；如果节点不可点击或 Boss 通道异常，先检查 `startCombat(node.id)`、`combatWinsThisCycle`、`getBossUnlockWinsRequired()` 是否仍按原逻辑使用。
-- 敌方 GIF 是最大性能风险。新增动图前必须压缩并更新 manifest。
-- `npm run build` 当前通过，主 JS chunk 约 487 kB；后续做功能增长时仍需要留意拆包或按需加载。
-- `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；GIF 与 poster 当前是主链路，不要误删 fallback。
+- 敌方动画是最大图片体积风险。当前主链路为动画 WebP + poster；新增动图前必须压缩并更新 manifest。
+- `npm run build` 当前通过，主 JS chunk 约 488.8 kB；后续做功能增长时仍需要留意拆包或按需加载。
+- `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；动画 WebP 与 poster 当前是主链路，不要误删 fallback。
 - 根目录 `未使用/` 保存原始素材、历史记录和导入来源，不应删除。
 - 根目录 `codex_crash_log.md` 是 Codex 闪退、浏览器插件和本机修复记录，后续排查异常退出时优先追加记录，不要当作普通临时日志删除。
 - **Git 网络**：中国大陆可能对 GitHub HTTPS 做 SNI 干扰（TLS 通过但 HTTP 被 RST）。当前已配置 SSH：`git@github.com:r1062046861-RXQ/test1.git`，密钥 `~/.ssh/id_ed25519`。
@@ -579,7 +582,7 @@ npm run build
 
 1. 原始素材放在根目录素材文件夹或指定来源。
 2. 运行时资源放入 `game/public/assets`。
-3. 需要压缩 GIF 时使用现有导入脚本。
+3. 需要压缩敌方动图时优先转 480px 宽动画 WebP，并保留 poster。
 4. 执行 `cd game && npm run assets:manifest`。
 5. 检查 `runtimeAssetManifest.test.ts`。
 
@@ -609,7 +612,7 @@ npm run build
 | `game/src/store/gameStore.ts` | Unity GameManager、RunState、BattleState、SaveService |
 | React components | Unity UI Toolkit / uGUI 页面、Prefab |
 | `game/public/assets` | Unity Texture/Sprite/Animator/Addressables |
-| GIF + poster | 建议转 sprite sheet、Animator、VideoClip 或 Spine/序列帧 |
+| 动画 WebP/GIF + poster | 建议转 sprite sheet、Animator、VideoClip 或 Spine/序列帧 |
 
 迁移前建议先做的工程准备：
 
@@ -618,7 +621,7 @@ npm run build
 - 为所有卡牌和敌人建立稳定 schema，避免 UI 文案和数值混在一处。
 - 给卡牌、敌人、状态、意图、地图节点建立可导出的 JSON。
 - 明确随机数来源，迁移时使用可注入 seed。
-- 把 GIF 转为 Unity 友好的动画格式，并建立资源 ID 到 Addressables key 的映射。
+- 把 WebP/GIF 动图转为 Unity 友好的动画格式，并建立资源 ID 到 Addressables key 的映射。
 - 将当前 Vitest 规则测试迁移为 Unity EditMode 测试，先保证战斗数值一致，再重做表现层。
 
 Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + 规则 + 表现”的边界：
@@ -652,10 +655,12 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
+| 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；`public/assets` 从约 202MiB 降至约 95.9MiB，`runtimeAssetManifest.ts` 已刷新。 |
 | Windows 11 离线版 | 新增 `offline-windows/open-game.cmd` 与 `open-game.ps1`，用 PowerShell 内置本地 HTTP 服务启动 `offline-windows/web`，目标电脑不需要 Node.js、npm、Python 或网络；`web/` 和 zip 为本机构建产物，不进 Git。 |
+| 第五轮平衡调整 | 每回合首张攻击牌费用 -1；白芍柔肝/点穴/酸枣仁/厚朴/细辛/麻黄汤补进攻收益；陈皮、葛根、赤芍、桔梗、枳实和子午流注改为更少堵手；低攻击体质开局补到至少 5 张攻击牌；奖励和药房在低进攻牌组时保底给进攻牌。 |
 | 首页右侧按钮回退静态版 | 首页右侧“公告/活动/图鉴/设置”已退回旧静态 `side_menu.png`，移除动态圈、拆分图标和拆分文字层。 |
 | 事件装备点亮图鉴 | `handleEventChoice` 的 `addRelic` 分支现在会把真实装备牌同步加入 `player.obtainedCardIds`，修复事件获得装备后卡牌图鉴不点亮的问题，并补充 store 回归测试。 |
-| 2026-05-26 线上发布 | 提交 `aefeb0e` 已推送 `origin/main`，GitHub Pages 工作流成功，`https://test1.renxuanqi.top` 返回 200。 |
+| 2026-05-26 线上发布 | 本项目通过 `origin/main` 触发 GitHub Pages；线上 `https://test1.renxuanqi.top` 以后续 Actions 最新成功运行为准。 |
 | 体质抽牌动画回退 | `ConstitutionIntroOverlay.tsx` 已恢复旧版真实卡面“小包洗牌”动画；接口 `ConstitutionIntroStage`、`CONSTITUTION_CINEMATIC_MS`、`onSkip/onClose/onSelect` 保持不变，选择页本身不回滚。 |
 | 战斗手牌回退旧版 | 战斗中手牌使用现有 `Hand` 组件，保留长按预览和出牌逻辑；不再使用新写的占位式 `CombatHandV2`。 |
 | 战斗敌人信息真实化 | 敌人 HP 血条、生命数字、格挡、意图、状态全部读取真实 `enemy` 数据；没有真实状态时不显示占位状态图。 |
@@ -676,7 +681,7 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | 药房合成数量显示 | ShopView combine 页显示牌组/手牌/材料数量，每张材料与目标候选牌显示同模板拥有数量 `xN` |
 | 敌人不重复 | `lastEnemyId` 过滤，同一敌人不连续出现 |
 | 三兄弟数值 | Act1 二哥路线从满血开局无效回血改为生命上限 +2 + 50 金币；其他路线保留合理化后的事件奖励 |
-| 主页资源加载进度 | `runtimeAssetLoading` 的总量只统计实际预加载的 critical/static 资源，不再把未预载 GIF 纳入加载条分母 |
+| 主页资源加载进度 | `runtimeAssetLoading` 的总量只统计实际预加载的 critical/static 资源，不再把延后加载的敌人动画纳入加载条分母 |
 | 事件系统 v2.1 | 新增 1 主线（3 幕分叉）+ 11 支线事件，含完整叙事、选项效果、后果动画；`eventLog`/`eventMarkers` 持久化 |
 | 装备堆叠 | 装备不再唯一，但通过 `EQUIPMENT_EFFECT_CAPS` 限制有效层数；重复装备可持有，超过上限不再继续放大效果 |
 | 事件密度调整 | 层类型概率 25%→35%，保底间隔 4→2 场战斗，三幕全通约 11-12 事件 |

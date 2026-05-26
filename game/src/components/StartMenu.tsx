@@ -565,7 +565,7 @@ export const StartMenu: React.FC = () => {
             <div
               className="start-menu-page__background"
               style={{
-                backgroundImage: `url("${resolveAssetUrl('/assets/main_menu/v2/background.png')}")`,
+                backgroundImage: `url("${resolveAssetUrl('/assets/main_menu/v2/background.webp')}")`,
               }}
             />
             <img

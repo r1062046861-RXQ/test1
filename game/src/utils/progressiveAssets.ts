@@ -1,6 +1,7 @@
 import { resolveAssetUrl } from './assets';
 
 const GIF_PATTERN = /\.gif(?:$|[?#])/i;
+const ENEMY_ANIMATED_WEBP_PATTERN = /\/assets\/cards_enemy\/(?![^?#]*-poster)[^?#]+\.webp(?:$|[?#])/i;
 const ABSOLUTE_URL_PATTERN = /^(?:[a-z]+:)?\/\//i;
 
 type AssetLoadState = 'pending' | 'loaded' | 'error';
@@ -170,7 +171,8 @@ const preloadWithFetch = async (
   }
 };
 
-export const isAnimatedGifSource = (src: string) => GIF_PATTERN.test(src);
+export const isAnimatedGifSource = (src: string) =>
+  GIF_PATTERN.test(src) || ENEMY_ANIMATED_WEBP_PATTERN.test(src);
 
 export const getProgressiveAssetSources = (
   animatedPath?: string | null,

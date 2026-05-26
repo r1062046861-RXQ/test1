@@ -7,8 +7,11 @@ import { resolveAssetBackground } from '../utils/assets';
 
 type RestMode = 'idle' | 'remove' | 'done';
 
+const getRestBackground = (currentAct: number) =>
+  currentAct === 2 ? '/assets/background_rest_act2.jpg' : '/assets/background_rest.png';
+
 export const RestView: React.FC = () => {
-  const { player, currentNodeId, healPlayer, removeCardById, completeNonCombat } = useGameStore();
+  const { player, currentAct, currentNodeId, healPlayer, removeCardById, completeNonCombat } = useGameStore();
   const [mode, setMode] = useState<RestMode>('idle');
   const [result, setResult] = useState<string | null>(null);
   const [removedNames, setRemovedNames] = useState<string[]>([]);
@@ -61,7 +64,7 @@ export const RestView: React.FC = () => {
       footer={footer}
       style={{
         backgroundImage:
-          `linear-gradient(180deg, rgba(8,11,18,0.34), rgba(6,8,14,0.74)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground('/assets/background_rest.png')}`,
+          `linear-gradient(180deg, rgba(8,11,18,0.34), rgba(6,8,14,0.74)), radial-gradient(circle at top, rgba(255,223,167,0.14), transparent 30%), ${resolveAssetBackground(getRestBackground(currentAct))}`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

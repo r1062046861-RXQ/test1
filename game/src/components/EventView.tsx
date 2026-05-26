@@ -38,6 +38,13 @@ const formatEffect = (e: { type: string; value?: number; count?: number; cardId?
   }
 };
 
+const getOptionGoldCost = (effects: Array<{ type: string; value?: number }>) =>
+  effects.reduce((total, effect) => (
+    effect.type === 'goldChange' && (effect.value ?? 0) < 0
+      ? total + Math.abs(effect.value ?? 0)
+      : total
+  ), 0);
+
 export const EventView: React.FC = () => {
   const { player, currentEvent, eventChosenIndex, handleEventChoice, clearCurrentEvent, completeNonCombat } = useGameStore();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -70,13 +77,21 @@ export const EventView: React.FC = () => {
 
   const confirmed = eventChosenIndex != null;
 
+  const canAffordOption = (index: number) => {
+    const option = currentEvent.options[index];
+    if (!option) return false;
+    return player.gold >= getOptionGoldCost(option.effects);
+  };
+
   const handleSelect = (index: number) => {
     if (confirmed) return;
+    if (!canAffordOption(index)) return;
     setSelectedIndex(index);
   };
 
   const handleConfirm = () => {
     if (selectedIndex === null || confirmed) return;
+    if (!canAffordOption(selectedIndex)) return;
     handleEventChoice(currentEvent.id, selectedIndex);
   };
 
@@ -115,21 +130,26 @@ export const EventView: React.FC = () => {
         <div className="space-y-3">
           {currentEvent.options.map((opt, i) => {
             const isSelected = selectedIndex === i;
+            const affordable = canAffordOption(i);
+            const goldCost = getOptionGoldCost(opt.effects);
             return (
               <button
                 key={i}
                 type="button"
-                disabled={confirmed}
+                disabled={confirmed || !affordable}
                 onClick={() => handleSelect(i)}
                 className={`w-full text-left rounded-2xl border px-5 py-4 transition-all duration-200 ${
                   isSelected
                     ? 'border-amber-400/60 bg-amber-400/15 ring-1 ring-amber-400/30'
-                    : confirmed
-                      ? 'border-amber-600/20 bg-amber-700/10 opacity-40'
+                    : confirmed || !affordable
+                      ? 'border-amber-600/20 bg-amber-700/10 opacity-40 cursor-not-allowed'
                       : 'border-amber-600/20 bg-amber-700/10 hover:border-amber-400/40 hover:bg-amber-500/15'
                 }`}
               >
                 <div className="text-base font-semibold text-amber-50">{opt.label}</div>
+                {!affordable && goldCost > 0 ? (
+                  <div className="mt-2 text-xs font-semibold text-red-200/80">金币不足：需要 {goldCost} 金币</div>
+                ) : null}
               </button>
             );
           })}

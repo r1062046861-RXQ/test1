@@ -1,6 +1,6 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-25
+更新日期：2026-05-26
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
@@ -63,6 +63,15 @@ npm run assets:manifest
 - EdgeOne 脚本：`game/package.json` 中的 `edgeone:deploy`、`edgeone:preview`
 - 自定义域名历史上下文：`test1.renxuanqi.top`
 
+Windows 11 离线交付：
+
+- 本机离线包目录：`offline-windows/`
+- 本机压缩包：`wuxing-yidao-offline-windows.zip`
+- 新电脑双击：`offline-windows/open-game.cmd`
+- 运行依赖：Windows 11 自带 PowerShell；不需要 Node.js、npm、Python 或网络
+- `offline-windows/open-game.ps1` 内置一个只监听 `127.0.0.1` 的静态 HTTP 服务器，默认从 5173 开始找空闲端口，并自动打开浏览器
+- `offline-windows/web/` 是 `game/dist/` 的复制产物，和 zip 一样已加入 `.gitignore`，不要提交到 GitHub；需要更新离线包时重新 `cd game && npm run build` 后复制 `game/dist` 到 `offline-windows/web`
+
 ## 3. 技术栈
 
 `game/package.json` 当前显示：
@@ -108,34 +117,35 @@ wechatgame/
 
 | 项目 | 当前数量 / 说明 |
 | --- | --- |
-| 卡牌总数 | 108 条模板记录：85 药材牌、12 药方牌、11 装备牌 |
-| 起始牌组 | 9 种体质各 15 张，管理员体质约 88 张（全部药材+药方） |
+| 卡牌总数 | 108 条模板记录：75 药材牌、10 敌方机制牌、12 药方牌、11 装备牌 |
+| 起始牌组 | 9 种体质各 15 张，管理员体质约 87 张（全部药材+药方） |
 | 药方蓝图 | 12 种正式蓝图，合成台按配方合成，可重复合成无上限 |
 | 药方牌 | 12 张，除合成台外无其他获取方法 |
-| 装备牌 | 11 张，战斗胜利掉落，获得后全局被动，可重复获得堆叠效果（`countRelic`） |
+| 装备牌 | 11 张，战斗胜利掉落，获得后全局被动，可重复获得，但效果按有效层数上限结算 |
 | 事件 | 1 条主线（分叉 3 幕）+ 11 条支线，含 `eventLog`/`eventMarkers` 持久化 |
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
-| 语音/音频 | BGM、环境音、SFX 等音频资源当前约 36 MiB |
-| `public/assets` 总量 | 当前工作区约 436 个文件，约 290 MiB；已包含主菜单、地图 v2、战斗 v2 等 UI 替换资源 |
+| 语音/音频 | BGM、环境音、SFX 等音频资源当前约 35.6 MiB |
+| `public/assets` 总量 | 当前工作区约 358 个文件，约 202 MiB；已包含主菜单、地图 v2、战斗 v2 等 UI 替换资源 |
 
 运行时资源按目录统计：
 
 | 目录 | 文件数 | 体积 |
 | --- | ---: | ---: |
-| `audio` | 28 | 约 36.2 MB |
-| `author_qr` | 4 | 约 0.3 MB |
+| `audio` | 20 | 约 35.6 MB |
+| `author_qr` | 2 | 约 0.3 MB |
 | `cards_enemy` | 65 | 约 142 MB |
 | `cards_equipment` | 11 | 约 1.1 MB |
-| `cards_formula_placeholders` | 19 | 约 0.7 MB |
+| `cards_formula_placeholders` | 12 | 约 0.7 MB |
 | `cards_herb_placeholders` | 1 | 约 0.04 MB |
-| `cards_player` | 85 | 约 5.3 MB |
+| `cards_player` | 84 | 约 5.0 MB |
 | `cards_replacement_placeholders` | 48 | 约 1.1 MB |
-| `cards_special` | 1 | 约 0.002 MB（已删除 3 张无用卡图） |
-| `combat` | 33 | 约 2.7 MB（战斗 v2 切片与背景） |
+| `cards_special` | 0 | 0 MB（旧占位图已清理） |
+| `combat` | 31 | 约 2.7 MB（战斗 v2 切片与背景） |
 | `constitutions` | 9 | 约 0.6 MB |
+| `constitution_select` | 8 | 约 0.4 MB |
 | `intro` | 11 | 约 3.6 MB |
-| `main_menu` | 90 | 约 94.7 MB（主菜单设计图背景、按钮切片、悬停态、图标、标题文字、区域切片） |
+| `main_menu` | 37 | 约 7.3 MB（主菜单 v2 运行资源和字体子集；旧大字体与 QA 截图已清理） |
 | `map` | 12 | 约 0.2 MB（地图 v2 切片） |
 | 根目录背景图 | 10 | 约 1.9 MB（已压缩至 200KB 内） |
 
@@ -181,7 +191,7 @@ wechatgame/
 | `start_menu` | `StartMenu` | 主菜单、资源加载进度、9 体质选择入口。当前使用 1920×1080 参考坐标系做资源拼装：背景单独 cover 填充，标题与 6 个按钮 plate 独立渲染，按钮默认态/hover 态在同一网格锚点原地换图。运行资源位于 `game/public/assets/main_menu/`。当前按钮文字和 hover 图资源已有更新，不要重新按旧截图偏移 UI。 |
 | `card_codex` | `CardCodexView` | 图鉴，包括卡牌/敌人/术语 |
 | `map` | `MapView` | 地图节点选择。当前正在使用 v2 资源拼装界面，核心资源在 `game/public/assets/map/v2/`，核心 CSS 前缀是 `map-v2-*`，布局按 1920×1080 参考坐标系定位。 |
-| `combat` | `CombatView` | 战斗主界面。当前已重写为 v2 资源拼装界面，核心资源在 `game/public/assets/combat/v2/`，核心 CSS 前缀是 `combat-v2-*`。 |
+| `combat` | `CombatView` | 战斗主界面。当前已重写为 v2 资源拼装界面，核心资源在 `game/public/assets/combat/v2/`，核心 CSS 前缀是 `combat-v2-*`；手牌恢复旧版 `Hand` 真实卡牌交互，敌人生命/格挡/意图/状态为真实数据驱动。 |
 | `reward` | `RewardView` | 战斗奖励：3 张药材牌可选取/放弃，另展示本次装备掉落和真实药方蓝图奖励 |
 | `chest` | `ChestView` | 宝箱页存在；当前地图生成不产出宝箱节点 |
 | `rest` | `RestView` | 休息 |
@@ -198,7 +208,11 @@ wechatgame/
 
 - 主菜单 v2 已接入：`StartMenu.tsx` 使用 `game/public/assets/main_menu/` 下的 v2/default、v2/hover、regions 等资源；默认态与 hover 态必须同尺寸同锚点原地换图。
 - 地图 v2 正在接入：`MapView.tsx` 使用 `map-v2-*` 样式和 `game/public/assets/map/v2/` 切片，包括路径框、首领进度、统计图标、提示框。
-- 战斗 v2 正在接入：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括玩家资源面板、生命面板、敌人卡框、手牌底座、战斗记录、结束回合按钮。
+- 战斗 v2 已接入并持续微调：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括巡诊者窗口、被动/装备窗口、生命/格挡/真气窗口、结束回合按钮、敌人信息区和战斗记录。
+- 战斗手牌已恢复旧版 `Hand` 组件，不使用 `CombatHandV2` 或“卡牌合并/敌人牌”示例占位图。
+- 敌人信息区必须读取真实战斗状态：`enemy.currentHp/maxHp` 驱动血条，`enemy.block` 驱动格挡，`enemy.intent` 驱动意图说明，`enemy.statusEffects` 驱动状态列表。没有真实状态时不显示占位状态图。
+- 被动/装备窗口是同窗标签页：被动页只展示 `player.statusEffects`，装备页按 `player.relics` 聚合并用 `CARD_LIBRARY[relic.id].image` 展示真实装备卡图、名称、数量和描述。
+- 战斗 UI 动画 cue 是表现层逻辑：玩家/敌人生命、格挡、真气变化、敌人受击、敌人获得负面效果、敌人不同意图类型释放反馈都由 `CombatView` 本地 diff 和 CSS 动画生成，不应改变核心结算。
 - `game/src/data/runtimeAssetManifest.ts` 已随当前资源变化更新；继续改运行时资源后必须重新执行 `npm run assets:manifest`。
 
 ## 7. 体质系统
@@ -233,19 +247,21 @@ wechatgame/
 
 | 维度 | 分布 |
 | --- | --- |
-| 分类 | herb 85，formula 12，equipment 11 |
-| 战斗类型 | attack 27，skill 45，power 36 |
+| 分类 | herb 75，enemy 10，formula 12，equipment 11 |
+| 战斗类型 | attack 28，skill 44，power 36 |
 | 稀有度 | common 22，uncommon 30，rare 56 |
-| 费用 | 0 费 65，1 费 31，2 费 9，3 费 3 |
+| 费用 | 0 费 44，1 费 45，2 费 15，3 费 4 |
 | 目标 | self 73，single_enemy 23，all_enemies 12 |
 
 规则要点：
 
 - 药材牌是普通玩家可打出卡牌的主体。
+- `黄芩清肺`（`huangqin`）已从 `formula_ingredient_placeholder`/不可打出改为可打出的 0 费攻击牌：`huangqin_effect` 对单体敌人造成 4 点伤害并施加 1 层热邪；它仍保留 `herb` 分类，可继续作为药方蓝图材料。
 - 药方牌共有 12 张，只能通过合成台消耗完整配方药材实例后加入牌组。
 - 药方蓝图共有 12 种，正常地图战斗胜利每次奖励 1 张真实蓝图；重复蓝图录入不会重复污染进度。
 - 第一次成功合成某药方时，本局显示对应汤头歌诀；同一局再次合成不重复弹。
-- 装备牌共有 11 张，只通过战斗胜利掉落：普通 10%、精英 20%、首领 50%。装备获得后作为当前跑图全局被动，不进入手牌、牌组、商店、宝箱或普通奖励池。装备可重复获得（不再唯一），效果按持有数量倍增（通过 `countRelic` / `countEquipment`），`hasRelic` 已替换为 `countRelic` 倍乘逻辑。
+- 攻击牌按印刷费用和费用修正消耗真气；第一轮平衡已取消 `resolveCardPlay` 中“攻击牌实际费用强制为 0”的特例。
+- 装备牌共有 11 张，只通过战斗胜利掉落：普通 10%、精英 20%、首领 50%。装备获得后作为当前跑图全局被动，不进入手牌、牌组、商店、宝箱或普通奖励池。装备可重复获得（不再唯一），但效果按 `EQUIPMENT_EFFECT_CAPS` 有效层数上限结算。
 - 允许持有同模板多张卡，系统以运行时实例 ID 区分；模板数量上限保留为 10 张。药房合成页会显示每张候选牌的同模板拥有数量（含 `x1`），并显示牌组、手牌、材料计数。
 
 不要只改卡牌文案。凡是修改卡牌能力，必须同时检查：
@@ -438,9 +454,9 @@ wechatgame/
 
 当前 UI 替换新增资源目录：
 
-- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 33 个文件，包含 `background.png`、玩家资源/生命面板、敌人卡框、手牌底座、按钮和状态图标。
+- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 31 个文件，包含 `background.png`、玩家资源/生命面板、被动/装备面板、按钮、血条和状态图标。
 - `game/public/assets/map/v2/`：地图 v2 资源拼装切片，当前约 12 个文件，包含路线框、首领进度、提示面板和统计图标。
-- `game/public/assets/main_menu/`：主菜单 v2 资源、按钮文字和 hover 图资源已有更新，不要按旧截图重新偏移文字或 icon。
+- `game/public/assets/main_menu/`：主菜单 v2 运行资源、按钮文字、hover 图和字体子集；旧大字体、旧区域切片和 QA 截图已清理，不要按旧截图重新偏移文字或 icon。
 
 关键工具：
 
@@ -482,12 +498,13 @@ npm test -- --run
 npm run build
 ```
 
-当前验证（2026-05-14）：`npm test -- --run` 为 6 个测试文件、71 个测试用例通过；`npm run build` 通过。构建时 Vite 会提示主 JS chunk 约 582 kB，略高于默认 500 kB 建议线。
+当前验证（2026-05-26）：`npm test -- --run` 为 6 个测试文件、89 个测试用例通过；`npm run build` 通过。当前主 JS chunk 约 487 kB。
 
 测试重点：
 
 - 卡牌规则：伤害、格挡、治疗、抽牌、状态、特殊卡。
 - 药方系统：完整配方校验、合成消耗、歌诀显示、药方牌战斗效果。
+- 药材/合成材料双身份：`黄芩清肺` 可打出，同时仍可作为药方蓝图材料。
 - 装备系统：掉落概率、装备不进手牌、11 种装备被动。
 - 体质规则：9 种体质被动。
 - Boss 行为：肝火炽盛、脾虚湿困、五行失调等。
@@ -512,11 +529,16 @@ npm run build
 - `game/src/index.css` 很大，UI 调整前应先搜索已有 class，避免重复造样式系统。
 - 当前 UI v2 主要 class 前缀是 `map-v2-*` 和 `combat-v2-*`。改地图或战斗时优先沿用这些前缀，不要再新建一套并行 UI 系统。
 - `CombatView.tsx` 当前已重写为资源拼装界面；如果战斗出牌、选敌、结束回合异常，先检查 v2 组件是否仍正确调用 `playCard`、`selectEnemy`、`endTurn`、`completeCombat`。
+- `CombatView.tsx` 里敌人/玩家受击、格挡、真气、负面效果和敌方行动动画均为 UI-only cue。不要为了动画反馈去修改 `shared/core/gameCore.ts` 的结算结果或 store 字段结构。
+- 战斗左侧被动/装备窗口采用标签页，不要重新把装备列表混回被动页；被动页需要避免图标、文字、类型标签重叠。
+- 战斗手牌当前依赖旧版 `Hand` 组件和 `viewportTier`，不要恢复已删除的 `CombatHandV2` 占位手牌。
+- `ConstitutionIntroOverlay.tsx` 的体质选择前动画已恢复为旧版真实卡面“小包洗牌”过场，`CONSTITUTION_CINEMATIC_MS` 为 2200ms；体质选择页本身仍保留当前新版。
 - `MapView.tsx` 当前已重写为资源拼装界面；如果节点不可点击或 Boss 通道异常，先检查 `startCombat(node.id)`、`combatWinsThisCycle`、`getBossUnlockWinsRequired()` 是否仍按原逻辑使用。
 - 敌方 GIF 是最大性能风险。新增动图前必须压缩并更新 manifest。
-- `npm run build` 当前通过，但主 JS chunk 约 582 kB，后续做功能增长时需要留意拆包或按需加载。
+- `npm run build` 当前通过，主 JS chunk 约 487 kB；后续做功能增长时仍需要留意拆包或按需加载。
 - `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；GIF 与 poster 当前是主链路，不要误删 fallback。
 - 根目录 `未使用/` 保存原始素材、历史记录和导入来源，不应删除。
+- 根目录 `codex_crash_log.md` 是 Codex 闪退、浏览器插件和本机修复记录，后续排查异常退出时优先追加记录，不要当作普通临时日志删除。
 - **Git 网络**：中国大陆可能对 GitHub HTTPS 做 SNI 干扰（TLS 通过但 HTTP 被 RST）。当前已配置 SSH：`git@github.com:r1062046861-RXQ/test1.git`，密钥 `~/.ssh/id_ed25519`。
 
 ### UI 替换关键词规范
@@ -613,19 +635,35 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 - `tmp/`
 - `__pycache__/`
 - `game/dist/`
+- `offline-windows/web/`
+- `wuxing-yidao-offline-windows.zip`
 - 根目录临时 JSON、截图、过期日志
 
 不应自动删除：
 
 - `未使用/` 中的原始素材、历史记录和导入来源
+- `codex_crash_log.md` 中的 Codex 闪退/插件修复记录
 - `game/public/assets/`
 - `game/node_modules/`
 - 根目录启动测试文件 `open-web-game.*`
+- `offline-windows/open-game.cmd`、`offline-windows/open-game.ps1`、`offline-windows/README_OFFLINE.txt`
 
 ## 21. 最近重大变更
 
 | 变更 | 说明 |
 |------|------|
+| Windows 11 离线版 | 新增 `offline-windows/open-game.cmd` 与 `open-game.ps1`，用 PowerShell 内置本地 HTTP 服务启动 `offline-windows/web`，目标电脑不需要 Node.js、npm、Python 或网络；`web/` 和 zip 为本机构建产物，不进 Git。 |
+| 首页右侧按钮回退静态版 | 首页右侧“公告/活动/图鉴/设置”已退回旧静态 `side_menu.png`，移除动态圈、拆分图标和拆分文字层。 |
+| 事件装备点亮图鉴 | `handleEventChoice` 的 `addRelic` 分支现在会把真实装备牌同步加入 `player.obtainedCardIds`，修复事件获得装备后卡牌图鉴不点亮的问题，并补充 store 回归测试。 |
+| 2026-05-26 线上发布 | 提交 `aefeb0e` 已推送 `origin/main`，GitHub Pages 工作流成功，`https://test1.renxuanqi.top` 返回 200。 |
+| 体质抽牌动画回退 | `ConstitutionIntroOverlay.tsx` 已恢复旧版真实卡面“小包洗牌”动画；接口 `ConstitutionIntroStage`、`CONSTITUTION_CINEMATIC_MS`、`onSkip/onClose/onSelect` 保持不变，选择页本身不回滚。 |
+| 战斗手牌回退旧版 | 战斗中手牌使用现有 `Hand` 组件，保留长按预览和出牌逻辑；不再使用新写的占位式 `CombatHandV2`。 |
+| 战斗敌人信息真实化 | 敌人 HP 血条、生命数字、格挡、意图、状态全部读取真实 `enemy` 数据；没有真实状态时不显示占位状态图。 |
+| 被动/装备窗口标签页 | 左侧被动窗口改为“被动效果/装备”同窗标签页；被动页只显示状态，装备页按 `player.relics` 聚合显示真实装备卡图、数量和描述。 |
+| 战斗反馈增强 | 玩家/敌人掉血、回血、格挡、真气变化有更明显浮字；敌人受攻击或获得负面效果有视觉反馈；敌方 attack/defend/buff/debuff/special 意图有不同释放动画。 |
+| `黄芩清肺` 可打出 | `huangqin` 改为 0 费单体攻击牌，造成 4 点伤害并施加 1 层热邪，同时仍作为药方合成材料；已补充规则和 store 测试。 |
+| 第一轮平衡调整 | 取消攻击牌强制 0 费；高收益 0 费牌、控制牌、起始牌组、普通敌双动概率和装备重复收益已削峰，详见 `BALANCE_GUIDE.md`。 |
+| 战斗示例图资源清理 | “卡牌合并.png / 敌人牌.png”等示例图不应出现在 UI 资产中；当前战斗 UI 使用 `combat/v2` 真实切片和数据驱动状态。 |
 | 战斗 v2 资源拼装接入 | `CombatView.tsx` 已重写为资源拼装界面，使用 `game/public/assets/combat/v2/` 资源与 `combat-v2-*` 样式；保留出牌、选敌、结束回合、返回地图、管理员跳过战斗等原有流程入口。 |
 | 地图 v2 资源拼装接入 | `MapView.tsx` 已重写为资源拼装界面，使用 `game/public/assets/map/v2/` 资源与 `map-v2-*` 样式；保留地图节点点击、Boss 3 胜解锁、手牌一览等原有流程。 |
 | 地图页合成台入口调整 | `MapView` 自己渲染 `<SynthesisBench />`；`App.tsx` 的地图分支不再通过 `<GameSurface synthesisBench>` 注入，后续不要重复渲染两个合成台入口。 |
@@ -640,7 +678,7 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | 三兄弟数值 | Act1 二哥路线从满血开局无效回血改为生命上限 +2 + 50 金币；其他路线保留合理化后的事件奖励 |
 | 主页资源加载进度 | `runtimeAssetLoading` 的总量只统计实际预加载的 critical/static 资源，不再把未预载 GIF 纳入加载条分母 |
 | 事件系统 v2.1 | 新增 1 主线（3 幕分叉）+ 11 支线事件，含完整叙事、选项效果、后果动画；`eventLog`/`eventMarkers` 持久化 |
-| 装备堆叠 | 装备不再唯一，`hasRelic` 替换为 `countRelic` 倍乘逻辑，11 件装备全部支持堆叠 |
+| 装备堆叠 | 装备不再唯一，但通过 `EQUIPMENT_EFFECT_CAPS` 限制有效层数；重复装备可持有，超过上限不再继续放大效果 |
 | 事件密度调整 | 层类型概率 25%→35%，保底间隔 4→2 场战斗，三幕全通约 11-12 事件 |
 | 24 张卡牌重命名 | 药材名统一改为「药名+功效」格式（如「葛根」→「葛根解肌」） |
 | randomCard 效果 | 事件可按 rarity+cardType 从牌库随机抽取卡牌 |
@@ -665,7 +703,7 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | Boss 独立通道 | 从 event 直连，3胜解锁；Boss 后 `currentAct++` 进入下一幕 |
 | 敌人缩放 | 普通开战流程只应用 HP 缩放，尚未应用 `damageBonus` |
 | 管理员章节选择 | `startGame('admin', actNum)` 可直接从 Act 1/2/3 开始管理员体质 |
-| 管理员初始牌组扩充 | 管理员体质运行时含全部药材牌（85张）+ 药方牌（12张）入初始牌组，装备作为遗物持有 |
+| 管理员初始牌组扩充 | 管理员体质运行时含全部药材牌（75张）+ 药方牌（12张）入初始牌组，装备作为遗物持有 |
 | 管理员全图鉴 | 管理员体质 `obtainedCardIds` 含所有药材+药方+装备，图鉴全部点亮 |
 | 背景图全面换新 | 战斗/地图/休憩/药房/合成台使用新艺术图，每张压缩至200KB内 |
 | 音频全面压缩 | 所有 BGM 重编码为 96kbps，环境音 64kbps 单声道，当前音频目录约 29MB |

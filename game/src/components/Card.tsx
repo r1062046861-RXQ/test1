@@ -258,7 +258,7 @@ export const Card: React.FC<CardProps> = ({
         <div className="combat-card__header relative z-10">
           <div className="combat-card__header-row">
             <div className={cn('combat-card__cost', costTheme[card.type])}>
-              {cardCategory === 'equipment' ? '装' : card.type === 'attack' ? '攻' : card.cost}
+              {cardCategory === 'equipment' ? '装' : card.cost}
             </div>
 
             <div className="combat-card__title-pill">

@@ -78,18 +78,18 @@ const ACT_SUBTITLES = {
 } as const;
 
 const NODE_META: Record<NodeType, { label: string; icon: React.ReactNode }> = {
-  start: { label: '起点', icon: <ScrollText size={18} /> },
-  combat: { label: '战斗', icon: <Skull size={18} /> },
-  elite: { label: '精英', icon: <ShieldAlert size={18} /> },
-  boss: { label: '首领', icon: <Crown size={20} /> },
-  event: { label: '奇遇', icon: <ScrollText size={18} /> },
-  shop: { label: '药房', icon: <ShoppingBag size={18} /> },
-  rest: { label: '休憩', icon: <BedSingle size={18} /> },
-  chest: { label: '宝箱', icon: <ScrollText size={18} /> },
+  start: { label: '起点', icon: <ScrollText size={24} /> },
+  combat: { label: '战斗', icon: <Skull size={24} /> },
+  elite: { label: '精英', icon: <ShieldAlert size={24} /> },
+  boss: { label: '首领', icon: <Crown size={28} /> },
+  event: { label: '奇遇', icon: <ScrollText size={24} /> },
+  shop: { label: '药房', icon: <ShoppingBag size={24} /> },
+  rest: { label: '休憩', icon: <BedSingle size={24} /> },
+  chest: { label: '宝箱', icon: <ScrollText size={24} /> },
 };
 
 const LAYER_SPACING = 118;
-const NODE_CENTER_OFFSET = 30;
+const NODE_CENTER_OFFSET = 34;
 
 const getMapBackground = (currentAct: number) => {
   if (currentAct === 1) return '/assets/background_map_act1.png';
@@ -120,10 +120,11 @@ const HandOverview: React.FC<HandOverviewProps> = ({ deck, relics }) => {
       <button
         type="button"
         className="map-v2-action map-v2-action--deck"
-        style={refRect(1676, 829, 156, 68)}
+        style={refRect(1576, 829, 260, 72)}
         aria-label={`查看牌组，当前 ${deck.length} 张牌`}
         onClick={() => setOpen(true)}
       >
+        <ScrollText size={26} aria-hidden="true" />
         <span className="map-v2-action__label">手牌一览</span>
         <span className="map-v2-action__count">{deck.length} 牌</span>
       </button>
@@ -435,7 +436,7 @@ export const MapView: React.FC = () => {
                             whileHover={canEnter ? { scale: 1.08, y: -3 } : undefined}
                             whileTap={canEnter ? { scale: 0.96 } : undefined}
                           >
-                            {bossLocked ? <Lock size={19} /> : meta.icon}
+                            {bossLocked ? <Lock size={24} /> : meta.icon}
                           </motion.span>
                         </button>
                         <div className="map-v2-node__label">{meta.label}</div>

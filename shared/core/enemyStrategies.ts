@@ -248,7 +248,14 @@ class SpleenDampnessStrategy implements EnemyBehaviorStrategy {
       executeDefendIntent(enemy, intent);
       ctx.log(`${enemy.name} 获得了 ${intent.value || 0} 点格挡`);
     } else if (intent.type === 'debuff') {
-      ctx.applyDebuffToPlayer({ id: 'cost_up', name: '脾虚湿困', type: 'debuff', stacks: 1, canStack: true, description: '卡牌消耗增加', duration: 3 });
+      const existingCostUp = ctx.getStatus(ctx.player, 'cost_up');
+      if (existingCostUp) {
+        existingCostUp.stacks = 1;
+        existingCostUp.canStack = false;
+        existingCostUp.duration = Math.max(existingCostUp.duration ?? 0, 2);
+      } else {
+        ctx.applyDebuffToPlayer({ id: 'cost_up', name: '脾虚湿困', type: 'debuff', stacks: 1, canStack: false, description: '卡牌消耗增加', duration: 2 });
+      }
       ctx.applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
       ctx.log('湿困中焦：卡牌消耗增加');
     }
@@ -272,13 +279,15 @@ class HeartKidneyGapStrategy implements EnemyBehaviorStrategy {
     if (intent.type === 'attack') {
       executeAttackIntent(enemy, intent, ctx);
     } else if (intent.type === 'debuff') {
-      if (Math.random() < 0.5) {
+      const roll = Math.random();
+      if (roll < 0.45) {
         ctx.applyDebuffToPlayer({ id: 'draw_down', name: '心悸不安', type: 'debuff', stacks: 1, canStack: true, description: '下回合少抽牌', duration: 1 });
-        ctx.applyDebuffToPlayer({ id: 'no_block', name: '心肾不交', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
         ctx.log('心悸不安：下回合抽牌减少');
+      } else if (roll < 0.85) {
+        ctx.applyDebuffToPlayer({ id: 'no_block', name: '心肾不交', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
+        ctx.log('心肾不交：下回合无法获得格挡');
       } else {
         ctx.applyDebuffToPlayer({ id: 'stun', name: '痰蒙心窍', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
-        ctx.applyDebuffToPlayer({ id: 'no_block', name: '心肾不交', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
         ctx.log('痰蒙心窍：你被眩晕');
       }
     }
@@ -315,10 +324,12 @@ class TanmengxinqiaoStrategy implements EnemyBehaviorStrategy {
       if (ctx.getStacks(ctx.player, 'draw_down') > 0 || ctx.getStacks(ctx.player, 'no_block') > 0) {
         ctx.applyDebuffToPlayer({ id: 'stun', name: '痰蒙心窍', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
         ctx.log('痰蒙心窍：你被迷窍眩晕');
-      } else {
+      } else if (Math.random() < 0.5) {
         ctx.applyDebuffToPlayer({ id: 'draw_down', name: '神志昏蒙', type: 'debuff', stacks: 1, canStack: true, description: '下回合少抽牌', duration: 1 });
+        ctx.log('痰蒙心窍：下回合少抽');
+      } else {
         ctx.applyDebuffToPlayer({ id: 'no_block', name: '窍闭失固', type: 'debuff', stacks: 1, canStack: true, description: '下回合无法获得格挡', duration: 1 });
-        ctx.log('痰蒙心窍：下回合少抽且无法获得格挡');
+        ctx.log('痰蒙心窍：下回合无法获得格挡');
       }
     }
   }
@@ -431,11 +442,9 @@ class ShenbunaqiStrategy implements EnemyBehaviorStrategy {
     if (intent.type === 'attack') {
       executeAttackIntent(enemy, intent, ctx);
     } else if (intent.type === 'debuff') {
-      ctx.applyDebuffToPlayer({ id: 'energy_drain', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '真气上限降低', duration: 2 });
-      ctx.applyDebuffToPlayer({ id: 'max_energy_down', name: '纳气失司', type: 'debuff', stacks: 1, canStack: true, description: '下回合真气上限 -1', duration: 1 });
+      ctx.applyDebuffToPlayer({ id: 'energy_drain', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '真气上限降低', duration: 1 });
       ctx.applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-      ctx.applyDebuffToPlayer({ id: 'weak', name: '气虚失摄', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 1 });
-      ctx.log('肾不纳气：真气受抑，寒邪与虚弱同时侵袭');
+      ctx.log('肾不纳气：真气受抑，寒邪侵袭');
     }
   }
 }
@@ -888,6 +897,6 @@ export const getEnemyActionCount = (enemy: Enemy, currentAct: number): number =>
   const rank = getEnemyRank(enemy);
   if (rank !== 'common') return 2;
   if (currentAct <= 1) return 1;
-  if (currentAct === 2) return Math.random() < 0.65 ? 2 : 1;
-  return 2;
+  if (currentAct === 2) return Math.random() < 0.45 ? 2 : 1;
+  return Math.random() < 0.8 ? 2 : 1;
 };

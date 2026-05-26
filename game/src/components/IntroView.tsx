@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { resolveAssetUrl } from '../utils/assets';
 
 const REF_W = 1920;
 const REF_H = 1080;
+const SIDE_MENU_RECT = { left: 1753, top: 87, width: 81, height: 462 };
 
 type IntroPanel = 'notice' | 'activity' | 'settings' | null;
 type SideActionId = 'notice' | 'activity' | 'codex' | 'settings';
@@ -27,6 +28,8 @@ const SIDE_ACTIONS: Array<{
   { id: 'codex', label: '图鉴', top: 327 },
   { id: 'settings', label: '设置', top: 447 },
 ];
+
+const sideMenuRect = () => refRect(SIDE_MENU_RECT.left, SIDE_MENU_RECT.top, SIDE_MENU_RECT.width, SIDE_MENU_RECT.height);
 
 const PlaceholderPanel: React.FC<{
   type: Exclude<IntroPanel, 'settings' | null>;
@@ -153,17 +156,9 @@ const IntroSettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 export const IntroView: React.FC = () => {
   const setPhase = useGameStore((state) => state.setPhase);
-  const [acceptedAgreement, setAcceptedAgreement] = useState(false);
   const [activePanel, setActivePanel] = useState<IntroPanel>(null);
-  const [showAgreementHint, setShowAgreementHint] = useState(false);
 
   const handleEnter = () => {
-    if (!acceptedAgreement) {
-      setShowAgreementHint(true);
-      window.setTimeout(() => setShowAgreementHint(false), 1400);
-      return;
-    }
-
     setPhase('start_menu');
   };
 
@@ -204,7 +199,7 @@ export const IntroView: React.FC = () => {
               src={resolveAssetUrl('/assets/intro/side_menu.png')}
               alt=""
               aria-hidden="true"
-              style={refRect(1753, 87, 81, 462)}
+              style={sideMenuRect()}
             />
             {SIDE_ACTIONS.map((action) => (
               <button
@@ -218,14 +213,10 @@ export const IntroView: React.FC = () => {
             ))}
             <button
               type="button"
-              className={[
-                'intro-page__enter',
-                acceptedAgreement ? 'intro-page__enter--enabled' : 'intro-page__enter--locked',
-              ].join(' ')}
+              className="intro-page__enter intro-page__enter--enabled"
               style={refRect(431, 895, 1149, 66)}
               onClick={handleEnter}
               aria-label="进入主菜单"
-              aria-disabled={!acceptedAgreement}
             >
               <img
                 src={resolveAssetUrl('/assets/intro/enter_main_menu.png')}
@@ -233,39 +224,6 @@ export const IntroView: React.FC = () => {
                 aria-hidden="true"
               />
             </button>
-            <button
-              type="button"
-              className="intro-page__agreement"
-              style={refRect(755, 991, 503, 29)}
-              onClick={() => {
-                setAcceptedAgreement((current) => !current);
-                setShowAgreementHint(false);
-              }}
-              aria-pressed={acceptedAgreement}
-              aria-label="我已仔细阅读并同意用户协议和隐私政策"
-            >
-              <img
-                src={resolveAssetUrl('/assets/intro/agreement.png')}
-                alt=""
-                aria-hidden="true"
-              />
-              <span className="intro-page__agreement-check" aria-hidden="true">
-                {acceptedAgreement ? <Check size={20} strokeWidth={3} /> : null}
-              </span>
-            </button>
-            <AnimatePresence>
-              {showAgreementHint ? (
-                <motion.div
-                  className="intro-page__agreement-hint"
-                  style={refRect(775, 956, 460, 28)}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                >
-                  请先勾选阅读协议。
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
           </div>
         </div>
       </div>

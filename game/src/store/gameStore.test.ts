@@ -11,7 +11,7 @@ import {
 import { FORMULA_BLUEPRINTS } from '../data/formulas';
 import { useGameStore } from './gameStore';
 import * as progressiveAssets from '../utils/progressiveAssets';
-import { getMainlineActData } from '../../../shared/data/events';
+import { SIDE_EVENTS, getMainlineActData } from '../../../shared/data/events';
 
 describe('Game Store', () => {
   beforeEach(() => {
@@ -175,6 +175,71 @@ describe('Game Store', () => {
     expect(state.eventMarkers?.three_brothers).toBe('erge');
   });
 
+  it('blocks event options when negative gold costs cannot be paid', () => {
+    const event = SIDE_EVENTS.find(entry => entry.id === 'side_bianzheng')!;
+    useGameStore.setState({
+      currentEvent: event,
+      eventChosenIndex: null,
+      player: {
+        ...useGameStore.getState().player,
+        gold: 0,
+      },
+    });
+
+    useGameStore.getState().handleEventChoice(event.id, 0);
+
+    expect(useGameStore.getState().eventChosenIndex).toBeNull();
+    expect(useGameStore.getState().player.relics).toHaveLength(0);
+    expect(useGameStore.getState().player.gold).toBe(0);
+
+    useGameStore.setState({
+      player: {
+        ...useGameStore.getState().player,
+        gold: 120,
+      },
+    });
+
+    useGameStore.getState().handleEventChoice(event.id, 0);
+
+    expect(useGameStore.getState().eventChosenIndex).toBe(0);
+    expect(useGameStore.getState().player.relics).toContainEqual(expect.objectContaining({ id: 'equipment_bianzheng' }));
+    expect(useGameStore.getState().player.obtainedCardIds).toContain('equipment_bianzheng');
+    expect(useGameStore.getState().player.gold).toBe(0);
+
+    useGameStore.setState({
+      player: {
+        ...useGameStore.getState().player,
+        gold: 120,
+      },
+    });
+
+    useGameStore.getState().handleEventChoice(event.id, 0);
+
+    const obtainedBianzhengIds = useGameStore.getState().player.obtainedCardIds.filter(
+      (cardId) => cardId === 'equipment_bianzheng',
+    );
+    expect(obtainedBianzhengIds).toHaveLength(1);
+  });
+
+  it('shop combine cannot create cards from later acts', () => {
+    const store = useGameStore.getState();
+    store.addCardToDeck('gancao');
+    store.addCardToDeck('chenpi');
+    store.addCardToDeck('huangqin');
+
+    const materialIds = useGameStore.getState().player.deck.map(card => card.id);
+    expect(CARD_LIBRARY.longdan.act).toBe(3);
+
+    useGameStore.getState().combineCards(materialIds, 'longdan');
+    expect(useGameStore.getState().player.deck).toHaveLength(3);
+    expect(useGameStore.getState().player.deck.some(card => getTemplateCardId(card) === 'longdan')).toBe(false);
+
+    useGameStore.setState({ currentAct: 3 });
+    useGameStore.getState().combineCards(materialIds, 'longdan');
+    expect(useGameStore.getState().player.deck).toHaveLength(1);
+    expect(getTemplateCardId(useGameStore.getState().player.deck[0])).toBe('longdan');
+  });
+
   it('starts combat correctly', () => {
     const store = useGameStore.getState();
     store.startGame();
@@ -238,7 +303,7 @@ describe('Game Store', () => {
     });
     const randomSpy = vi.spyOn(Math, 'random')
       .mockReturnValue(0)
-      .mockReturnValueOnce(0.09)
+      .mockReturnValueOnce(0.05)
       .mockReturnValueOnce(0);
 
     store.completeCombat();
@@ -325,7 +390,7 @@ describe('Game Store', () => {
     });
     const randomSpy = vi.spyOn(Math, 'random')
       .mockReturnValue(0)
-      .mockReturnValueOnce(0.09)
+      .mockReturnValueOnce(0.05)
       .mockReturnValueOnce(0);
 
     store.completeCombat();
@@ -337,6 +402,50 @@ describe('Game Store', () => {
     expect(useGameStore.getState().pendingFormulaBlueprintId).toBe(FORMULA_BLUEPRINTS[0].id);
   });
 
+  it('Act 1 equipment rewards use the early equipment pool only', () => {
+    const store = useGameStore.getState();
+    store.startGame();
+    const map = useGameStore.getState().map;
+    const combatNode = map.flatMap(layer => layer.nodes).find(node => node.type === 'combat');
+    expect(combatNode).toBeDefined();
+
+    combatNode!.status = 'available';
+    useGameStore.setState({
+      map,
+      currentAct: 1,
+      currentNodeId: combatNode!.id,
+    });
+    const randomSpy = vi.spyOn(Math, 'random')
+      .mockReturnValue(0)
+      .mockReturnValueOnce(0.05)
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0);
+
+    store.completeCombat();
+    randomSpy.mockRestore();
+
+    expect(useGameStore.getState().pendingEquipmentRewardId).toBe('equipment_tianren');
+    expect(['equipment_ziwuliuzhu', 'equipment_yinyang', 'equipment_bianzheng', 'equipment_qiji']).not.toContain(
+      useGameStore.getState().pendingEquipmentRewardId,
+    );
+  });
+
+  it('high-impact equipment side events are delayed or carry real costs', () => {
+    const byId = (id: string) => SIDE_EVENTS.find(event => event.id === id)!;
+
+    expect(byId('side_needle_stage2').actRequirement).toBe(2);
+    expect(byId('side_yaowang').actRequirement).toBe(2);
+    expect(byId('side_zangxiang').actRequirement).toBe(2);
+    expect(byId('side_qixue').actRequirement).toBe(2);
+    expect(byId('side_bianzheng').actRequirement).toBe(3);
+    expect(byId('side_yinyang').actRequirement).toBe(3);
+    expect(byId('side_qiji').actRequirement).toBe(3);
+
+    expect(byId('side_bianzheng').options[0].effects).toContainEqual({ type: 'goldChange', value: -120 });
+    expect(byId('side_yinyang').options[1].effects).toContainEqual({ type: 'damage', value: 18 });
+    expect(byId('side_qixue').options[0].effects).toContainEqual({ type: 'maxHpChange', value: -2 });
+  });
+
   it('子午流注让非首回合补牌上限提高到6', () => {
     useGameStore.setState({
       phase: 'combat',
@@ -344,6 +453,12 @@ describe('Game Store', () => {
       player: {
         ...useGameStore.getState().player,
         relics: [
+          {
+            id: 'equipment_ziwuliuzhu',
+            name: CARD_LIBRARY.equipment_ziwuliuzhu.name,
+            description: CARD_LIBRARY.equipment_ziwuliuzhu.description,
+            effectId: CARD_LIBRARY.equipment_ziwuliuzhu.effectId,
+          },
           {
             id: 'equipment_ziwuliuzhu',
             name: CARD_LIBRARY.equipment_ziwuliuzhu.name,
@@ -390,14 +505,14 @@ describe('Game Store', () => {
       player: {
         ...started.player,
         hp: 70,
-        relics: [zhiweibing, qixueJinye, zhengti],
+        relics: [zhiweibing, zhiweibing, zhiweibing, qixueJinye, qixueJinye, zhengti, zhengti, zhengti],
       },
     });
 
     store.startCombat(combatNode!.id);
     const inCombat = useGameStore.getState();
-    expect(inCombat.player.block).toBe(5);
-    expect(inCombat.player.hp).toBe(71);
+    expect(inCombat.player.block).toBe(10);
+    expect(inCombat.player.hp).toBe(72);
 
     useGameStore.setState({
       phase: 'rest',
@@ -407,7 +522,7 @@ describe('Game Store', () => {
       },
     });
     store.healPlayer(2);
-    expect(useGameStore.getState().player.hp).toBe(73);
+    expect(useGameStore.getState().player.hp).toBe(74);
   });
 
   it('keeps first-turn damage against boss_liver_fire in the store immediately after playing an attack', () => {

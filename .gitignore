@@ -13,6 +13,9 @@ game/.vite/
 game-mini/dist/
 game-mini/node_modules/
 
+offline-windows/web/
+wuxing-yidao-offline-windows.zip
+
 *.log
 未使用/
 open-web-game.cmd

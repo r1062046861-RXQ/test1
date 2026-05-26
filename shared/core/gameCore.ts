@@ -1,4 +1,5 @@
 import { Card, Enemy, EnemyIntent, GamePhase, MapLayer, MapNode, NodeType, Player, StatusEffect } from '../baseTypes';
+import { EQUIPMENT_EFFECT_CAPS } from '../data/cards';
 import { ENEMIES } from '../data/enemies';
 import { getEnemyStrategy, getEnemyActionCount, type EnemyActionContext } from './enemyStrategies';
 
@@ -93,6 +94,14 @@ const hasRelic = (player: Player, id: string) =>
 const countRelic = (player: Player, id: string): number =>
   player.relics?.filter(relic => relic.id === id).length ?? 0;
 
+const getEquipmentEffectCap = (id: string): number =>
+  Object.prototype.hasOwnProperty.call(EQUIPMENT_EFFECT_CAPS, id)
+    ? EQUIPMENT_EFFECT_CAPS[id as keyof typeof EQUIPMENT_EFFECT_CAPS]
+    : Number.POSITIVE_INFINITY;
+
+const countRelicCapped = (player: Player, id: string): number =>
+  Math.min(countRelic(player, id), getEquipmentEffectCap(id));
+
 const getCombatRound = (player: Player) =>
   getStacks(player, 'combat_round') || 1;
 
@@ -107,7 +116,7 @@ const gainPlayerBlock = (player: Player, amount: number) => {
 
 const takePlayerHpDamage = (player: Player, amount: number) => {
   if (amount <= 0) return 0;
-  const finalDamage = hasRelic(player, 'equipment_zhengti') ? Math.max(0, amount - countRelic(player, 'equipment_zhengti')) : amount;
+  const finalDamage = hasRelic(player, 'equipment_zhengti') ? Math.max(0, amount - countRelicCapped(player, 'equipment_zhengti')) : amount;
   if (finalDamage <= 0) return 0;
   player.hp = Math.max(0, player.hp - finalDamage);
   return finalDamage;
@@ -126,7 +135,7 @@ const applyHealToPlayer = (player: Player, amount: number) => {
     heal += 1;
   }
   if (hasRelic(player, 'equipment_zhengti')) {
-    heal += countRelic(player, 'equipment_zhengti');
+    heal += countRelicCapped(player, 'equipment_zhengti');
   }
   if (hasPassive(player, 'blood_stasis_passive')) {
     heal = Math.floor(heal * 0.5);
@@ -589,7 +598,7 @@ export const resolveCardPlay = (
   };
 
   const { cost: baseCost, consumeCostUp } = computeCardCost();
-  const effectiveCost = card.type === 'attack' ? 0 : baseCost;
+  const effectiveCost = baseCost;
   if (newPlayer.energy < effectiveCost) return null;
   if (consumeCostUp) {
     removeStatus(newPlayer, 'cost_up_next');
@@ -638,20 +647,17 @@ export const resolveCardPlay = (
     if (getStacks(newPlayer, 'no_block') > 0) {
       blockGain = 0;
     }
-    if (getStacks(newPlayer, 'double_block') > 0) {
-      blockGain *= 2;
-    }
-    if (getStacks(newPlayer, 'formula_zhenwu_guard') > 0) {
+    if (getStacks(newPlayer, 'double_block') > 0 || getStacks(newPlayer, 'formula_zhenwu_guard') > 0) {
       blockGain = Math.floor(blockGain * 1.5);
     }
     if (hasPassive(newPlayer, 'blood_stasis_passive')) {
       blockGain = Math.floor(blockGain * 0.5);
     }
     if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 >= newPlayer.maxHp) {
-      blockGain += countRelic(newPlayer, 'equipment_yinyang');
+      blockGain += countRelicCapped(newPlayer, 'equipment_yinyang');
     }
     blockGain += getStacks(newPlayer, 'equipment_zhengqi');
-    const totalGain = getStacks(newPlayer, 'block_echo') > 0 ? blockGain * 2 : blockGain;
+    const totalGain = getStacks(newPlayer, 'block_echo') > 0 ? Math.floor(blockGain * 1.5) : blockGain;
     if (totalGain > 0) {
       gainPlayerBlock(newPlayer, totalGain);
     }
@@ -780,10 +786,10 @@ export const resolveCardPlay = (
       dmg -= 1;
     }
     if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
-      dmg += countRelic(newPlayer, 'equipment_yinyang');
+      dmg += countRelicCapped(newPlayer, 'equipment_yinyang');
     }
     if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
-      dmg += countRelic(newPlayer, 'equipment_tianren');
+      dmg += countRelicCapped(newPlayer, 'equipment_tianren');
     }
     if (getStacks(newPlayer, 'attack_buff') > 0) {
       dmg += 3;
@@ -822,10 +828,10 @@ export const resolveCardPlay = (
         dmg -= 1;
       }
       if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) {
-        dmg += countRelic(newPlayer, 'equipment_yinyang');
+        dmg += countRelicCapped(newPlayer, 'equipment_yinyang');
       }
       if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) {
-        dmg += countRelic(newPlayer, 'equipment_tianren');
+        dmg += countRelicCapped(newPlayer, 'equipment_tianren');
       }
       const dealt = applyDamageToEnemy(enemy, dmg, options);
       if (dealt > 0) {
@@ -980,8 +986,8 @@ export const resolveCardPlay = (
         if (hasPassive(newPlayer, 'balanced_passive')) dmg += 1;
         if (hasPassive(newPlayer, 'qi_deficiency_passive')) dmg -= 1;
         if (hasPassive(newPlayer, 'qi_stagnation_passive')) dmg -= 1;
-        if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) dmg += countRelic(newPlayer, 'equipment_yinyang');
-        if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) dmg += countRelic(newPlayer, 'equipment_tianren');
+        if (hasRelic(newPlayer, 'equipment_yinyang') && newPlayer.hp * 2 < newPlayer.maxHp) dmg += countRelicCapped(newPlayer, 'equipment_yinyang');
+        if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 1) dmg += countRelicCapped(newPlayer, 'equipment_tianren');
         const dealt = applyDamageToEnemy(enemy, dmg);
         if (dealt > 0) log(`小青龙汤对 ${enemy.name} 造成了 ${dealt} 点伤害`);
       });
@@ -1374,8 +1380,8 @@ export const resolveCardPlay = (
       }
       break;
     case 'double_block_buff':
-      applyBuffToPlayer({ id: 'double_block', name: '真武汤', type: 'buff', stacks: 1, canStack: false, description: '格挡效果翻倍' });
-      log(`格挡效果翻倍`);
+      applyBuffToPlayer({ id: 'double_block', name: '苍术健脾', type: 'buff', stacks: 1, canStack: false, description: '格挡效果+50%' });
+      log(`格挡效果提升`);
       break;
     case 'percent_damage':
       if (targetEnemy) {
@@ -1495,7 +1501,7 @@ export const resolveCardPlay = (
       break;
     }
     case 'block_echo_power':
-      applyBuffToPlayer({ id: 'block_echo', name: '补中益气', type: 'buff', stacks: 1, canStack: false, description: '获得格挡时再获得等量护盾' });
+      applyBuffToPlayer({ id: 'block_echo', name: '补中益气', type: 'buff', stacks: 1, canStack: false, description: '获得格挡时额外获得50%护盾' });
       log(`获得补中益气效果`);
       break;
     case 'status_enemy':
@@ -1612,7 +1618,20 @@ export const resolveCardPlay = (
     }
   }
   if (card.type === 'attack' && targetEnemy && hasPassive(newPlayer, 'blood_stasis_passive')) {
-    applyDebuffToEnemy(targetEnemy, { id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加25%' });
+    const stasisMarksThisTurn = getStacks(newPlayer, 'blood_stasis_passive_marks');
+    if (stasisMarksThisTurn < 2) {
+      applyDebuffToEnemy(targetEnemy, { id: 'blood_stasis', name: '血瘀', type: 'debuff', stacks: 1, canStack: true, description: '受到伤害增加25%' });
+      applyBuffToPlayer({
+        id: 'blood_stasis_passive_marks',
+        name: '血瘀攻势',
+        type: 'buff',
+        stacks: 1,
+        canStack: true,
+        description: '本回合血瘀质攻击叠加次数',
+        duration: 1,
+        hidden: true,
+      });
+    }
   }
   if (card.type === 'skill' && hasPassive(newPlayer, 'phlegm_dampness_passive')) {
     const bindTarget = targetEnemy ?? newEnemies.find(enemy => enemy.currentHp > 0) ?? null;
@@ -1623,14 +1642,13 @@ export const resolveCardPlay = (
         type: 'debuff',
         stacks: 1,
         canStack: true,
-        description: '每层攻击-1，受到伤害+1；3层时眩晕并虚弱',
+        description: '每层攻击-1，受到伤害+1；3层时眩晕',
       });
       const bind = getStatus(bindTarget, 'phlegm_bind');
       if (bind && bind.stacks >= 3) {
         removeStatus(bindTarget, 'phlegm_bind');
         applyDebuffToEnemy(bindTarget, { id: 'stun', name: '眩晕', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
-        applyDebuffToEnemy(bindTarget, { id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 2 });
-        log(`[痰湿质] 痰湿禁锢触发，${bindTarget.name} 被眩晕并虚弱`);
+        log(`[痰湿质] 痰湿禁锢触发，${bindTarget.name} 被眩晕`);
       }
     }
   }
@@ -1639,11 +1657,11 @@ export const resolveCardPlay = (
     log('[气郁质] 气机流转：额外抽1张牌');
   }
   if (card.type === 'skill' && hasRelic(newPlayer, 'equipment_jingluo') && !state.turnFlags.playedSkill) {
-    gainPlayerBlock(newPlayer, 2 * countRelic(newPlayer, 'equipment_jingluo'));
+    gainPlayerBlock(newPlayer, 2 * countRelicCapped(newPlayer, 'equipment_jingluo'));
     log('[经络学说] 经络通行：获得2点格挡');
   }
   if (card.type === 'attack' && targetEnemy && getStacks(newPlayer, 'attack_stun_chance') > 0) {
-    if (Math.random() < 0.25) {
+    if (Math.random() < 0.15) {
       applyDebuffToEnemy(targetEnemy, { id: 'stun', name: '眩晕', type: 'debuff', stacks: 1, canStack: true, description: '跳过行动', duration: 1 });
       log(`朱砂安神触发，${targetEnemy.name} 眩晕`);
     }
@@ -1848,6 +1866,17 @@ const getAliveEnemyCount = (enemies: Enemy[]) => enemies.filter(enemy => enemy.c
 
 const canSummonEnemy = (enemies: Enemy[]) => getAliveEnemyCount(enemies) < MAX_ALIVE_ENEMIES_ON_FIELD;
 
+const STRONG_DISRUPTION_SPECIALS = new Set([
+  '阳明腑实',
+  '燥邪伤肺',
+  '寒水泛溢',
+  '水湿不运',
+  '化热',
+]);
+
+const isStrongDisruptionIntent = (intent: EnemyIntent) =>
+  intent.type === 'debuff' || (intent.type === 'special' && STRONG_DISRUPTION_SPECIALS.has(intent.description));
+
 const applyDamageToPlayer = (
   player: Player,
   baseDamage: number,
@@ -2004,7 +2033,7 @@ export const resolveEnemyTurn = (
     const totalActions = getEnemyActionCount(enemy, state.currentAct);
     if (totalActions > 1 && strategy.getFollowUpIntent) {
       const followUp = strategy.getFollowUpIntent(enemy, primaryIntent, ctx);
-      if (followUp) {
+      if (followUp && !(isStrongDisruptionIntent(primaryIntent) && isStrongDisruptionIntent(followUp))) {
         plannedIntents.push(followUp);
       }
     }
@@ -2150,7 +2179,7 @@ export const resolveEnemyTurn = (
     }
   }
   if (hasRelic(newPlayer, 'equipment_tianren') && getCombatRound(newPlayer) % 2 === 0) {
-    const healed = applyHealToPlayer(newPlayer, 2 * countRelic(newPlayer, 'equipment_tianren'));
+    const healed = applyHealToPlayer(newPlayer, 2 * countRelicCapped(newPlayer, 'equipment_tianren'));
     log(`[天人相应] 偶数回合调息：恢复${healed}点生命`);
   }
   if (hasRelic(newPlayer, 'equipment_qiji')) {
@@ -2204,8 +2233,6 @@ export const resolveEnemyTurn = (
 
   const maxEnergyDown = getStacks(newPlayer, 'max_energy_down');
   if (maxEnergyDown > 0) {
-    newPlayer.maxEnergy = Math.max(1, newPlayer.maxEnergy - maxEnergyDown);
-    newPlayer.energy = Math.min(newPlayer.energy, newPlayer.maxEnergy);
     removeStatus(newPlayer, 'max_energy_down');
   }
 

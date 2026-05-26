@@ -119,3 +119,118 @@ enabled = true
   - script: `C:\Users\C2H6O\.codex\backups\codex-browser-crash-20260526-020425\reset-codex-browser-profile-after-exit.ps1`
   - behavior: waits until Codex fully exits, then renames `codex-browser-app` to a timestamped backup
   - log: `C:\Users\C2H6O\.codex\backups\codex-browser-crash-20260526-020425\reset-codex-browser-profile-after-exit.log`
+
+## 2026-05-26 14:23:00 Asia/Shanghai
+
+- Follow-up repair for the Codex plugin button being grey/disabled.
+- Verified GitHub access for recommended skills after removing the stale Git proxy:
+  - `git -C C:\Users\C2H6O\.codex\vendor_imports\skills fetch --depth 1 origin main`
+  - result: fetch succeeded.
+- Found the Codex Chrome extension had respawned the external native host:
+  - extension id: `hehggadaopoacecdllhhajmbjkdcmajg`
+  - native host: `com.openai.codexextension`
+  - process: `extension-host.exe`
+- Added Chrome user policies to prevent the external Codex Chrome extension/native host from relaunching:
+  - `HKCU\Software\Policies\Google\Chrome\ExtensionInstallBlocklist`
+  - `HKCU\Software\Policies\Google\Chrome\NativeMessagingBlocklist`
+- Removed the native messaging host registry key again:
+  - `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.openai.codexextension`
+- Stopped the running Codex Chrome native host processes.
+- Backup created at:
+  - `C:\Users\C2H6O\.codex\backups\codex-plugin-button-fix-20260526-141939`
+- Verified after waiting:
+  - native host registry key no longer exists
+  - no `extension-host.exe` process remains
+  - `plugins`, `apps`, `browser_use`, `in_app_browser`, and `tool_search` feature flags are enabled
+
+## 2026-05-26 18:02:00 Asia/Shanghai
+
+- Root-fix attempt after the Codex in-app browser again failed/crashed when opened.
+- Current Codex logs did not show a Windows crash report or Crashpad dump. The browser route failed internally:
+  - `IAB_LIFECYCLE waiting for browser sidebar webview attachment`
+  - `IAB_LIFECYCLE browser use open wait timed out`
+  - `No active Codex browser pane available`
+- Confirmed `chrome@openai-bundled` is disabled and the browser-use backend is restricted to the in-app browser:
+
+```toml
+[plugins."chrome@openai-bundled"]
+enabled = false
+
+BROWSER_USE_AVAILABLE_BACKENDS = "iab"
+```
+
+- Found the external Chrome native messaging registry key had returned even though its manifest file was absent:
+  - `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.openai.codexextension`
+- Found the bundled Chrome plugin cache directory had returned as a damaged cache containing a dangling `latest` junction.
+- Applied persistent external Chrome bridge blocking:
+  - removed the native messaging host registry key
+  - kept `HKCU\Software\Policies\Google\Chrome\ExtensionInstallBlocklist`
+  - kept `HKCU\Software\Policies\Google\Chrome\NativeMessagingBlocklist`
+  - added `HKCU\Software\Policies\Google\Chrome\ExtensionSettings`
+  - blocked extension id: `hehggadaopoacecdllhhajmbjkdcmajg`
+  - blocked native host: `com.openai.codexextension`
+- Isolated the damaged Chrome plugin cache:
+  - backup root: `C:\Users\C2H6O\.codex\backups\codex-browser-root-fix-20260526-180248`
+  - moved `C:\Users\C2H6O\.codex\plugins\cache\openai-bundled\chrome`
+  - removed the dangling `latest` reparse point before moving the cache
+- Verified immediately after online cleanup:
+  - native host registry key no longer exists
+  - Chrome extension manifest no longer exists
+  - Chrome plugin cache no longer exists
+  - no Codex `extension-host.exe` process remains
+- Installed a one-time hidden after-exit reset watcher:
+  - process id observed at install: `13492`
+  - log: `C:\Users\C2H6O\.codex\backups\codex-browser-root-fix-20260526-180248\after-exit-reset.log`
+  - waits for `Codex.exe`, `codex.exe`, and `node_repl.exe` to fully exit
+  - then re-removes the native host key and isolates any re-created Chrome cache
+  - then renames the in-app browser partition and WebView/Electron caches so Codex recreates them cleanly on next launch:
+    - `Partitions\codex-browser-app`
+    - `browser-sidebar-local-servers.json`
+    - `Network`
+    - `GPUCache`
+    - `DawnGraphiteCache`
+    - `DawnWebGPUCache`
+    - `Code Cache`
+    - `Cache`
+    - `Session Storage`
+    - `blob_storage`
+
+## 2026-05-26 19:20:00 Asia/Shanghai
+
+- Follow-up after another Codex abnormal exit around `2026-05-26 19:13 Asia/Shanghai`.
+- Evidence checked:
+  - running Codex process was restarted at `2026-05-26 19:14:54`
+  - previous main log stopped at `2026-05-26T11:13:03Z`
+  - no recent Windows `Application Error` or `Windows Error Reporting` event for Codex
+  - no new Crashpad report file was present
+- Latest relevant in-app browser lifecycle before the exit still showed unstable browser state:
+  - repeated `IAB_LIFECYCLE resolved browser use route`
+  - `browser sidebar guest torn down`
+  - `unregistered debugger listener ... reason=webcontents-destroyed`
+- Found the previous after-exit reset watcher did run at `19:13:28`, but failed to move the browser profile and caches because the script used an invalid Windows PowerShell parameter combination:
+  - `Split-Path -LiteralPath ... -Parent`
+  - `Split-Path -LiteralPath ... -Leaf`
+  - result: `Move-Item` received an empty destination path
+- Therefore the old `codex-browser-app` partition and WebView/Electron caches were not reset, despite the watcher reporting completion.
+- Also found the browser-use backend config had reverted to:
+
+```toml
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+```
+
+- Repaired config back to in-app browser only:
+
+```toml
+BROWSER_USE_AVAILABLE_BACKENDS = "iab"
+```
+
+- Installed a corrected one-time hidden after-exit reset watcher using `[IO.Path]::GetDirectoryName()` and `[IO.Path]::GetFileName()` instead of `Split-Path`:
+  - backup root: `C:\Users\C2H6O\.codex\backups\codex-browser-reset-repair-20260526-192003`
+  - script: `C:\Users\C2H6O\.codex\backups\codex-browser-reset-repair-20260526-192003\after-exit-reset-fixed.ps1`
+  - log: `C:\Users\C2H6O\.codex\backups\codex-browser-reset-repair-20260526-192003\after-exit-reset.log`
+- Verified current state after repair:
+  - no `extension-host.exe`
+  - native host registry key absent
+  - bundled Chrome plugin cache absent
+  - Chrome extension manifest absent
+  - corrected watcher is waiting for the next full Codex exit

@@ -12,7 +12,7 @@ import type {
   PlayerImpactCue,
   StatusEffect,
 } from '../types';
-import { CARD_LIBRARY, EQUIPMENT_CARD_IDS, STARTING_DECKS } from '../data/cards';
+import { CARD_LIBRARY, EQUIPMENT_CARD_IDS, EQUIPMENT_EFFECT_CAPS, STARTING_DECKS } from '../data/cards';
 import { FORMULA_BLUEPRINTS, FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
 import { countCardCopies, getCardCategory, getTemplateCardId, isFormulaCard, isHerbCard } from '../data/cards';
 import { ENEMY_CODEX_DETAILS } from '../data/codex';
@@ -211,6 +211,33 @@ const BASE_DRAW_PER_TURN = 3;
 const MAX_HAND_LIMIT = 10;
 const MAX_DRAW_PER_TURN = 5;
 const EQUIPMENT_DRAW_PER_TURN_CAP = 6;
+type EquipmentCardId = (typeof EQUIPMENT_CARD_IDS)[number];
+
+const EQUIPMENT_REWARD_POOLS: Record<1 | 2 | 3, EquipmentCardId[]> = {
+  1: ['equipment_zhiweibing', 'equipment_jingluo', 'equipment_tianren'],
+  2: [
+    'equipment_zhiweibing',
+    'equipment_jingluo',
+    'equipment_tianren',
+    'equipment_zhengti',
+    'equipment_qixue_jinye',
+    'equipment_zhengxie',
+    'equipment_zangxiang',
+  ],
+  3: [...EQUIPMENT_CARD_IDS],
+};
+
+const EQUIPMENT_DROP_CHANCES: Record<1 | 2 | 3, Record<'combat' | 'elite' | 'boss', number>> = {
+  1: { combat: 0.06, elite: 0.15, boss: 0.35 },
+  2: { combat: 0.08, elite: 0.18, boss: 0.45 },
+  3: { combat: 0.1, elite: 0.2, boss: 0.5 },
+};
+
+const normalizeAct = (act: number): 1 | 2 | 3 => {
+  if (act <= 1) return 1;
+  if (act === 2) return 2;
+  return 3;
+};
 
 const createCardInstance = (cardId: string): Card => ({
   ...CARD_LIBRARY[cardId],
@@ -228,16 +255,21 @@ const createEquipmentRelic = (cardId: string) => {
   };
 };
 
-const hasEquipment = (player: GameStore['player'], cardId: string) =>
-  player.relics?.some(relic => relic.id === cardId) ?? false;
-
 const countEquipment = (player: GameStore['player'], cardId: string): number =>
   player.relics?.filter(relic => relic.id === cardId).length ?? 0;
+
+const getEquipmentEffectCap = (cardId: string): number =>
+  Object.prototype.hasOwnProperty.call(EQUIPMENT_EFFECT_CAPS, cardId)
+    ? EQUIPMENT_EFFECT_CAPS[cardId as keyof typeof EQUIPMENT_EFFECT_CAPS]
+    : Number.POSITIVE_INFINITY;
+
+const countEquipmentCapped = (player: GameStore['player'], cardId: string): number =>
+  Math.min(countEquipment(player, cardId), getEquipmentEffectCap(cardId));
 
 const applyEquipmentBlock = (player: GameStore['player'], amount: number) => {
   const nextPlayer = { ...player };
   nextPlayer.block += amount;
-  const qixueCount = countEquipment(nextPlayer, 'equipment_qixue_jinye');
+  const qixueCount = countEquipmentCapped(nextPlayer, 'equipment_qixue_jinye');
   if (qixueCount > 0) {
     nextPlayer.hp = Math.min(nextPlayer.maxHp, nextPlayer.hp + Math.min(2 * qixueCount, Math.floor(amount / 5)));
   }
@@ -246,21 +278,23 @@ const applyEquipmentBlock = (player: GameStore['player'], amount: number) => {
 
 const getPlayerHealAmount = (player: GameStore['player'], amount: number) => {
   if (amount <= 0) return 0;
-  return amount + countEquipment(player, 'equipment_zhengti');
+  return amount + countEquipmentCapped(player, 'equipment_zhengti');
 };
 
-const getEquipmentDropChance = (nodeType: MapNode['type'] | undefined) => {
-  if (nodeType === 'boss') return 0.5;
-  if (nodeType === 'elite') return 0.2;
-  if (nodeType === 'combat') return 0.1;
+const getEquipmentDropChance = (nodeType: MapNode['type'] | undefined, currentAct: number) => {
+  const act = normalizeAct(currentAct);
+  if (nodeType === 'boss') return EQUIPMENT_DROP_CHANCES[act].boss;
+  if (nodeType === 'elite') return EQUIPMENT_DROP_CHANCES[act].elite;
+  if (nodeType === 'combat') return EQUIPMENT_DROP_CHANCES[act].combat;
   return 0;
 };
 
-const rollEquipmentReward = (nodeType: MapNode['type'] | undefined) => {
-  const chance = getEquipmentDropChance(nodeType);
+const rollEquipmentReward = (nodeType: MapNode['type'] | undefined, currentAct: number) => {
+  const chance = getEquipmentDropChance(nodeType, currentAct);
   if (chance <= 0 || Math.random() >= chance) return null;
 
-  return EQUIPMENT_CARD_IDS[Math.floor(Math.random() * EQUIPMENT_CARD_IDS.length)] ?? null;
+  const pool = EQUIPMENT_REWARD_POOLS[normalizeAct(currentAct)];
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
 };
 
 const pickSideEvent = (state: GameStore): GameEvent | null => {
@@ -365,7 +399,7 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '痰湿质',
       type: 'buff',
       stacks: 1,
-      description: '打出技能牌给敌人叠加痰湿禁锢，3层时眩晕并虚弱。',
+      description: '打出技能牌给敌人叠加痰湿禁锢，3层时眩晕。',
       canStack: false,
       dispelImmune: true,
     },
@@ -387,7 +421,7 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '血瘀质',
       type: 'buff',
       stacks: 1,
-      description: '攻击牌叠加血瘀；攻击血瘀目标伤害+50%并无视格挡；格挡与治疗减半。',
+      description: '每回合前2张攻击牌叠加血瘀；攻击血瘀目标伤害+50%并无视格挡；格挡与治疗减半。',
       canStack: false,
       dispelImmune: true,
     },
@@ -894,7 +928,7 @@ export const useGameStore = create<GameStore>()(
          };
         const combatState = createCombatState(state, scaledEnemy, nodeId);
         let startingPlayer: GameStore['player'] = combatState.player;
-        const zhiweibingCount = countEquipment(startingPlayer, 'equipment_zhiweibing');
+        const zhiweibingCount = countEquipmentCapped(startingPlayer, 'equipment_zhiweibing');
         if (zhiweibingCount > 0) {
           startingPlayer = applyEquipmentBlock(startingPlayer, 5 * zhiweibingCount);
         }
@@ -922,8 +956,9 @@ export const useGameStore = create<GameStore>()(
         primeEnemyMedia(enemyTemplate);
         const combatState = createCombatState(previewState, enemyTemplate, `admin_enemy_${enemyId}`);
         let startingPlayer: GameStore['player'] = combatState.player;
-        if (hasEquipment(startingPlayer, 'equipment_zhiweibing')) {
-          startingPlayer = applyEquipmentBlock(startingPlayer, 5);
+        const zhiweibingCount = countEquipmentCapped(startingPlayer, 'equipment_zhiweibing');
+        if (zhiweibingCount > 0) {
+          startingPlayer = applyEquipmentBlock(startingPlayer, 5 * zhiweibingCount);
         }
         set({
           ...runState,
@@ -988,7 +1023,7 @@ export const useGameStore = create<GameStore>()(
         }
 
         const { map, currentLayerIndex, currentNode } = completeNode(state);
-        const equipmentRewardId = rollEquipmentReward(currentNode?.type);
+        const equipmentRewardId = rollEquipmentReward(currentNode?.type, state.currentAct);
         const formulaBlueprintRewardId = rollFormulaBlueprintReward(currentNode?.type);
         const rewardPlayer = equipmentRewardId
           ? {
@@ -1195,7 +1230,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const drawDown = state.player.statusEffects.find(s => s.id === 'draw_down')?.stacks ?? 0;
         const base = BASE_DRAW_PER_TURN + Math.min(state.bossKills, MAX_DRAW_PER_TURN - BASE_DRAW_PER_TURN);
-        const equipmentBonus = countEquipment(state.player, 'equipment_ziwuliuzhu') && state.phase === 'combat' ? countEquipment(state.player, 'equipment_ziwuliuzhu') : 0;
+        const equipmentBonus = state.phase === 'combat' ? countEquipmentCapped(state.player, 'equipment_ziwuliuzhu') : 0;
         const cap = equipmentBonus > 0 ? EQUIPMENT_DRAW_PER_TURN_CAP : MAX_DRAW_PER_TURN;
         return Math.max(0, Math.min(cap, base + equipmentBonus) - drawDown);
       },
@@ -1242,6 +1277,7 @@ export const useGameStore = create<GameStore>()(
         set(state => {
           const targetTemplate = CARD_LIBRARY[targetCardId];
           if (!targetTemplate || !isHerbCard(targetTemplate) || targetTemplate.unplayable) return {};
+          if ((targetTemplate.act ?? 1) > state.currentAct) return {};
           const nextDeck = state.player.deck.filter(c => !cardIds.includes(c.id));
           const alreadyHas = countCardCopies(nextDeck, targetCardId);
           if (alreadyHas >= MAX_CARD_COPIES) return {};
@@ -1368,6 +1404,12 @@ export const useGameStore = create<GameStore>()(
         if (!event || event.id !== eventId) return;
         const option = event.options[optionIndex];
         if (!option) return;
+        const goldCost = option.effects.reduce((total, effect) => (
+          effect.type === 'goldChange' && (effect.value ?? 0) < 0
+            ? total + Math.abs(effect.value ?? 0)
+            : total
+        ), 0);
+        if (state.player.gold < goldCost) return;
 
         const nextPlayer = { ...state.player };
        let nextGold = state.player.gold;
@@ -1419,6 +1461,10 @@ export const useGameStore = create<GameStore>()(
                     description: c?.description ?? '',
                     effectId: c?.effectId ?? '',
                   }];
+                }
+                const obtainedCardIds = nextPlayer.obtainedCardIds ?? [];
+                if (c && getCardCategory(c) === 'equipment' && !obtainedCardIds.includes(effect.relicId)) {
+                  nextPlayer.obtainedCardIds = [...obtainedCardIds, effect.relicId];
                 }
               }
               break;

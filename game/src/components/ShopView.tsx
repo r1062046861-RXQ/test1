@@ -23,6 +23,7 @@ interface BuySlot {
 export const ShopView: React.FC = () => {
   const {
     player,
+    currentAct,
     addCardToDeck,
     sellCardFromDeck,
     combineCards,
@@ -43,10 +44,14 @@ export const ShopView: React.FC = () => {
   const priceMultiplier = useMemo(() => getShopPriceMultiplier() / 100, [player.gold]);
   const deckCounts = useMemo(() => countCardsByTemplate(player.deck), [player.deck]);
   const handLimit = getHandLimit();
+  const isAvailableInCurrentAct = (cardId: string) => {
+    const card = CARD_LIBRARY[cardId];
+    return Boolean(card) && (card.act ?? 1) <= currentAct;
+  };
 
   const cardPool = useMemo(
-    () => Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable),
-    [],
+    () => Object.values(CARD_LIBRARY).filter((card) => isHerbCard(card) && !card.unplayable && (card.act ?? 1) <= currentAct),
+    [currentAct],
   );
 
   useEffect(() => {
@@ -96,9 +101,9 @@ export const ShopView: React.FC = () => {
     const ids = player.obtainedCardIds ?? [];
     return ids.filter(cid => {
       const count = player.deck.filter(c => c.id === cid || c.name === CARD_LIBRARY[cid]?.name).length;
-      return count < 10 && CARD_LIBRARY[cid] && isHerbCard(CARD_LIBRARY[cid]) && !CARD_LIBRARY[cid].unplayable;
+      return count < 10 && isAvailableInCurrentAct(cid) && isHerbCard(CARD_LIBRARY[cid]) && !CARD_LIBRARY[cid].unplayable;
     });
-  }, [player.obtainedCardIds, player.deck]);
+  }, [currentAct, player.obtainedCardIds, player.deck]);
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
@@ -146,6 +151,7 @@ export const ShopView: React.FC = () => {
             <div className="grid grid-cols-4 gap-4 mt-3 justify-items-center">
               {buySlots.map(({ cardId, price, discount, sold }, i) => {
                 const card = CARD_LIBRARY[cardId];
+                const affordable = player.gold >= price;
                 return (
                   <div key={`${cardId}_${i}`} className="relative flex flex-col items-center">
                     {sold ? (
@@ -161,8 +167,9 @@ export const ShopView: React.FC = () => {
                         )}
                         <Card card={card!} interactive={false} hoverLift={false} />
                         <ActionButton
-                          variant="primary"
-                          className="mt-2 text-sm"
+                          variant={affordable ? 'primary' : 'secondary'}
+                          disabled={!affordable}
+                          className={`shop-buy-button ${affordable ? 'shop-buy-button--affordable' : 'shop-buy-button--unaffordable'} mt-2 text-sm`}
                           style={{ width: 'fit-content' }}
                           onClick={() => buyCard(i, cardId, price)}
                         >

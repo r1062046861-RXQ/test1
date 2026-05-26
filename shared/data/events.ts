@@ -221,6 +221,7 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_needle_stage2',
     title: '继承衣钵',
     description: '再次见到老翁，他已病入膏肓。他将一本手札交给你："子午流注的真谛，不在于针，而在于\'时\'。我年轻时试针太多，经络已损……这便是代价。"',
+    actRequirement: 2,
     continuationMarker: 'needle_stage1',
     clearMarkerOnTrigger: 'needle_stage1',
     options: [
@@ -229,6 +230,7 @@ export const SIDE_EVENTS: GameEvent[] = [
         description: '老翁闭目而逝，手札浸满了他的体温。',
         effects: [
           { type: 'addRelic', relicId: 'equipment_ziwuliuzhu', count: 1 },
+          { type: 'maxHpChange', value: -2 },
         ],
       },
       {
@@ -242,11 +244,12 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_yaowang',
     title: '药王义诊',
     description: '药王孙思邈在山村义诊。病人中有衣衫褴褛的贫民，也有眼神凶悍的逃犯。\n"你既为医，可愿一视同仁？"',
+    actRequirement: 2,
     options: [
       {
         label: '一视同仁',
         description: '药王说："你救他性命，他偷你盘缠。世间因果，便是整体。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_zhengti', count: 1 }, { type: 'heal', value: 25 }, { type: 'goldChange', value: -80 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_zhengti', count: 1 }, { type: 'goldChange', value: -100 }, { type: 'damage', value: 10 }],
       },
       {
         label: '区别对待',
@@ -264,16 +267,17 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_bianzheng',
     title: '同病异治',
     description: '两名病人同是发热头痛。甲外感风寒需发汗，乙内伤食积需泻下。\n同行医者劝你："开同样的药最保险，何必冒险？"',
+    actRequirement: 3,
     options: [
       {
         label: '辨证开方',
         description: '两人皆愈！华佗闻讯称赞："此人知同病异治之理。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_bianzheng', count: 1 }, { type: 'goldChange', value: 130 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_bianzheng', count: 1 }, { type: 'goldChange', value: -120 }],
       },
       {
         label: '保守治疗',
         description: '乙病情加重——你不得不全力补救。最终从错误中真正学会了辨证。',
-        effects: [{ type: 'addRelic', relicId: 'equipment_bianzheng', count: 1 }, { type: 'goldChange', value: 50 }, { type: 'maxHpChange', value: -1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_bianzheng', count: 1 }, { type: 'goldChange', value: -80 }, { type: 'maxHpChange', value: -2 }],
       },
       {
         label: '拒诊',
@@ -286,16 +290,17 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_yinyang',
     title: '太极悟道',
     description: '山间道长打太极拳，口中念道："阴平阳秘，精神乃治。\n你可知阴阳消长，如昼夜交替？"',
+    actRequirement: 3,
     options: [
       {
         label: '拜师学艺',
         description: '道长说："入门需清心。"道长祝福："阴阳互根，你已入门。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'heal', value: 20 }, { type: 'removeCard', count: 1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'goldChange', value: -100 }, { type: 'removeCard', count: 1 }],
       },
       {
         label: '切磋求悟',
         description: '道长手下不留情。但推手中你确有所悟。',
-        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'heal', value: 30 }, { type: 'maxHpChange', value: -1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_yinyang', count: 1 }, { type: 'damage', value: 18 }, { type: 'maxHpChange', value: -2 }],
       },
       {
         label: '质疑阴阳',
@@ -335,7 +340,7 @@ export const SIDE_EVENTS: GameEvent[] = [
       {
         label: '接受淬炼',
         description: '医官点头："好胆色！"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_zhengxie', count: 1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_zhengxie', count: 1 }, { type: 'damage', value: 12 }],
       },
       {
         label: '温和养生',
@@ -353,6 +358,7 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_zangxiang',
     title: '藏象之谜',
     description: '古籍残卷："五脏藏精气而不泻，六腑传化物而不藏。\n藏泻有度，病安从来？"后半页被撕毁。',
+    actRequirement: 2,
     options: [
       {
         label: '彻夜抄录',
@@ -397,6 +403,7 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_qiji',
     title: '气机升降',
     description: '气功大师一呼一吸间，落叶随之盘旋。"清气升，浊气降。\n你看这落叶——升不是永远升，降不是永远降。升降有道，气机自转。"',
+    actRequirement: 3,
     options: [
       {
         label: '潜心修习',
@@ -419,11 +426,12 @@ export const SIDE_EVENTS: GameEvent[] = [
     id: 'side_qixue',
     title: '气血同源',
     description: '药田里满地当归。白发老妪采药时问："年轻人，你可知——\n为何有人喝了半辈子当归汤，血还是虚？"',
+    actRequirement: 2,
     options: [
       {
         label: '答：血虚不补气，如无火煮水',
         description: '老妪眼睛一亮："你懂阳中求阴。气为血之帅，血为气之母。这玉牌归你了。"',
-        effects: [{ type: 'addRelic', relicId: 'equipment_qixue_jinye', count: 1 }],
+        effects: [{ type: 'addRelic', relicId: 'equipment_qixue_jinye', count: 1 }, { type: 'maxHpChange', value: -2 }],
       },
       {
         label: '答：补得不够多',

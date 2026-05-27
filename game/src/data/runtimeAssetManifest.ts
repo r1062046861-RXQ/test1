@@ -1732,14 +1732,14 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
   },
   {
     "path": "/assets/intro/background.webp",
-    "bytes": 5370324,
+    "bytes": 12737224,
     "stage": "gif"
   },
   {
     "path": "/assets/main_menu/v2/background.webp",
-    "bytes": 4222990,
+    "bytes": 10100574,
     "stage": "gif"
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 71030342;
+export const TOTAL_RUNTIME_ASSET_BYTES = 84274826;

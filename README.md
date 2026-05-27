@@ -63,7 +63,7 @@ wechatgame/
 │   │   ├── services/          # 音频 + 资源加载服务
 │   │   ├── utils/             # 资源路径、ID 生成、图片预载
 │   │   └── index.css          # 主要视觉系统（很大，先搜索再改）
-│   ├── public/assets/         # 运行时资源（当前工作区约368个文件，约105MiB）
+│   ├── public/assets/         # 运行时资源（当前工作区约368个文件，约118MiB）
 │   └── package.json
 ├── .github/workflows/pages.yml # GitHub Pages 自动部署
 ├── AI_HANDOFF.md              # 完整交接文档
@@ -88,7 +88,7 @@ wechatgame/
 | 24 张卡牌名称已完成全局统一重命名（药材名+功效） | ✅ |
 | 背景图全部换新（战斗/地图/休憩/药房/合成台），关键大图已转 WebP 并压缩到约 200KB 级别 | ✅ |
 | 敌人动画已由大体积 GIF 转为 480px 宽动画 WebP，`cards_enemy` 目录约 43.3MiB | ✅ |
-| 音频目录当前约35.6MiB；运行时资源当前工作区约105.2MiB，图片 manifest 约67.7MiB | ✅ |
+| 音频目录当前约35.6MiB；运行时资源当前工作区约117.9MiB，图片 manifest 约80.4MiB | ✅ |
 | 主页加载条按实际预加载资源（critical/static）统计进度，不再把延后加载的敌人动画计入总量 | ✅ |
 | 字体优化（宋体/Songti SC，macOS兼容） | ✅ |
 | 战斗UI去琥珀色，按幕次主题配色（天蓝/玫红/紫清） | ✅ |

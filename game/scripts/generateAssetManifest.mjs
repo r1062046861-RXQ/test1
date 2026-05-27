@@ -7,6 +7,10 @@ const assetRoot = path.join(projectRoot, 'public', 'assets');
 const outputPath = path.join(projectRoot, 'src', 'data', 'runtimeAssetManifest.ts');
 const IMAGE_EXTENSIONS = new Set(['.png', '.gif', '.jpg', '.jpeg', '.webp', '.svg']);
 const ANIMATED_ASSET_PATTERN = /^\/assets\/cards_enemy\/(?![^/]*-poster)[^/]+\.webp$/i;
+const ANIMATED_BACKGROUND_PATHS = new Set([
+  '/assets/intro/background.webp',
+  '/assets/main_menu/v2/background.webp',
+]);
 const CRITICAL_ASSET_PATHS = new Set([
   '/assets/background_main_menu.png',
   '/assets/constitutions/balanced.webp',
@@ -49,7 +53,11 @@ const getAssetStage = (assetPath) => {
   if (CRITICAL_ASSET_PATHS.has(assetPath)) {
     return 'critical';
   }
-  if (assetPath.toLowerCase().endsWith('.gif') || ANIMATED_ASSET_PATTERN.test(assetPath)) {
+  if (
+    assetPath.toLowerCase().endsWith('.gif') ||
+    ANIMATED_ASSET_PATTERN.test(assetPath) ||
+    ANIMATED_BACKGROUND_PATHS.has(assetPath)
+  ) {
     return 'gif';
   }
   return 'static';

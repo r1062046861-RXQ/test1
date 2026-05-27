@@ -6,7 +6,6 @@ import { resolveAssetUrl } from '../utils/assets';
 
 const REF_W = 1920;
 const REF_H = 1080;
-const SIDE_MENU_RECT = { left: 1753, top: 87, width: 81, height: 462 };
 
 type IntroPanel = 'notice' | 'activity' | 'settings' | null;
 type SideActionId = 'notice' | 'activity' | 'codex' | 'settings';
@@ -21,15 +20,17 @@ const refRect = (left: number, top: number, width: number, height: number) => ({
 const SIDE_ACTIONS: Array<{
   id: SideActionId;
   label: string;
+  asset: string;
+  left: number;
   top: number;
+  width: number;
+  height: number;
 }> = [
-  { id: 'notice', label: '公告', top: 87 },
-  { id: 'activity', label: '活动', top: 207 },
-  { id: 'codex', label: '图鉴', top: 327 },
-  { id: 'settings', label: '设置', top: 447 },
+  { id: 'notice', label: '公告', asset: '/assets/intro/v2/notice.png', left: 1753, top: 89, width: 79, height: 102 },
+  { id: 'activity', label: '活动', asset: '/assets/intro/v2/activity.png', left: 1753, top: 207, width: 79, height: 102 },
+  { id: 'codex', label: '图鉴', asset: '/assets/intro/v2/codex.png', left: 1753, top: 323, width: 79, height: 102 },
+  { id: 'settings', label: '设置', asset: '/assets/intro/v2/settings.png', left: 1753, top: 439, width: 79, height: 104 },
 ];
-
-const sideMenuRect = () => refRect(SIDE_MENU_RECT.left, SIDE_MENU_RECT.top, SIDE_MENU_RECT.width, SIDE_MENU_RECT.height);
 
 const PlaceholderPanel: React.FC<{
   type: Exclude<IntroPanel, 'settings' | null>;
@@ -184,42 +185,37 @@ export const IntroView: React.FC = () => {
             />
             <img
               className="intro-page__top-copy"
-              src={resolveAssetUrl('/assets/intro/top_copy.png')}
+              src={resolveAssetUrl('/assets/intro/v2/top_copy.png')}
               alt="循五行，辨寒热虚实。以巡诊构筑为引，在一次次取舍中理解药性、生克与证候变化。"
               style={refRect(79, 81, 509, 65)}
             />
             <img
               className="intro-page__title"
-              src={resolveAssetUrl('/assets/intro/title.png')}
+              src={resolveAssetUrl('/assets/intro/v2/title.png')}
               alt="五行医道"
-              style={refRect(611, 263, 738, 296)}
-            />
-            <img
-              className="intro-page__side-menu"
-              src={resolveAssetUrl('/assets/intro/side_menu.png')}
-              alt=""
-              aria-hidden="true"
-              style={sideMenuRect()}
+              style={refRect(528, 232, 913, 356)}
             />
             {SIDE_ACTIONS.map((action) => (
               <button
                 key={action.id}
                 type="button"
-                className="intro-page__side-hotspot"
-                style={refRect(1738, action.top - 6, 111, 104)}
+                className="intro-page__side-action"
+                style={refRect(action.left, action.top, action.width, action.height)}
                 aria-label={action.label}
                 onClick={() => handleSideAction(action.id)}
-              />
+              >
+                <img src={resolveAssetUrl(action.asset)} alt="" aria-hidden="true" />
+              </button>
             ))}
             <button
               type="button"
               className="intro-page__enter intro-page__enter--enabled"
-              style={refRect(431, 895, 1149, 66)}
+              style={refRect(483, 894, 955, 54)}
               onClick={handleEnter}
               aria-label="进入主菜单"
             >
               <img
-                src={resolveAssetUrl('/assets/intro/enter_main_menu.png')}
+                src={resolveAssetUrl('/assets/intro/v2/enter_main_menu.png')}
                 alt=""
                 aria-hidden="true"
               />

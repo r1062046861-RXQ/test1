@@ -127,8 +127,8 @@ wechatgame/
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
 | 语音/音频 | BGM、环境音、SFX 等音频资源当前约 35.6 MiB |
-| `public/assets` 总量 | 当前工作区约 360 个文件，约 95.9 MiB；敌人动画和大背景已完成 WebP 压缩 |
-| 图片 manifest | 当前约 338 条图片资源，`TOTAL_RUNTIME_ASSET_BYTES` 约 58.4 MiB；音频不计入 manifest |
+| `public/assets` 总量 | 当前工作区约 368 个文件，约 105.2 MiB；敌人动画和大背景已完成 WebP 压缩 |
+| 图片 manifest | 当前约 346 条图片资源，`TOTAL_RUNTIME_ASSET_BYTES` 约 67.7 MiB；音频不计入 manifest |
 
 运行时资源按目录统计：
 
@@ -143,11 +143,11 @@ wechatgame/
 | `cards_player` | 84 | 约 5.0 MB |
 | `cards_replacement_placeholders` | 48 | 约 1.1 MB |
 | `cards_special` | 0 | 0 MB（旧占位图已清理） |
-| `combat` | 32 | 约 0.6 MB（战斗 v2 切片与 WebP 背景） |
+| `combat` | 33 | 约 0.8 MB（战斗 v2 切片与 WebP 背景） |
 | `constitutions` | 9 | 约 0.6 MB |
 | `constitution_select` | 8 | 约 0.4 MB |
-| `intro` | 11 | 约 0.6 MB |
-| `main_menu` | 37 | 约 5.0 MB（主菜单 v2 运行资源和字体子集；旧大字体与 QA 截图已清理） |
+| `intro` | 18 | 约 5.8 MB（启动页 v2 运行切片与背景） |
+| `main_menu` | 37 | 约 9.0 MB（主菜单 v2 运行资源和字体子集；旧大字体与 QA 截图已清理） |
 | `map` | 12 | 约 0.2 MB（地图 v2 切片） |
 | 根目录背景图 | 8 | 约 1.4 MB（Act 2 地图背景已转 WebP） |
 
@@ -189,7 +189,7 @@ wechatgame/
 
 | 阶段 | 组件 | 作用 |
 | --- | --- | --- |
-| `intro` | `IntroView` | 开场页 |
+| `intro` | `IntroView` | 开场页。当前使用 `game/public/assets/intro/v2/` 资源拼装标题、顶部文案、右侧公告/活动/图鉴/设置入口和底部进入按钮，按 1920×1080 示例图坐标定位；背景仍使用 `game/public/assets/intro/background.webp`，CSS 负责暗化和底部雾层。 |
 | `start_menu` | `StartMenu` | 主菜单、资源加载进度、9 体质选择入口。当前使用 1920×1080 参考坐标系做资源拼装：背景单独 cover 填充，标题与 6 个按钮 plate 独立渲染，按钮默认态/hover 态在同一网格锚点原地换图。运行资源位于 `game/public/assets/main_menu/`。当前按钮文字和 hover 图资源已有更新，不要重新按旧截图偏移 UI。 |
 | `card_codex` | `CardCodexView` | 图鉴，包括卡牌/敌人/术语 |
 | `map` | `MapView` | 地图节点选择。当前正在使用 v2 资源拼装界面，核心资源在 `game/public/assets/map/v2/`，核心 CSS 前缀是 `map-v2-*`，布局按 1920×1080 参考坐标系定位。 |
@@ -208,6 +208,7 @@ wechatgame/
 
 当前 UI 替换状态：
 
+- 启动页 v2 已接入：`IntroView.tsx` 使用 `game/public/assets/intro/v2/` 下的 7 张运行切片，排除源目录里的 `示例图.png`；坐标来自示例图模板匹配，后续替换必须保持 1920×1080 参考坐标。
 - 主菜单 v2 已接入：`StartMenu.tsx` 使用 `game/public/assets/main_menu/` 下的 v2/default、v2/hover、regions 等资源；默认态与 hover 态必须同尺寸同锚点原地换图。
 - 地图 v2 正在接入：`MapView.tsx` 使用 `map-v2-*` 样式和 `game/public/assets/map/v2/` 切片，包括路径框、首领进度、统计图标、提示框。
 - 战斗 v2 已接入并持续微调：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括巡诊者窗口、被动/装备窗口、生命/格挡/真气窗口、结束回合按钮、敌人信息区和战斗记录。
@@ -458,6 +459,7 @@ wechatgame/
 
 - `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 32 个文件，包含 `background.webp`、`background_act2.webp`、玩家资源/生命面板、被动/装备面板、按钮、血条和状态图标。
 - `game/public/assets/map/v2/`：地图 v2 资源拼装切片，当前约 12 个文件，包含路线框、首领进度、提示面板和统计图标。
+- `game/public/assets/intro/v2/`：启动页 v2 资源拼装切片，包含标题、顶部文案、进入主菜单按钮、公告/活动/图鉴/设置四个入口；源素材中的 `示例图.png` 只作参考，不进入运行资源。
 - `game/public/assets/main_menu/`：主菜单 v2 运行资源、按钮文字、hover 图和字体子集；旧大字体、旧区域切片和 QA 截图已清理，不要按旧截图重新偏移文字或 icon。
 
 关键工具：
@@ -500,7 +502,7 @@ npm test -- --run
 npm run build
 ```
 
-当前验证（2026-05-26）：`npm test -- --run` 为 6 个测试文件、89 个测试用例通过；`npm run build` 通过。当前主 JS chunk 约 487 kB。
+当前验证（2026-05-27）：`npm test -- --run` 为 6 个测试文件、90 个测试用例通过；`npm run build` 通过。当前主 JS chunk 约 489 kB。
 
 测试重点：
 
@@ -654,10 +656,11 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
-| 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；`public/assets` 从约 202MiB 降至约 95.9MiB，`runtimeAssetManifest.ts` 已刷新。 |
+| 启动页 v2 资源拼装接入 | `IntroView.tsx` 使用 `game/public/assets/intro/v2/` 资源按示例图精准还原：首页标题、顶部文案、右侧公告/活动/图鉴/设置入口和底部进入按钮均为独立切片；`runtimeAssetManifest.ts` 已刷新。 |
+| 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；`public/assets` 当前约 105.2MiB，`runtimeAssetManifest.ts` 已刷新。 |
 | Windows 11 离线版 | 新增 `offline-windows/open-game.cmd` 与 `open-game.ps1`，用 PowerShell 内置本地 HTTP 服务启动 `offline-windows/web`，目标电脑不需要 Node.js、npm、Python 或网络；`web/` 和 zip 为本机构建产物，不进 Git。 |
 | 第五轮平衡调整 | 每回合首张攻击牌费用 -1；白芍柔肝/点穴/酸枣仁/厚朴/细辛/麻黄汤补进攻收益；陈皮、葛根、赤芍、桔梗、枳实和子午流注改为更少堵手；低攻击体质开局补到至少 5 张攻击牌；奖励和药房在低进攻牌组时保底给进攻牌。 |
-| 首页右侧按钮回退静态版 | 首页右侧“公告/活动/图鉴/设置”已退回旧静态 `side_menu.png`，移除动态圈、拆分图标和拆分文字层。 |
+| 首页右侧按钮 v2 切片 | 首页右侧“公告/活动/图鉴/设置”已改为 `intro/v2` 下的独立入口切片，不再使用旧静态 `side_menu.png`。 |
 | 事件装备点亮图鉴 | `handleEventChoice` 的 `addRelic` 分支现在会把真实装备牌同步加入 `player.obtainedCardIds`，修复事件获得装备后卡牌图鉴不点亮的问题，并补充 store 回归测试。 |
 | 2026-05-26 线上发布 | 本项目通过 `origin/main` 触发 GitHub Pages；线上 `https://test1.renxuanqi.top` 以后续 Actions 最新成功运行为准。 |
 | 体质抽牌动画回退 | `ConstitutionIntroOverlay.tsx` 已恢复旧版真实卡面“小包洗牌”动画；接口 `ConstitutionIntroStage`、`CONSTITUTION_CINEMATIC_MS`、`onSkip/onClose/onSelect` 保持不变，选择页本身不回滚。 |

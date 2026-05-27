@@ -63,7 +63,7 @@ wechatgame/
 │   │   ├── services/          # 音频 + 资源加载服务
 │   │   ├── utils/             # 资源路径、ID 生成、图片预载
 │   │   └── index.css          # 主要视觉系统（很大，先搜索再改）
-│   ├── public/assets/         # 运行时资源（当前工作区约360个文件，约96MiB）
+│   ├── public/assets/         # 运行时资源（当前工作区约368个文件，约105MiB）
 │   └── package.json
 ├── .github/workflows/pages.yml # GitHub Pages 自动部署
 ├── AI_HANDOFF.md              # 完整交接文档
@@ -88,7 +88,7 @@ wechatgame/
 | 24 张卡牌名称已完成全局统一重命名（药材名+功效） | ✅ |
 | 背景图全部换新（战斗/地图/休憩/药房/合成台），关键大图已转 WebP 并压缩到约 200KB 级别 | ✅ |
 | 敌人动画已由大体积 GIF 转为 480px 宽动画 WebP，`cards_enemy` 目录约 43.3MiB | ✅ |
-| 音频目录当前约35.6MiB；运行时资源当前工作区约95.9MiB，图片 manifest 约58.4MiB | ✅ |
+| 音频目录当前约35.6MiB；运行时资源当前工作区约105.2MiB，图片 manifest 约67.7MiB | ✅ |
 | 主页加载条按实际预加载资源（critical/static）统计进度，不再把延后加载的敌人动画计入总量 | ✅ |
 | 字体优化（宋体/Songti SC，macOS兼容） | ✅ |
 | 战斗UI去琥珀色，按幕次主题配色（天蓝/玫红/紫清） | ✅ |
@@ -112,6 +112,7 @@ wechatgame/
 | 无限地图 + Boss 独立通道（需3场战斗解锁） | ✅ |
 | 商店价格倍率系统 | ✅ |
 | 本地持久化存档 | ✅ |
+| 启动页 v2 资源拼装已接入：按示例图 1920×1080 坐标还原标题、文案、右侧入口和进入按钮 | ✅ |
 | 主菜单 v2 资源拼装已接入：默认态/hover 态同尺寸同锚点原地换图 | ✅ |
 | `黄芩清肺` 保留药材身份且可打出：0 费造成 4 点伤害并施加 1 层热邪 | ✅ |
 | 地图 v2 正在使用 `game/public/assets/map/v2/` 与 `map-v2-*` 样式 | 已接入，持续微调 |
@@ -172,6 +173,7 @@ wechatgame/
 | 改事件数据/效果 | `shared/data/events.ts` → `SIDE_EVENTS[]` / `getMainlineActData()` |
 | 改游戏流程、掉落、合成台状态 | `game/src/store/gameStore.ts` |
 | 改 UI / 页面 | `game/src/components/` + `game/src/index.css` |
+| 改启动页 UI | `game/src/components/IntroView.tsx` + `game/public/assets/intro/v2/` |
 | 改主菜单 UI | `game/src/components/StartMenu.tsx` + `game/public/assets/main_menu/` |
 | 改地图 v2 UI | `game/src/components/MapView.tsx` + `map-v2-*` CSS + `game/public/assets/map/v2/` |
 | 改战斗 v2 UI | `game/src/components/CombatView.tsx` + `combat-v2-*` CSS + `game/public/assets/combat/v2/` |
@@ -188,9 +190,9 @@ npm test -- --run
 npm run build
 ```
 
-当前验证（2026-05-26）：`npm test -- --run` 为 6 个测试文件、89 个测试用例通过。
+当前验证（2026-05-27）：`npm test -- --run` 为 6 个测试文件、90 个测试用例通过。
 
-`npm run build` 当前通过。主 JS chunk 约 487 kB，构建产物发布于 `game/dist/`。
+`npm run build` 当前通过。主 JS chunk 约 489 kB，构建产物发布于 `game/dist/`。
 
 ---
 

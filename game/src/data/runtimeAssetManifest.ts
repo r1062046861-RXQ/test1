@@ -1321,13 +1321,8 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/intro/background.webp",
-    "bytes": 209500,
-    "stage": "static"
-  },
-  {
     "path": "/assets/intro/enter_main_menu.png",
-    "bytes": 50967,
+    "bytes": 93122,
     "stage": "static"
   },
   {
@@ -1371,8 +1366,38 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "stage": "static"
   },
   {
-    "path": "/assets/main_menu/v2/background.webp",
-    "bytes": 82496,
+    "path": "/assets/intro/v2/activity.png",
+    "bytes": 12043,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/codex.png",
+    "bytes": 10918,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/enter_main_menu.png",
+    "bytes": 44913,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/notice.png",
+    "bytes": 10961,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/settings.png",
+    "bytes": 11573,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/title.png",
+    "bytes": 173209,
+    "stage": "static"
+  },
+  {
+    "path": "/assets/intro/v2/top_copy.png",
+    "bytes": 29274,
     "stage": "static"
   },
   {
@@ -1704,7 +1729,17 @@ export const RUNTIME_ASSET_MANIFEST: RuntimeAssetManifestEntry[] = [
     "path": "/assets/cards_enemy/99.webp",
     "bytes": 2624920,
     "stage": "gif"
+  },
+  {
+    "path": "/assets/intro/background.webp",
+    "bytes": 5370324,
+    "stage": "gif"
+  },
+  {
+    "path": "/assets/main_menu/v2/background.webp",
+    "bytes": 4222990,
+    "stage": "gif"
   }
 ];
 
-export const TOTAL_RUNTIME_ASSET_BYTES = 61393978;
+export const TOTAL_RUNTIME_ASSET_BYTES = 71030342;

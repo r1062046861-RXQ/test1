@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Home, X } from 'lucide-react';
 import { ENEMY_ACT_LABELS, ENEMY_CODEX_DETAILS, ENEMY_TIER_LABELS, type EnemyTier } from '../data/codex';
 import { ENEMIES } from '../data/enemies';
 import { useGameStore } from '../store/gameStore';
@@ -552,6 +552,11 @@ export const StartMenu: React.FC = () => {
     }
   };
 
+  const handleReturnIntro = () => {
+    playSfx('button_click');
+    setPhase('intro');
+  };
+
   return (
     <>
       <div className="start-menu-page">
@@ -573,6 +578,16 @@ export const StartMenu: React.FC = () => {
               src={resolveAssetUrl('/assets/main_menu/v2/title_text.png')}
               alt="五行辨证巡诊"
             />
+
+            <button
+              type="button"
+              className="start-menu-home-button"
+              onClick={handleReturnIntro}
+              aria-label="返回首页"
+            >
+              <Home aria-hidden="true" size={22} strokeWidth={1.9} />
+              <span>返回首页</span>
+            </button>
 
             {BUTTON_CONFIG.map((button) => {
               const enabled = !button.requiresSavedRun || hasSavedRun;

@@ -1,6 +1,6 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-26
+更新日期：2026-05-27
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
@@ -127,8 +127,8 @@ wechatgame/
 | 敌人总数 | 20 条记录：普通敌、精英、4 个 Boss 与 1 个召唤单位 |
 | 体质 | 9 种 + 管理员体质（`?admin` 开启） |
 | 语音/音频 | BGM、环境音、SFX 等音频资源当前约 35.6 MiB |
-| `public/assets` 总量 | 当前工作区约 368 个文件，约 114.6 MiB；敌人动画和大背景已完成 WebP 压缩，首页/主菜单动图为 1920×1080 animated WebP 且单文件小于 10MB |
-| 图片 manifest | 当前约 346 条图片资源，`TOTAL_RUNTIME_ASSET_BYTES` 约 77.1 MiB；音频不计入 manifest |
+| `public/assets` 总量 | 当前工作区约 370 个文件，约 198 MiB；敌人动画和大背景已完成 WebP 压缩，首页/主菜单动图使用原始 GIF（首页 46MB + 主菜单 37MB），不再使用 animated WebP |
+| 图片 manifest | 当前约 348 条图片资源，`TOTAL_RUNTIME_ASSET_BYTES` 约 161 MiB；音频不计入 manifest |
 
 运行时资源按目录统计：
 
@@ -146,8 +146,8 @@ wechatgame/
 | `combat` | 33 | 约 0.8 MB（战斗 v2 切片与 WebP 背景） |
 | `constitutions` | 9 | 约 0.6 MB |
 | `constitution_select` | 8 | 约 0.4 MB |
-| `intro` | 18 | 约 10.1 MiB（启动页 v2 运行切片与 1920×1080 动图背景；背景约 9.46 MiB） |
-| `main_menu` | 37 | 约 14.0 MiB（主菜单 v2 运行资源、1920×1080 动图背景和字体子集；背景约 9.07 MiB，旧大字体与 QA 截图已清理） |
+| `intro` | 19 | 约 56 MiB（启动页 v2 运行切片与背景 GIF；原始 GIF 背景约 46 MiB） |
+| `main_menu` | 38 | 约 51 MiB（主菜单 v2 运行资源、背景 GIF 和字体子集；原始 GIF 背景约 37 MiB，旧大字体与 QA 截图已清理） |
 | `map` | 12 | 约 0.2 MB（地图 v2 切片） |
 | 根目录背景图 | 8 | 约 1.4 MB（Act 2 地图背景已转 WebP） |
 
@@ -656,8 +656,9 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
+| Trae 接手 (2026-05-27) | 首页/主菜单动图替换为原始 GIF（46MB+37MB），放弃 animated WebP 压缩；主菜单「返回首页」按钮改为右下角圆角方形，字体统一为 JingHuaSongti/SimSun。 |
 | 启动页 v2 资源拼装接入 | `IntroView.tsx` 使用 `game/public/assets/intro/v2/` 资源按示例图精准还原：首页标题、顶部文案、右侧公告/活动/图鉴/设置入口和底部进入按钮均为独立切片；`runtimeAssetManifest.ts` 已刷新。 |
-| 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；首页和主菜单动图已重新导出为 1920×1080 animated WebP，单文件均低于 10MB；`public/assets` 当前约 114.6MiB，`runtimeAssetManifest.ts` 已刷新。 |
+| 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；首页和主菜单动图后续已替换为原始 GIF（清晰度优先于体积）；`public/assets` 当前约 198MiB。 |
 | Windows 11 离线版 | 新增 `offline-windows/open-game.cmd` 与 `open-game.ps1`，用 PowerShell 内置本地 HTTP 服务启动 `offline-windows/web`，目标电脑不需要 Node.js、npm、Python 或网络；`web/` 和 zip 为本机构建产物，不进 Git。 |
 | 第五轮平衡调整 | 每回合首张攻击牌费用 -1；白芍柔肝/点穴/酸枣仁/厚朴/细辛/麻黄汤补进攻收益；陈皮、葛根、赤芍、桔梗、枳实和子午流注改为更少堵手；低攻击体质开局补到至少 5 张攻击牌；奖励和药房在低进攻牌组时保底给进攻牌。 |
 | 首页右侧按钮 v2 切片 | 首页右侧“公告/活动/图鉴/设置”已改为 `intro/v2` 下的独立入口切片，不再使用旧静态 `side_menu.png`。 |

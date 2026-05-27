@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -3103,16 +3103,16 @@ textarea {
   .start-menu-home-button {
     position: absolute;
     z-index: 9;
-    left: calc(72 / 1920 * 100%);
-    top: calc(54 / 1080 * 100%);
-    width: calc(190 / 1920 * 100%);
+    right: calc(60 / 1920 * 100%);
+    bottom: calc(40 / 1080 * 100%);
+    width: calc(210 / 1920 * 100%);
     height: calc(54 / 1080 * 100%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: min(0.6vw, 10px);
     border: 1px solid rgba(236, 210, 142, 0.58);
-    border-radius: 4px;
+    border-radius: 12px;
     background:
       linear-gradient(180deg, rgba(33, 52, 50, 0.52), rgba(11, 19, 23, 0.5)),
       rgba(12, 22, 30, 0.36);
@@ -3120,7 +3120,7 @@ textarea {
       inset 0 0 0 1px rgba(255, 249, 212, 0.08),
       0 10px 22px rgba(0, 0, 0, 0.18);
     color: #f6e8bd;
-    font-family: KaiTi, STKaiti, "Noto Serif SC", "Songti SC", serif;
+    font-family: "JingHuaSongti", "SimSun", "Songti SC", "STSong", serif;
     font-size: calc(23 / 1080 * 100cqh);
     font-weight: 700;
     letter-spacing: 0;

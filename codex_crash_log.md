@@ -234,3 +234,43 @@ BROWSER_USE_AVAILABLE_BACKENDS = "iab"
   - bundled Chrome plugin cache absent
   - Chrome extension manifest absent
   - corrected watcher is waiting for the next full Codex exit
+
+## 2026-05-27 00:57:00 Asia/Shanghai
+
+- Follow-up after Codex again exited abnormally around `2026-05-27 00:33 Asia/Shanghai`.
+- Latest new desktop logs for process `17976` were zero bytes, so the most useful evidence remains the previous log:
+  - `codex-desktop-6932e743-76a5-4d7a-8064-b665c8660f60-6356-t0-i1-153833-0.log`
+- That log repeatedly resolved the same in-app browser route for:
+  - conversation/thread: `019e5ef0-4f68-7f13-a2a2-15e936d12aeb`
+  - turn: `019e6514-ec17-79b1-95a0-f7893a1db298`
+  - followed by `browser sidebar guest torn down` and `webcontents-destroyed`
+- Root-cause direction changed from external Chrome bridge to stale in-app-browser route hydration from a huge historical thread plus config drift:
+  - session file size: about 155 MB
+  - file moved from `.codex\sessions\2026\05\25\rollout-2026-05-25T19-41-13-019e5ef0-4f68-7f13-a2a2-15e936d12aeb.jsonl`
+  - backup: `C:\Users\C2H6O\.codex\backups\codex-browser-thread-quarantine-20260527-004509\sessions-quarantined\rollout-2026-05-25T19-41-13-019e5ef0-4f68-7f13-a2a2-15e936d12aeb.jsonl`
+- Removed the same thread from `C:\Users\C2H6O\.codex\session_index.jsonl`.
+- Re-applied IAB-only backend:
+
+```toml
+BROWSER_USE_AVAILABLE_BACKENDS = "iab"
+```
+
+- Current running Codex can still rewrite `.codex-global-state.json` from memory, so final pruning must happen after a full Codex exit.
+- Installed a clean hidden after-exit root repair watcher:
+  - script: `C:\Users\C2H6O\.codex\backups\codex-browser-thread-quarantine-20260527-004509\after-exit-root-repair-and-guard.ps1`
+  - log: `C:\Users\C2H6O\.codex\backups\codex-browser-thread-quarantine-20260527-004509\after-exit-root-repair-and-guard.log`
+  - parser check passed
+  - watcher process is running and waiting for all `Codex.exe`, `codex.exe`, `node_repl.exe`, and `extension-host.exe` processes to exit
+- The watcher will then:
+  - re-force `BROWSER_USE_AVAILABLE_BACKENDS = "iab"`
+  - remove any remaining references to `019e5ef0-4f68-7f13-a2a2-15e936d12aeb` from global state
+  - remove/keep blocked the external Chrome native host
+  - keep the bundled marketplace `chrome` plugin entry/source isolated
+  - move in-app browser profile/cache folders so Codex recreates them cleanly on next launch
+  - guard the next Codex restart for 5 minutes to prevent config/state rewrite
+- Current verified external Chrome bridge state:
+  - native host registry key absent
+  - native host manifest absent
+  - `openai-bundled\chrome` cache absent
+  - active bundled marketplace chrome source absent
+  - no `extension-host.exe` process

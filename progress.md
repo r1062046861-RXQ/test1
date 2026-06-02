@@ -137,3 +137,8 @@
 - Confirmed `.github/workflows/pages.yml` builds `game` and deploys GitHub Pages on pushes to `main`.
 - Confirmed EdgeOne CLI is logged in as account `C2H6O`; production deploy script is `npm run edgeone:deploy`.
 - Release staging should exclude untracked `qzj.txt`.
+- Committed the release as `9bba413 Release 1.0.0 gameplay and UI updates` and pushed it to `origin/main`.
+- GitHub Pages workflow run `26814435965` completed successfully for commit `9bba413`.
+- `npm run edgeone:deploy` built successfully and uploaded files, but the EdgeOne deployment `dpxljvq3fmpf` returned cloud status `Failed`.
+- Verified `https://test1.renxuanqi.top/` returned HTTP 200 and served `assets/index-Cvmim8hH.js`, the same main JS asset produced by the local production build.
+- Verified the online JS contains `1.0.0`, `真气上限`, `查看现有手牌`, and `起始牌组攻击密度`.

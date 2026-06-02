@@ -174,12 +174,17 @@ Commit the completed 1.0.0 UI, readability, notice, hand overview, and balance c
 
 ## Phases
 - [x] Phase 1: Confirm current branch, remote, GitHub Pages workflow, and EdgeOne CLI login.
-- [ ] Phase 2: Stage release files while excluding local `qzj.txt`.
-- [ ] Phase 3: Commit and push `main` to GitHub.
-- [ ] Phase 4: Run EdgeOne production deploy.
-- [ ] Phase 5: Verify the online URL and record final deployment status.
+- [x] Phase 2: Stage release files while excluding local `qzj.txt`.
+- [x] Phase 3: Commit and push `main` to GitHub.
+- [x] Phase 4: Run EdgeOne production deploy.
+- [x] Phase 5: Verify the online URL and record final deployment status.
 
 ## Constraints
 - Do not commit `qzj.txt`.
 - Do not use destructive git commands.
 - Preserve all existing user/worktree changes that are part of the requested 1.0.0 release.
+
+## Errors Encountered
+| Error | Attempt | Resolution |
+|-------|---------|------------|
+| EdgeOne production deploy failed after uploading files and creating deployment `dpxljvq3fmpf` | Ran `npm run edgeone:deploy` | Build and upload succeeded, cloud deployment status returned `Failed`; GitHub Pages workflow for commit `9bba413` succeeded and `https://test1.renxuanqi.top/` served the matching production asset `assets/index-Cvmim8hH.js` |

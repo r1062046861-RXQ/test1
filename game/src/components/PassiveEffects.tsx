@@ -24,12 +24,18 @@ const createStatusStackMap = (statusEffects: ReturnType<typeof useGameStore.getS
 const PASSIVE_THUMB_MAP: Record<string, string> = {
   'balanced_passive': '/assets/constitutions/balanced.webp',
   'yin_deficiency_passive': '/assets/constitutions/yin_deficiency.webp',
+  'yin_deficiency_drawback': '/assets/constitutions/yin_deficiency.webp',
   'qi_deficiency_passive': '/assets/constitutions/qi_deficiency.webp',
+  'qi_deficiency_drawback': '/assets/constitutions/qi_deficiency.webp',
   'yang_deficiency_passive': '/assets/constitutions/yang_deficiency.webp',
+  'yang_deficiency_drawback': '/assets/constitutions/yang_deficiency.webp',
   'phlegm_dampness_passive': '/assets/constitutions/phlegm_dampness.webp',
   'damp_heat_passive': '/assets/constitutions/damp_heat.webp',
+  'damp_heat_drawback': '/assets/constitutions/damp_heat.webp',
   'blood_stasis_passive': '/assets/constitutions/blood_stasis.webp',
+  'blood_stasis_drawback': '/assets/constitutions/blood_stasis.webp',
   'qi_stagnation_passive': '/assets/constitutions/qi_stagnation.webp',
+  'qi_stagnation_drawback': '/assets/constitutions/qi_stagnation.webp',
   'special_diathesis_passive': '/assets/constitutions/special_diathesis.webp',
 };
 

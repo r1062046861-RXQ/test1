@@ -6,6 +6,7 @@ import { Card } from './Card';
 import { ActionButton, Badge, SectionTitle } from './ui/PageShell';
 import { resolveAssetBackground, resolveAssetUrl } from '../utils/assets';
 import { ensureOffensiveOffer } from '../utils/cardBalance';
+import { HandOverview } from './HandOverview';
 
 type TabKey = 'buy' | 'sell' | 'combine' | 'decompose';
 
@@ -122,7 +123,8 @@ export const ShopView: React.FC = () => {
             <h2 className="text-3xl font-bold text-stone-100 mt-1">药房</h2>
             <p className="text-sm text-stone-300 mt-1">买卖药材，合成新方。</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <HandOverview deck={player.deck} relics={player.relics ?? []} />
             {msg && <Badge variant="slate">{msg}</Badge>}
             <Badge variant="slate">{player.gold} 金币</Badge>
             <ActionButton variant="secondary" onClick={() => completeNonCombat()}>继续下一层</ActionButton>

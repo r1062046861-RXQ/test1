@@ -31,7 +31,7 @@ const DIRECT_DAMAGE_EFFECT_IDS = new Set([
 export const isOffensiveCard = (card: Card | undefined | null) =>
   Boolean(card && (card.type === 'attack' || DIRECT_DAMAGE_EFFECT_IDS.has(card.effectId)));
 
-export const needsOffensiveOffer = (deck: Card[], threshold = 0.4) => {
+export const needsOffensiveOffer = (deck: Card[], threshold = 0.45) => {
   const playableCards = deck.filter(card => !card.unplayable);
   if (playableCards.length === 0) return true;
   const offensiveCards = playableCards.filter(isOffensiveCard);
@@ -42,7 +42,7 @@ export const ensureOffensiveOffer = <T extends Card>(
   picked: T[],
   pool: T[],
   deck: Card[],
-  threshold = 0.4
+  threshold = 0.45
 ) => {
   if (!needsOffensiveOffer(deck, threshold) || picked.some(isOffensiveCard)) return picked;
   const pickedIds = new Set(picked.map(card => card.id));

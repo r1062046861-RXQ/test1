@@ -47,7 +47,11 @@ const executeDefendIntent = (enemy: Enemy, intent: EnemyIntent) => {
 };
 
 class WindColdGuestStrategy implements EnemyBehaviorStrategy {
-  getPrimaryIntent(_enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(_enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
+    const coldStacks = ctx.getStacks(ctx.player, 'cold_evil');
+    if (coldStacks > 0 && Math.random() < 0.45) {
+      return { type: 'attack', value: 8 + Math.min(2, coldStacks), description: '寒邪入络' };
+    }
     return Math.random() < 0.68
       ? { type: 'attack', value: 7, description: '寒邪侵袭' }
       : { type: 'debuff', value: 0, description: '风寒束表' };
@@ -71,7 +75,11 @@ class WindColdGuestStrategy implements EnemyBehaviorStrategy {
 }
 
 class WindHeatAttackStrategy implements EnemyBehaviorStrategy {
-  getPrimaryIntent(_enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(_enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
+    const heatStacks = ctx.getStacks(ctx.player, 'heat_evil');
+    if (heatStacks >= 2 && Math.random() < 0.5) {
+      return { type: 'attack', value: 5, hits: 2, description: '热盛连灼' };
+    }
     return Math.random() < 0.62
       ? { type: 'attack', value: 4, hits: 2, description: '热邪连袭' }
       : { type: 'debuff', value: 0, description: '热邪灼络' };
@@ -94,7 +102,11 @@ class WindHeatAttackStrategy implements EnemyBehaviorStrategy {
 }
 
 class DampTurbidityStrategy implements EnemyBehaviorStrategy {
-  getPrimaryIntent(_enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(_enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
+    const dampStacks = ctx.getStacks(ctx.player, 'dampness_evil');
+    if (dampStacks > 0 && Math.random() < 0.45) {
+      return { type: 'defend', value: 8, description: '湿浊蓄势' };
+    }
     return Math.random() < 0.55
       ? { type: 'attack', value: 6, description: '湿浊侵身' }
       : { type: 'debuff', value: 0, description: '湿邪困脾' };
@@ -111,6 +123,9 @@ class DampTurbidityStrategy implements EnemyBehaviorStrategy {
       executeAttackIntent(enemy, intent, ctx);
     } else if (intent.type === 'defend') {
       executeDefendIntent(enemy, intent);
+      if (intent.description === '湿浊蓄势') {
+        ctx.addStatus(enemy, { id: 'strength', name: '浊气加压', type: 'buff', stacks: 1, canStack: true, description: '攻击伤害提高' });
+      }
       ctx.log(`${enemy.name} 获得了 ${intent.value || 0} 点格挡`);
     } else if (intent.type === 'debuff') {
       ctx.applyDebuffToPlayer({ id: 'dampness_evil', name: '湿邪', type: 'debuff', stacks: 1, canStack: true, description: '格挡获得降低' });
@@ -203,8 +218,12 @@ class QiBloodStasisStrategy implements EnemyBehaviorStrategy {
     enemy.meta = { ...(enemy.meta || {}), turn: (enemy.meta?.turn || 0) + 1 };
   }
 
-  getPrimaryIntent(enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
     const turn = enemy.meta?.turn || 0;
+    const bloodStacks = ctx.getStacks(ctx.player, 'blood_stasis');
+    if (bloodStacks > 0 && turn % 2 === 1) {
+      return { type: 'attack', value: 11 + Math.min(2, bloodStacks), description: '瘀阻痛甚' };
+    }
     return turn % 2 === 0
       ? { type: 'debuff', value: 0, description: '气滞血瘀' }
       : { type: 'attack', value: 10, description: '郁阻作痛' };
@@ -228,8 +247,11 @@ class QiBloodStasisStrategy implements EnemyBehaviorStrategy {
 }
 
 class SpleenDampnessStrategy implements EnemyBehaviorStrategy {
-  getPrimaryIntent(_enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(_enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
     const roll = Math.random();
+    if (ctx.getStacks(ctx.player, 'dampness_evil') > 0 && roll < 0.4) {
+      return { type: 'defend', value: 12, description: '湿聚成形' };
+    }
     if (roll < 0.32) return { type: 'attack', value: 8, description: '湿浊压身' };
     if (roll < 0.72) return { type: 'defend', value: 10, description: '脾虚护体' };
     return { type: 'debuff', value: 0, description: '湿困中焦' };
@@ -246,6 +268,9 @@ class SpleenDampnessStrategy implements EnemyBehaviorStrategy {
       executeAttackIntent(enemy, intent, ctx);
     } else if (intent.type === 'defend') {
       executeDefendIntent(enemy, intent);
+      if (intent.description === '湿聚成形') {
+        ctx.addStatus(enemy, { id: 'strength', name: '湿聚压迫', type: 'buff', stacks: 1, canStack: true, description: '攻击伤害提高' });
+      }
       ctx.log(`${enemy.name} 获得了 ${intent.value || 0} 点格挡`);
     } else if (intent.type === 'debuff') {
       const existingCostUp = ctx.getStatus(ctx.player, 'cost_up');
@@ -425,8 +450,14 @@ class ShenbunaqiStrategy implements EnemyBehaviorStrategy {
     enemy.meta = { ...(enemy.meta || {}), turn: (enemy.meta?.turn || 0) + 1 };
   }
 
-  getPrimaryIntent(enemy: Enemy, _ctx: EnemyActionContext): EnemyIntent {
+  getPrimaryIntent(enemy: Enemy, ctx: EnemyActionContext): EnemyIntent {
     const turn = enemy.meta?.turn || 0;
+    if (ctx.getStacks(ctx.player, 'energy_drain') > 0) {
+      return { type: 'attack', value: 12, description: '纳气反冲' };
+    }
+    if (turn > 0 && turn % 3 === 0) {
+      return { type: 'debuff', value: 0, description: '寒饮压气' };
+    }
     return turn % 2 === 0
       ? { type: 'debuff', value: 0, description: '肾不纳气' }
       : { type: 'attack', value: 11, description: '纳气失司' };
@@ -443,8 +474,13 @@ class ShenbunaqiStrategy implements EnemyBehaviorStrategy {
       executeAttackIntent(enemy, intent, ctx);
     } else if (intent.type === 'debuff') {
       ctx.applyDebuffToPlayer({ id: 'energy_drain', name: '肾不纳气', type: 'debuff', stacks: 1, canStack: true, description: '真气上限降低', duration: 1 });
-      ctx.applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
-      ctx.log('肾不纳气：真气受抑，寒邪侵袭');
+      if (intent.description === '寒饮压气') {
+        ctx.applyDebuffToPlayer({ id: 'weak', name: '虚弱', type: 'debuff', stacks: 1, canStack: true, description: '造成伤害降低25%', duration: 1 });
+        ctx.log('寒饮压气：真气受抑，攻势迟滞');
+      } else {
+        ctx.applyDebuffToPlayer({ id: 'cold_evil', name: '寒邪', type: 'debuff', stacks: 1, canStack: true, description: '寒邪缠身' });
+        ctx.log('肾不纳气：真气受抑，寒邪侵袭');
+      }
     }
   }
 }
@@ -897,6 +933,6 @@ export const getEnemyActionCount = (enemy: Enemy, currentAct: number): number =>
   const rank = getEnemyRank(enemy);
   if (rank !== 'common') return 2;
   if (currentAct <= 1) return 1;
-  if (currentAct === 2) return Math.random() < 0.45 ? 2 : 1;
-  return Math.random() < 0.8 ? 2 : 1;
+  if (currentAct === 2) return Math.random() < 0.55 ? 2 : 1;
+  return Math.random() < 0.85 ? 2 : 1;
 };

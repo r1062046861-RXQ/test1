@@ -71,3 +71,69 @@
 - Ran `npm test -- --run`: 6 files / 90 tests passed.
 - Ran `npm run build`: production build passed.
 - Updated README.md, AI_HANDOFF.md (date, asset stats, recent changes).
+
+## Documentation consistency audit progress (2026-06-02)
+- Started a documentation/source consistency audit at the user's request.
+- Added a scoped audit plan to `task_plan.md`.
+- No gameplay/source/asset edits made for the audit.
+- Read current `README.md` and `AI_HANDOFF.md`.
+- Initial potential mismatches spotted: README asset total appears internally inconsistent (`118MiB` in tree vs `198MiB` later), and AI handoff still mentions intro background `.webp` while recent changes claim GIF runtime assets.
+- Completed source-vs-doc audit across README, AI handoff, balance guide, event/design docs, tutorial art plan, runtime assets, and both Excel files.
+- Verified current source truth by loading TypeScript data and inspecting `gameStore.ts`/`gameCore.ts`: card costs/targets, event queue behavior, equipment drop rates, map event force threshold, equipment caps, and asset totals.
+- Confirmed the audit did not modify gameplay/source/assets; only `task_plan.md`, `findings.md`, and `progress.md` were updated with audit notes.
+
+## Versioning policy progress (2026-06-02)
+- Set the project/game version to `1.0.0` in `game/package.json` and `game/package-lock.json`.
+- Added an intro/home screen version label sourced from `game/package.json`.
+- Added documentation rules requiring README/AI_HANDOFF/BALANCE_GUIDE/design docs/data-sheet notes to include the relevant version number on future updates.
+
+## 1.0.0 hand overview progress (2026-06-02)
+- Extracted the map-only hand overview into shared `HandOverview`.
+- Kept the map label as `手牌一览`; added `查看现有手牌` entries to the shop and combat reward pages.
+- Updated README and AI_HANDOFF with the `1.0.0` behavior note.
+
+## 1.0.0 combat readability progress (2026-06-02)
+- Planned and implemented the map stat wording change from `真气` to `真气上限`.
+- Split the combat effect panel into `增益效果`, `负面效果`, and `装备` tabs.
+- Made the long-hover hand preview use an explicit 3000ms delay and 1.5x preview scale.
+- Scoped card text readability improvements to combat hand cards.
+
+## 1.0.0 effect details and classification progress (2026-06-02)
+- Made folded combat effect and equipment rows clickable, opening a full-text detail dialog.
+- Split mixed constitution passives into visible buff/drawback status entries while keeping original passive IDs for rules.
+- Hid the `warm_yang_start_count` rules counter so 阳虚质的启动代价只通过负面效果展示.
+- Bumped the internal persisted store version to `15` so old saves refresh constitution display statuses.
+
+## 1.0.0 balance guide audit progress (2026-06-02)
+- Read `BALANCE_GUIDE.md` and checked current card/enemy/reward facts against `shared/` and `game/src/store/gameStore.ts`.
+- Updated the balance guide with `1.0.0` version metadata and current data sources.
+- Corrected current formula/herb value statistics and enemy status rows for `cost_up` and `shenbunaqi`.
+- Clarified that `boss_spleen_damp` currently logs the water-damp summon hint but does not directly insert `damp_minion`.
+
+## 1.0.0 P1-P5 balance implementation progress (2026-06-02)
+- Resumed after interruption from the existing dirty worktree and added a scoped P1-P5 implementation plan to `task_plan.md`.
+- Confirmed the previous handoff says code/test changes are mostly implemented, while `BALANCE_GUIDE.md` still has stale changed-card, formula, enemy HP/action, and boss summon rows to finish before final verification.
+- Fixed a source/doc mismatch in `山药平补`: card text said end-turn heal 1, while `effectValue` and the core fallback still resolved as 2. Updated `shared/data/cards.ts`, `shared/core/gameCore.ts`, and `gameCore.test.ts`.
+- Corrected `BALANCE_GUIDE.md` stale rows for reduced healing cards, formula card effects, formula blueprint effects, enemy HP/pool statistics, ordinary enemy action probabilities, and added the new state-linked enemy actions/status rows.
+- First verification run failed on the new `山药平补` assertion, then passed after the contextual data fix.
+- Ran `npm test -- --run`: 6 test files / 90 tests passed.
+- Ran `npm run build`: production build passed.
+- Search checks confirmed map status label is `真气上限`, map hand overview remains `手牌一览`, shop/reward use `HandOverview` default `查看现有手牌`, `LONG_HOVER_PREVIEW_DELAY_MS` is 3000, combat preview scale is 1.5, and low-offense threshold / enemy double-action probabilities are updated.
+
+## 1.0.0 starting attack density follow-up progress (2026-06-02)
+- Started implementation from user-approved P1-P5 order for raising low-attack starting decks.
+- Computed current attack counts and opening-hand low-attack risk: 5-attack decks have about 43.4% chance to open 0 or 1 attacks; 6-attack decks have about 29.4%.
+- Added the follow-up plan to `task_plan.md` and recorded the current balance findings in `findings.md`.
+- P1 completed: 阴虚质、痰湿质、特禀质 now each have 7 attack cards while staying at 15 total cards.
+- P2 completed: 平和质、气虚质、阳虚质、气郁质 now each have 7 attack cards while staying at 15 total cards.
+- P3/P4 completed by verification: 湿热质 remains 8 attacks, 血瘀质 remains 10 attacks, and reward/shop low-offense threshold remains 45%.
+- P5 completed: added exact starting-deck attack-count assertions, updated README/AI_HANDOFF/BALANCE_GUIDE and homepage notice with the detailed replacement list.
+- Ran `npm test -- --run`: 6 test files / 90 tests passed.
+- Ran `npm run build`: production build passed, main JS chunk about 497.30 kB.
+
+## 1.0.0 production deploy progress (2026-06-02)
+- Started publish request for repository `https://github.com/r1062046861-RXQ/test1` and online address `test1.renxuanqi.top`.
+- Confirmed current branch is `main` tracking `origin/main`, and `origin` points to `git@github.com:r1062046861-RXQ/test1.git`.
+- Confirmed `.github/workflows/pages.yml` builds `game` and deploys GitHub Pages on pushes to `main`.
+- Confirmed EdgeOne CLI is logged in as account `C2H6O`; production deploy script is `npm run edgeone:deploy`.
+- Release staging should exclude untracked `qzj.txt`.

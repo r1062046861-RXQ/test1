@@ -58,3 +58,59 @@ The remaining crash source is stale browser-use route hydration from a huge hist
 - Original GIF sources remain 1138x640, 95 frames, 10fps, 9.5s; higher clarity must come from better encoding/sharpening and avoiding unnecessary upscaling, not from true extra source detail.
 - Selected replacement backgrounds are 1920x1080 animated WebP, 76 frames, pre-scaled with Lanczos and light sharpening to avoid browser-side upscaling blur.
 - Final background sizes: intro 9,914,388 bytes (9.914 MB / 9.455 MiB), main menu 9,510,000 bytes (9.510 MB / 9.069 MiB), both below the 10MB requirement.
+
+---
+
+# Documentation consistency audit findings (2026-06-02)
+
+## Current source-of-truth snapshot
+- Working tree already had modified `README.md`, `AI_HANDOFF.md`, `game/src/components/StartMenu.tsx`, `game/src/index.css`, plus planning files and `qzj.txt`; audit changes are limited to planning files.
+- Source data loaded from `shared/data/cards.ts`, `shared/data/formulas.ts`, `shared/data/enemies.ts`, and `shared/data/events.ts`:
+  - Cards: 108 total; categories `herb=75`, `enemy=10`, `formula=12`, `equipment=11`.
+  - Card types: `skill=44`, `attack=28`, `power=36`.
+  - Rarities: `common=22`, `uncommon=30`, `rare=56`.
+  - Costs: `0=38`, `1=52`, `2=14`, `3=4`.
+  - Targets: `self=72`, `single_enemy=24`, `all_enemies=12`.
+  - Formula blueprints: 12.
+  - Enemies: 20 total; enemy pools contain 3+1+2 for Act 1, 4+1+1 for Act 2, 5+1+1 for Act 3, plus the summon template in `ENEMIES`.
+  - Side events: 11, with `side_needle_stage2` as a continuation event; mainline id is `mainline_three_brothers`.
+- Current filesystem asset total under `game/public/assets`: 370 files, 208,009,739 bytes, about 198.37 MiB. Audio subdirectory is about 35.56 MiB; image manifest total is 168,702,119 bytes, about 160.89 MiB.
+- Current intro/main-menu runtime components reference `.gif`: `IntroView.tsx` uses `/assets/intro/background.gif`; `StartMenu.tsx` uses `/assets/main_menu/v2/background.gif`.
+
+## Confirmed potential documentation mismatches so far
+- `README.md` and `AI_HANDOFF.md` card cost distributions that say `0=44 / 1=45 / 2=15 / 3=4` are stale; current source and `BALANCE_GUIDE.md` match `0=38 / 1=52 / 2=14 / 3=4`.
+- `AI_HANDOFF.md` target distribution `self=73 / single_enemy=23 / all_enemies=12` is stale; current source is `self=72 / single_enemy=24 / all_enemies=12`.
+- `README.md` project tree says `game/public/assets` is about 368 files / 118 MiB, but current filesystem is 370 files / 198.37 MiB and the same README later says about 198 MiB.
+- `AI_HANDOFF.md` still describes the intro page background path as `game/public/assets/intro/background.webp`, but current `IntroView.tsx` uses `/assets/intro/background.gif`.
+
+## Final audit notes
+- Correct card classification must use `getCardCategory()`: current counts are 75 herb, 10 enemy mechanism, 12 formula, and 11 equipment. Raw `category` fields are absent on many herb/enemy cards, so direct property counting gives the wrong answer.
+- `BALANCE_GUIDE.md` is mostly aligned with the current fifth-balance data for card counts, type/cost distributions, equipment caps, and act-scaled equipment drop rates.
+- `README.md` line 151 and `AI_HANDOFF.md` line 256 still use the pre-fifth-balance cost distribution. Replace with `0=38 / 1=52 / 2=14 / 3=4`.
+- `AI_HANDOFF.md` line 257 still uses stale target distribution. Replace with `self=72 / single_enemy=24 / all_enemies=12`.
+- `README.md` line 66 conflicts with the current filesystem and its own later status table: current `game/public/assets` is 370 files / 208,009,739 bytes (~198.37 MiB), with audio 37,286,268 bytes (~35.56 MiB). Manifest image bytes are 168,702,119 (~160.89 MiB).
+- `README.md` line 141, `AI_HANDOFF.md` line 384, and `游戏事件系统-落地方案.md` line 75 describe `combatSinceEvent >= 2`; current `shared/core/gameCore.ts` uses `forceEvent = combatSinceEvent >= 1`, so after any mainline layer without event/shop/rest/boss the next eligible layer is forced event/shop in all three main columns.
+- `AI_HANDOFF.md` line 267 says equipment only comes from battle victory drops at 10%/20%/50%; current `gameStore.ts` uses act-scaled battle drop rates: Act 1 6/15/35, Act 2 8/18/45, Act 3 10/20/50. Current events/mainline can also grant equipment directly via `addRelic`.
+- `游戏逻辑框架-展墙信息图谱.md` lines 129 and 137-139 are stale: it says 85 herb, attack 27, skill 45, power 36. Current effective counts are herb 75, enemy 10, formula 12, equipment 11; attack 28, skill 44, power 36.
+- `游戏逻辑框架-展墙信息图谱.md` line 164 repeats the old fixed equipment drop rate 10/20/50; current rates are act-scaled and equipment effects are capped by `EQUIPMENT_EFFECT_CAPS`.
+- `游戏事件系统-落地方案.md` is useful as a design/implementation plan but should not be treated as current truth. It still includes old implementation targets such as probability decay for duplicate equipment and an older `EventEffect` union that lacks current `randomCard`.
+- Current source event facts: `SIDE_EVENTS` has 11 entries; `side_needle_stage2` has `actRequirement: 2`, clears `needle_stage1`, grants `equipment_ziwuliuzhu` plus `maxHpChange -2`, and the store adds an extra `maxHp -3` only if the marker path was `needle`.
+- `NEW_PLAYER_TUTORIAL_ART_PLAN.md` references missing runtime paths: `intro/background.png`, `main_menu/v2/background.png`, `background_map_act2.png`, and `combat/v2/background.png`. Current existing equivalents are `intro/background.gif` plus `.webp`, `main_menu/v2/background.gif` plus `.webp`, `background_map_act2.webp`, and `combat/v2/background.webp`.
+- `卡牌清单.xlsx` has 108 matching card IDs but 31 rows differ from source fields, mostly stale costs. Its `统计` sheet is closer to current totals and includes notes about current event queue/loading behavior.
+- `游戏战斗数据.xlsx` has 108 matching card IDs but 31 rows differ from source fields, mostly stale costs; 85 card rows have blank category; the `统计总览` sheet is stale (`药材牌=0`, `攻击牌=27`, `技能牌=45`), and `系统常量` still says `强制事件保底 combatSinceEvent >= 2`.
+
+## Versioning policy notes (2026-06-02)
+- Current release version is `1.0.0`.
+- The intro/home screen should display the version from `game/package.json`.
+- Future README/AI_HANDOFF/BALANCE_GUIDE/design-doc/data-sheet updates must include the relevant version number; player-visible rule/content changes should update `game/package.json` first.
+
+## 1.0.0 P1-P5 balance implementation notes (2026-06-02)
+- `山药平补` must keep `description`, `effectValue`, `end_turn_heal_power` fallback, tests, and `BALANCE_GUIDE.md` aligned at 1 end-turn heal after the P1 healing-density reduction.
+- Current ordinary enemy double-action probabilities are Act 2 = 55% and Act 3 = 85%; old 45%/80% values only belong to prior historical notes, not current truth tables.
+- Current P5 enemy complexity rows include conditional actions: 风寒客 reads player 寒邪, 风热袭 reads player 热邪, 湿浊缠/臃肿肉山 read player 湿邪, 紫荆囚徒 reads player 血瘀, and 夺息雾妖 reads player 真气压制.
+
+## 1.0.0 starting attack density follow-up findings (2026-06-02)
+- Before this follow-up, 阴虚质、痰湿质、特禀质 each had 5 attack cards in 15; a 5-card opening hand had about 43.4% chance to contain 0 or 1 attack.
+- 平和质、气虚质、阳虚质、气郁质 each had 6 attack cards in 15; a 5-card opening hand had about 29.4% chance to contain 0 or 1 attack.
+- 湿热质 already had 8 attack cards and 血瘀质 already had 10 attack cards, so this follow-up should leave them unchanged.
+- Reward/shop low-offense threshold is currently 45% in `game/src/utils/cardBalance.ts`; raising starting decks to 7 attack cards is enough for the opening-hand issue without pushing that threshold higher.

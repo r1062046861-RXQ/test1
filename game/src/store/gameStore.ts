@@ -366,7 +366,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '阴虚质',
       type: 'buff',
       stacks: 1,
-      description: '获得滋阴时额外+1层；回合开始真气+1；受到伤害+1。',
+      description: '获得滋阴时额外+1层；回合开始真气+1。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'yin_deficiency_drawback',
+      name: '阴虚火旺',
+      type: 'debuff',
+      stacks: 1,
+      description: '受到伤害+1。',
       canStack: false,
       dispelImmune: true,
     },
@@ -377,7 +386,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '气虚质',
       type: 'buff',
       stacks: 1,
-      description: '攻击伤害-1，格挡+2，治疗+1；打出攻击牌恢复1点生命。',
+      description: '格挡+2，治疗+1；打出攻击牌恢复1点生命。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'qi_deficiency_drawback',
+      name: '气虚乏力',
+      type: 'debuff',
+      stacks: 1,
+      description: '攻击伤害-1。',
       canStack: false,
       dispelImmune: true,
     },
@@ -388,7 +406,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '阳虚质',
       type: 'buff',
       stacks: 1,
-      description: '回合开始获得温阳，前2次启动真气-1；3层温阳造成群体爆发。',
+      description: '回合开始获得温阳；3层温阳造成群体爆发。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'yang_deficiency_drawback',
+      name: '阳虚启动缓慢',
+      type: 'debuff',
+      stacks: 1,
+      description: '前2次启动真气-1。',
       canStack: false,
       dispelImmune: true,
     },
@@ -410,7 +437,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '湿热质',
       type: 'buff',
       stacks: 1,
-      description: '攻击牌施加热邪；每回合首张攻击牌使全体敌人获得热邪；格挡-2。',
+      description: '攻击牌施加热邪；每回合首张攻击牌使全体敌人获得热邪。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'damp_heat_drawback',
+      name: '湿热耗防',
+      type: 'debuff',
+      stacks: 1,
+      description: '格挡-2。',
       canStack: false,
       dispelImmune: true,
     },
@@ -421,7 +457,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '血瘀质',
       type: 'buff',
       stacks: 1,
-      description: '每回合前2张攻击牌叠加血瘀；攻击血瘀目标伤害+50%并无视格挡；格挡与治疗减半。',
+      description: '每回合前2张攻击牌叠加血瘀；攻击血瘀目标伤害+50%并无视格挡。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'blood_stasis_drawback',
+      name: '血瘀凝滞',
+      type: 'debuff',
+      stacks: 1,
+      description: '格挡与治疗减半。',
       canStack: false,
       dispelImmune: true,
     },
@@ -432,7 +477,16 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       name: '气郁质',
       type: 'buff',
       stacks: 1,
-      description: '每回合多抽1张；首张技能牌额外抽1张；敌方回合首次受伤-4；攻防-1。',
+      description: '每回合多抽1张；首张技能牌额外抽1张；敌方回合首次受伤-4。',
+      canStack: false,
+      dispelImmune: true,
+    },
+    {
+      id: 'qi_stagnation_drawback',
+      name: '气郁滞涩',
+      type: 'debuff',
+      stacks: 1,
+      description: '攻击伤害-1，格挡获得-1。',
       canStack: false,
       dispelImmune: true,
     },
@@ -459,6 +513,27 @@ const CONSTITUTION_PASSIVES: Record<Constitution, StatusEffect[]> = {
       dispelImmune: true,
     },
   ],
+};
+
+const CONSTITUTION_PASSIVE_STATUS_IDS = new Set(
+  Object.values(CONSTITUTION_PASSIVES).flatMap((passives) => passives.map((passive) => passive.id)),
+);
+
+const cloneConstitutionPassives = (constitution: Constitution) =>
+  CONSTITUTION_PASSIVES[constitution].map((status) => ({ ...status }));
+
+const refreshConstitutionPassiveStatuses = (
+  statusEffects: StatusEffect[] | undefined,
+  constitution: Constitution,
+): StatusEffect[] => {
+  const nonConstitutionStatuses = (statusEffects ?? []).filter((status) => {
+    if (status.id === 'fire_heat_passive' || status.id === 'jing_deficiency_passive') {
+      return false;
+    }
+    return !CONSTITUTION_PASSIVE_STATUS_IDS.has(status.id);
+  });
+
+  return [...nonConstitutionStatuses, ...cloneConstitutionPassives(constitution)];
 };
 
 const CRAFTING_PHASES = new Set<GamePhase>(['map', 'reward', 'shop', 'rest', 'event', 'chest']);
@@ -498,8 +573,11 @@ const createCombatState = (state: GameStore, enemyTemplate: Enemy, nodeId: strin
       exhaustPile: [],
       block: 0,
       energy: state.player.maxEnergy,
-      statusEffects: state.player.statusEffects.filter(status =>
-        status.dispelImmune
+      statusEffects: refreshConstitutionPassiveStatuses(
+        state.player.statusEffects.filter(status =>
+          status.dispelImmune
+        ),
+        normalizeConstitution(state.player.constitution),
       ),
     }
   };
@@ -566,7 +644,7 @@ const isAdminEnemyChallengeNode = (nodeId: string | null) =>
 
 const buildStartingPlayer = (constitution: Constitution) => {
   const normalizedConstitution = normalizeConstitution(constitution);
-  const statusEffects: StatusEffect[] = CONSTITUTION_PASSIVES[normalizedConstitution].map(status => ({ ...status }));
+  const statusEffects: StatusEffect[] = cloneConstitutionPassives(normalizedConstitution);
 
   if (normalizedConstitution === 'admin') {
     const allHerbIds = Object.keys(CARD_LIBRARY).filter((id) => isHerbCard(CARD_LIBRARY[id]));
@@ -1558,7 +1636,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'wuxing-yidao-storage',
       storage: createJSONStorage(() => webStorage),
-      version: 14,
+      version: 15,
       partialize: state => ({
         phase: state.phase === 'card_codex' || state.phase === 'intro' ? 'start_menu' : state.phase,
         player: state.player,
@@ -1625,19 +1703,7 @@ export const useGameStore = create<GameStore>()(
           player: {
             ...existingPlayer,
             constitution: normalizedConstitution,
-            statusEffects: existingPlayer.statusEffects?.map((status) => {
-              if (status.id === 'fire_heat_passive') {
-                return { ...CONSTITUTION_PASSIVES.damp_heat[0] };
-              }
-              if (status.id === 'jing_deficiency_passive') {
-                return { ...CONSTITUTION_PASSIVES.special_diathesis[0] };
-              }
-              const refreshedPassive = CONSTITUTION_PASSIVES[normalizedConstitution].find(passive => passive.id === status.id);
-              if (refreshedPassive) {
-                return { ...refreshedPassive };
-              }
-              return status;
-            }) ?? CONSTITUTION_PASSIVES[normalizedConstitution].map(status => ({ ...status })),
+            statusEffects: refreshConstitutionPassiveStatuses(existingPlayer.statusEffects, normalizedConstitution),
             relics: existingPlayer.relics ?? [],
             obtainedCardIds: existingPlayer.obtainedCardIds ?? [],
             obtainedEnemyTemplateIds: existingPlayer.obtainedEnemyTemplateIds ?? [],

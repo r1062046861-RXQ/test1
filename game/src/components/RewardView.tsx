@@ -6,6 +6,7 @@ import { FORMULA_BLUEPRINT_BY_ID } from '../data/formulas';
 import { ActionButton, Panel, SectionTitle } from './ui/PageShell';
 import { Check, ScrollText, X } from 'lucide-react';
 import { ensureOffensiveOffer } from '../utils/cardBalance';
+import { HandOverview } from './HandOverview';
 
 export const RewardView: React.FC = () => {
   const {
@@ -103,11 +104,14 @@ export const RewardView: React.FC = () => {
             <h2 className="text-3xl font-bold text-stone-950 mt-1">战利品</h2>
             <p className="text-sm text-stone-700 mt-1">选择需要的卡牌加入牌组，或拒绝继续。</p>
           </div>
-          {!allRewardsResolved ? (
-            <ActionButton variant="secondary" onClick={handleSkipAll}>
-              {skipConfirm ? '确定跳过全部？' : '跳过全部'}
-            </ActionButton>
-          ) : null}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <HandOverview deck={player.deck} relics={player.relics ?? []} />
+            {!allRewardsResolved ? (
+              <ActionButton variant="secondary" onClick={handleSkipAll}>
+                {skipConfirm ? '确定跳过全部？' : '跳过全部'}
+              </ActionButton>
+            ) : null}
+          </div>
         </div>
 
         <SectionTitle title="卡牌奖励与药方蓝图" hint="点击 ✓ 拿取，点击 ✗ 放弃。药方蓝图点击录入即可。" />

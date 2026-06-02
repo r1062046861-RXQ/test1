@@ -516,7 +516,7 @@ describe('shared game core', () => {
 
   it('五行失调会在血线阈值达到时切换阶段', () => {
     const enemy = makeEnemy('boss_five_elements');
-    enemy.currentHp = 380;
+    enemy.currentHp = Math.floor(enemy.maxHp * 0.78);
     enemy.meta = { phase: 'wood', phaseTurn: 0 };
     const player = makePlayer();
     const logs: string[] = [];
@@ -767,7 +767,7 @@ describe('shared game core', () => {
     });
     const healed = resolveCardPlay(makeState(healedPlayer, [makeEnemy('wind_cold_guest')]), danggui.id, undefined, () => undefined);
     expect(healed).not.toBeNull();
-    expect(healed!.player.hp).toBe(76);
+    expect(healed!.player.hp).toBe(75);
   });
 
   it('正邪相争在敌方攻击造成生命伤害后叠正气并提高格挡', () => {
@@ -857,19 +857,19 @@ describe('shared game core', () => {
     expect(getEnemyActionCount(common, 1)).toBe(1);
     expect(getEnemyActionCount(elite, 2)).toBe(2);
 
-    const act2Double = vi.spyOn(Math, 'random').mockReturnValue(0.44);
+    const act2Double = vi.spyOn(Math, 'random').mockReturnValue(0.54);
     expect(getEnemyActionCount(common, 2)).toBe(2);
     act2Double.mockRestore();
 
-    const act2Single = vi.spyOn(Math, 'random').mockReturnValue(0.45);
+    const act2Single = vi.spyOn(Math, 'random').mockReturnValue(0.55);
     expect(getEnemyActionCount(common, 2)).toBe(1);
     act2Single.mockRestore();
 
-    const act3Double = vi.spyOn(Math, 'random').mockReturnValue(0.79);
+    const act3Double = vi.spyOn(Math, 'random').mockReturnValue(0.84);
     expect(getEnemyActionCount(common, 3)).toBe(2);
     act3Double.mockRestore();
 
-    const act3Single = vi.spyOn(Math, 'random').mockReturnValue(0.8);
+    const act3Single = vi.spyOn(Math, 'random').mockReturnValue(0.85);
     expect(getEnemyActionCount(common, 3)).toBe(1);
     act3Single.mockRestore();
   });
@@ -940,12 +940,13 @@ describe('shared game core', () => {
           expect(result.player.block).toBe(8);
           expect(result.player.statusEffects.some((status) => status.id === 'weak')).toBe(false);
           expect(result.player.hand.some((card) => card.name === CARD_LIBRARY.chenpi.name)).toBe(true);
+          expect(getStacks(result.player, 'reduce_next_damage')).toBe(3);
         },
       },
       {
         cardId: 'formula_placeholder_02',
         assert: (result, _beforePlayer, beforeEnemies) => {
-          expect(result.enemies[0].currentHp).toBe(beforeEnemies[0].maxHp - 10);
+          expect(result.enemies[0].currentHp).toBe(beforeEnemies[0].maxHp - 9);
           expect(getEnemyStacks(result.enemies[0], 'heat_evil')).toBe(2);
         },
       },
@@ -957,7 +958,7 @@ describe('shared game core', () => {
           player.drawPile = [makeCard('chenpi', 'draw-a'), makeCard('gancao', 'draw-b')];
         },
         assert: (result) => {
-          expect(result.player.hp).toBe(66);
+          expect(result.player.hp).toBe(64);
           expect(result.player.statusEffects.some((status) => status.id === 'weak')).toBe(false);
           expect(result.player.hand.length).toBeGreaterThanOrEqual(2);
         },
@@ -968,8 +969,9 @@ describe('shared game core', () => {
           player.hp = 60;
         },
         assert: (result) => {
-          expect(result.player.hp).toBe(68);
+          expect(result.player.hp).toBe(65);
           expect(getStacks(result.player, 'strength')).toBe(1);
+          expect(getStacks(result.player, 'warm_yang')).toBe(1);
         },
       },
       {
@@ -1000,8 +1002,9 @@ describe('shared game core', () => {
           player.hp = 60;
         },
         assert: (result) => {
-          expect(result.player.hp).toBe(70);
+          expect(result.player.hp).toBe(66);
           expect(result.player.block).toBe(6);
+          expect(getStacks(result.player, 'next_skill_bonus')).toBe(1);
         },
       },
       {
@@ -1018,6 +1021,7 @@ describe('shared game core', () => {
         assert: (result, _beforePlayer, beforeEnemies) => {
           expect(result.enemies[0].currentHp).toBe(beforeEnemies[0].maxHp - 10);
           expect(result.enemies[1].currentHp).toBe(beforeEnemies[1].maxHp - 7);
+          expect(getEnemyStacks(result.enemies[0], 'weak')).toBe(1);
         },
       },
       {
@@ -1026,8 +1030,9 @@ describe('shared game core', () => {
           player.hp = 60;
         },
         assert: (result) => {
-          expect(result.player.hp).toBe(65);
+          expect(result.player.hp).toBe(63);
           expect(getEnemyStacks(result.enemies[0], 'stun')).toBe(1);
+          expect(getStacks(result.player, 'reduce_next_damage')).toBe(3);
         },
       },
       {
@@ -1158,8 +1163,8 @@ describe('shared game core', () => {
     expect(CARD_LIBRARY.hegu.cost).toBe(1);
     expect(CARD_LIBRARY.jinyinhua.cost).toBe(1);
     expect(CARD_LIBRARY.qinggusan.effectValue).toBe(6);
-    expect(CARD_LIBRARY.liuwei.effectValue).toBe(3);
-    expect(CARD_LIBRARY.liuwei.secondaryValue).toBe(4);
+    expect(CARD_LIBRARY.liuwei.effectValue).toBe(2);
+    expect(CARD_LIBRARY.liuwei.secondaryValue).toBe(3);
 
     const buzhongyiqi = makeCard('buzhongyiqi', 'echo-power');
     const huangqi = makeCard('huangqi', 'echo-block');
@@ -1176,12 +1181,13 @@ describe('shared game core', () => {
 
   it('第五轮进攻密度与手牌经济调整生效', () => {
     expect(CARD_LIBRARY.xiaochaihu.cost).toBe(1);
-    expect(CARD_LIBRARY.baohe.cost).toBe(0);
+    expect(CARD_LIBRARY.baohe.cost).toBe(1);
     expect(CARD_LIBRARY.baishao.secondaryValue).toBe(3);
     expect(CARD_LIBRARY.hegu.secondaryValue).toBe(4);
     expect(CARD_LIBRARY.suanzaoren.effectValue).toBe(4);
     expect(CARD_LIBRARY.xiaoyao.effectValue).toBe(2);
     expect(CARD_LIBRARY.xiaoyao.secondaryValue).toBe(1);
+    expect(CARD_LIBRARY.shanyao.effectValue).toBe(1);
 
     const enemy = makeEnemy('wind_cold_guest');
     const baishao = makeCard('baishao', 'offense-weak');
@@ -1200,13 +1206,16 @@ describe('shared game core', () => {
 
     const zhishi = makeCard('zhishi', 'flow');
     const mahuang = makeCard('mahuang', 'flow-attack');
-    const flowFirst = applyPlay(
-      makeState(makePlayer({ energy: 1, hand: [zhishi, mahuang] }), [makeEnemy('wind_cold_guest')]),
-      zhishi.id,
-    );
-    expect(getStacks(flowFirst.state.player, 'next_attack_cost_reduction')).toBe(1);
-    const flowSecond = applyPlay(flowFirst.state, mahuang.id, flowFirst.state.enemies[0].id);
-    expect(flowSecond.state.enemies[0].currentHp).toBeLessThan(flowFirst.state.enemies[0].currentHp);
+    const flowState = makeState(makePlayer({ energy: 1, hand: [zhishi, mahuang] }), [makeEnemy('wind_cold_guest')]);
+    const flowFirst = applyPlay(flowState, zhishi.id);
+    expect(getStacks(flowFirst.state.player, 'next_attack_cost_reduction')).toBe(0);
+
+    const postAttackState = makeState(makePlayer({ energy: 1, hand: [makeCard('zhishi', 'flow-after-attack'), makeCard('mahuang', 'flow-after-reduced')] }), [makeEnemy('wind_cold_guest')]);
+    postAttackState.turnFlags.playedAttack = true;
+    const flowAfterAttack = applyPlay(postAttackState, 'zhishi_flow-after-attack');
+    expect(getStacks(flowAfterAttack.state.player, 'next_attack_cost_reduction')).toBe(1);
+    const flowSecond = applyPlay(flowAfterAttack.state, 'mahuang_flow-after-reduced', flowAfterAttack.state.enemies[0].id);
+    expect(flowSecond.state.enemies[0].currentHp).toBeLessThan(flowAfterAttack.state.enemies[0].currentHp);
 
     const buffedEnemy = makeEnemy('wind_cold_guest');
     buffedEnemy.statusEffects = [{ id: 'strength', name: '力量', type: 'buff', stacks: 1, canStack: true, description: '攻击提高' }];

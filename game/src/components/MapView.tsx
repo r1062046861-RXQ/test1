@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   BedSingle,
   ChevronLeft,
@@ -9,13 +9,12 @@ import {
   ShieldAlert,
   Skull,
   ShoppingBag,
-  X,
 } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { getBossUnlockWinsRequired } from '../../../shared/core/gameCore';
-import type { Card as CardData, NodeType } from '../types';
-import { CARD_LIBRARY, countCardsByTemplate } from '../data/cards';
+import type { NodeType } from '../types';
 import { resolveAssetUrl } from '../utils/assets';
+import { HandOverview } from './HandOverview';
 import { SynthesisBench } from './SynthesisBench';
 
 const REF_W = 1920;
@@ -96,121 +95,6 @@ const getMapBackground = (currentAct: number) => {
   if (currentAct === 2) return '/assets/background_map_act2.webp';
   if (currentAct === 3) return '/assets/background_map_act3.webp';
   return '/assets/background_main_menu.png';
-};
-
-type HandOverviewProps = {
-  deck: CardData[];
-  relics: Array<{ id: string; name: string; description: string; effectId: string }>;
-};
-
-const HandOverview: React.FC<HandOverviewProps> = ({ deck, relics }) => {
-  const [open, setOpen] = React.useState(false);
-  const templateCounts = React.useMemo(() => countCardsByTemplate(deck), [deck]);
-  const sorted = React.useMemo(
-    () => Object.entries(templateCounts).sort(([, a], [, b]) => b.count - a.count),
-    [templateCounts],
-  );
-  const relicCounts = React.useMemo(() => {
-    const counts = new Map<string, number>();
-    relics.forEach((relic) => counts.set(relic.id, (counts.get(relic.id) ?? 0) + 1));
-    return Array.from(counts.entries()).sort(([, a], [, b]) => b - a);
-  }, [relics]);
-
-  return (
-    <>
-      <button
-        type="button"
-        className="map-v2-action map-v2-action--deck"
-        style={refRect(1576, 829, 260, 72)}
-        aria-label={`查看牌组，当前 ${deck.length} 张牌`}
-        onClick={() => setOpen(true)}
-      >
-        <ScrollText size={26} aria-hidden="true" />
-        <span className="map-v2-action__label">手牌一览</span>
-        <span className="map-v2-action__count">{deck.length} 牌</span>
-      </button>
-
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            className="synthesis-bench-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            onClick={() => setOpen(false)}
-          >
-            <motion.div
-              className="synthesis-bench"
-              role="dialog"
-              aria-modal="true"
-              initial={{ opacity: 0, y: 18, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.99 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              onClick={(event) => event.stopPropagation()}
-              style={{ maxWidth: '680px', maxHeight: 'min(600px, calc(100vh - 36px))' }}
-            >
-              <div className="synthesis-bench__header">
-                <div className="min-w-0">
-                  <div className="chapter-kicker">巡诊行囊</div>
-                  <h2 className="synthesis-bench__title">手牌一览</h2>
-                </div>
-                <button type="button" className="synthesis-bench__close" aria-label="关闭" onClick={() => setOpen(false)}>
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="ornate-scroll p-4" style={{ overflowY: 'auto', flex: 1 }}>
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-                  {sorted.map(([templateId, count]) => {
-                    const card = CARD_LIBRARY[templateId];
-                    if (!card) return null;
-                    return (
-                      <div key={templateId} className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-[rgba(255,255,255,0.04)] px-3 py-2">
-                        {card.image ? (
-                          <img src={resolveAssetUrl(card.image)} alt="" className="h-12 w-8 shrink-0 rounded-md object-cover" />
-                        ) : null}
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-bold text-amber-100">{card.name}</div>
-                          <div className="text-xs text-stone-400">x{count.count}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {relicCounts.length > 0 ? (
-                  <>
-                    <div className="chapter-kicker mt-5 mb-2">已获装备</div>
-                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-                      {relicCounts.map(([relicId, count]) => {
-                        const relic = relics.find((entry) => entry.id === relicId);
-                        if (!relic) return null;
-                        const relicCard = CARD_LIBRARY[relicId];
-                        return (
-                          <div key={relicId} className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-[rgba(255,255,255,0.04)] px-3 py-2">
-                            {relicCard?.image ? (
-                              <img src={resolveAssetUrl(relicCard.image)} alt="" className="h-12 w-8 shrink-0 rounded-md object-cover" />
-                            ) : null}
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-bold text-amber-100">{relic.name}</div>
-                              <div className="text-xs text-stone-400">x{count}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null}
-                {sorted.length === 0 && relicCounts.length === 0 ? (
-                  <div className="py-12 text-center text-stone-400">牌组为空</div>
-                ) : null}
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </>
-  );
 };
 
 type StatPillProps = {
@@ -332,7 +216,7 @@ export const MapView: React.FC = () => {
             <StatPill asset={MAP_ASSETS.statFloor} label="楼层" value={Math.max(1, currentFloor)} style={leftPanelRect(0, 538, 192, 92)} />
             <StatPill asset={MAP_ASSETS.statHp} label="生命" value={`${player.hp}/${player.maxHp}`} style={leftPanelRect(176, 538, 228, 92)} />
             <StatPill asset={MAP_ASSETS.statGold} label="金币" value={player.gold} style={leftPanelRect(0, 596, 196, 93)} />
-            <StatPill asset={MAP_ASSETS.statEnergy} label="真气" value={player.maxEnergy} style={leftPanelRect(176, 596, 201, 93)} />
+            <StatPill asset={MAP_ASSETS.statEnergy} label="真气上限" value={player.maxEnergy} style={leftPanelRect(176, 596, 201, 93)} />
           </div>
 
           <div className="map-v2-hint" style={leftPanelRect(0, 750, 384, 159)}>
@@ -487,7 +371,17 @@ export const MapView: React.FC = () => {
           </div>
         </aside>
 
-        <HandOverview deck={player.deck} relics={player.relics ?? []} />
+        <HandOverview
+          deck={player.deck}
+          relics={player.relics ?? []}
+          buttonLabel="手牌一览"
+          dialogTitle="手牌一览"
+          buttonClassName="map-v2-action map-v2-action--deck"
+          buttonStyle={refRect(1576, 829, 260, 72)}
+          buttonLabelClassName="map-v2-action__label"
+          buttonCountClassName="map-v2-action__count"
+          iconSize={26}
+        />
         <SynthesisBench />
       </div>
     </div>

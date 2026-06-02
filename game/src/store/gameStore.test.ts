@@ -90,9 +90,24 @@ describe('Game Store', () => {
     ];
 
     expect(Object.keys(STARTING_DECKS).sort()).toEqual([...constitutionIds].sort());
+    const expectedAttackCounts: Record<string, number> = {
+      balanced: 7,
+      yin_deficiency: 7,
+      qi_deficiency: 7,
+      yang_deficiency: 7,
+      phlegm_dampness: 7,
+      damp_heat: 8,
+      blood_stasis: 10,
+      qi_stagnation: 7,
+      special_diathesis: 7,
+      admin: 9,
+    };
+
     constitutionIds.forEach((constitution) => {
       const deck = STARTING_DECKS[constitution];
       expect(deck).toHaveLength(15);
+      const attackCount = deck.filter((cardId) => CARD_LIBRARY[cardId]?.type === 'attack').length;
+      expect(attackCount, `${constitution}: attack cards`).toBe(expectedAttackCounts[constitution]);
       deck.forEach((cardId) => {
         const card = CARD_LIBRARY[cardId];
         expect(card, `${constitution}:${cardId}`).toBeDefined();
@@ -127,12 +142,22 @@ describe('Game Store', () => {
       id: 'damp_heat_passive',
       dispelImmune: true,
     }));
+    expect(state.player.statusEffects).toContainEqual(expect.objectContaining({
+      id: 'damp_heat_drawback',
+      type: 'debuff',
+      dispelImmune: true,
+    }));
 
     store.startGame('fire_heat' as any);
     state = useGameStore.getState();
     expect(state.player.constitution).toBe('damp_heat');
     expect(state.player.statusEffects).toContainEqual(expect.objectContaining({
       id: 'damp_heat_passive',
+      dispelImmune: true,
+    }));
+    expect(state.player.statusEffects).toContainEqual(expect.objectContaining({
+      id: 'damp_heat_drawback',
+      type: 'debuff',
       dispelImmune: true,
     }));
 

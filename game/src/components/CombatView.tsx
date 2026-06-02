@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Hourglass, RefreshCw, Trash2 } from 'lucide-react';
+import { Hourglass, RefreshCw, Trash2, X } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
 import { CARD_LIBRARY } from '../data/cards';
 import type { Card as CardType, Enemy as EnemyType, StatusEffect } from '../types';
@@ -26,12 +27,18 @@ const ACT_LABELS: Record<number, string> = {
 const CONSTITUTION_ICON_BY_PASSIVE_ID: Record<string, string> = {
   balanced_passive: '/assets/constitutions/balanced.webp',
   yin_deficiency_passive: '/assets/constitutions/yin_deficiency.webp',
+  yin_deficiency_drawback: '/assets/constitutions/yin_deficiency.webp',
   qi_deficiency_passive: '/assets/constitutions/qi_deficiency.webp',
+  qi_deficiency_drawback: '/assets/constitutions/qi_deficiency.webp',
   yang_deficiency_passive: '/assets/constitutions/yang_deficiency.webp',
+  yang_deficiency_drawback: '/assets/constitutions/yang_deficiency.webp',
   phlegm_dampness_passive: '/assets/constitutions/phlegm_dampness.webp',
   damp_heat_passive: '/assets/constitutions/damp_heat.webp',
+  damp_heat_drawback: '/assets/constitutions/damp_heat.webp',
   blood_stasis_passive: '/assets/constitutions/blood_stasis.webp',
+  blood_stasis_drawback: '/assets/constitutions/blood_stasis.webp',
   qi_stagnation_passive: '/assets/constitutions/qi_stagnation.webp',
+  qi_stagnation_drawback: '/assets/constitutions/qi_stagnation.webp',
   special_diathesis_passive: '/assets/constitutions/special_diathesis.webp',
 };
 
@@ -198,10 +205,31 @@ const PlayerResources: React.FC = () => {
   );
 };
 
+type PassivePanelTab = 'buff' | 'debuff' | 'equipment';
+
+type EffectDetail =
+  | {
+      kind: 'effect';
+      title: string;
+      meta: string;
+      description: string;
+    }
+  | {
+      kind: 'equipment';
+      title: string;
+      meta: string;
+      description: string;
+      image: string | null;
+    };
+
 const PassiveEquipmentPanel: React.FC = () => {
   const { player } = useGameStore();
-  const [activeTab, setActiveTab] = useState<'passive' | 'equipment'>('passive');
+  const [activeTab, setActiveTab] = useState<PassivePanelTab>('buff');
+  const [selectedDetail, setSelectedDetail] = useState<EffectDetail | null>(null);
   const visibleEffects = player.statusEffects.filter((effect) => !effect.hidden);
+  const buffEffects = visibleEffects.filter((effect) => effect.type === 'buff');
+  const debuffEffects = visibleEffects.filter((effect) => effect.type === 'debuff');
+  const activeEffects = activeTab === 'buff' ? buffEffects : activeTab === 'debuff' ? debuffEffects : [];
   const relics = player.relics ?? [];
   const equipmentRows = useMemo(() => {
     const grouped = new Map<string, { relic: (typeof relics)[number]; count: number }>();
@@ -217,23 +245,95 @@ const PassiveEquipmentPanel: React.FC = () => {
 
     return Array.from(grouped.values());
   }, [relics]);
+  const effectLabel = activeTab === 'debuff' ? '负面' : '增益';
+  const emptyEffectText = activeTab === 'debuff' ? '当前没有负面效果' : '当前没有增益效果';
+  const closeDetail = () => setSelectedDetail(null);
+  const detailModal =
+    typeof document !== 'undefined'
+      ? createPortal(
+          <AnimatePresence>
+            {selectedDetail ? (
+              <motion.div
+                className="combat-v2-effect-detail-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+                onClick={closeDetail}
+              >
+                <motion.div
+                  className="combat-v2-effect-detail"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="combat-v2-effect-detail-title"
+                  initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98, y: 8 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="combat-v2-effect-detail__header">
+                    <div className="combat-v2-effect-detail__heading">
+                      <div className="combat-v2-effect-detail__kicker">完整说明</div>
+                      <h3 id="combat-v2-effect-detail-title">{selectedDetail.title}</h3>
+                      <div className="combat-v2-effect-detail__meta">{selectedDetail.meta}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="combat-v2-effect-detail__close"
+                      aria-label={`关闭${selectedDetail.title}完整说明`}
+                      onClick={closeDetail}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div
+                    className={`combat-v2-effect-detail__body ornate-scroll ${
+                      selectedDetail.kind === 'equipment' && selectedDetail.image ? 'combat-v2-effect-detail__body--with-image' : ''
+                    }`}
+                  >
+                    {selectedDetail.kind === 'equipment' && selectedDetail.image ? (
+                      <img src={selectedDetail.image} alt="" aria-hidden="true" />
+                    ) : null}
+                    <p>{selectedDetail.description}</p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
+          document.body,
+        )
+      : null;
 
   return (
-    <section className="combat-v2-panel combat-v2-passive-panel" aria-label="被动效果与装备">
+    <section className="combat-v2-panel combat-v2-passive-panel" aria-label="增益、负面效果与装备">
       <img className="combat-v2-panel__bg" src={asset('passive_panel.png')} alt="" aria-hidden="true" />
       <div className="combat-v2-passive-tabs">
         <button
           type="button"
-          className={`combat-v2-passive-tab ${activeTab === 'passive' ? 'combat-v2-passive-tab--active' : ''}`}
-          onClick={() => setActiveTab('passive')}
-          aria-pressed={activeTab === 'passive'}
+          className={`combat-v2-passive-tab ${activeTab === 'buff' ? 'combat-v2-passive-tab--active' : ''}`}
+          onClick={() => setActiveTab('buff')}
+          aria-pressed={activeTab === 'buff'}
         >
-          {activeTab === 'passive' ? (
+          {activeTab === 'buff' ? (
             <img className="combat-v2-passive-tab__frame" src={asset('passive_tab_frame.png')} alt="" aria-hidden="true" />
           ) : (
             <img className="combat-v2-passive-tab__single-icon" src={asset('passive_unselected_marker.png')} alt="" aria-hidden="true" />
           )}
-          <span>被动效果</span>
+          <span>增益效果</span>
+        </button>
+        <button
+          type="button"
+          className={`combat-v2-passive-tab combat-v2-passive-tab--debuff ${activeTab === 'debuff' ? 'combat-v2-passive-tab--active' : ''}`}
+          onClick={() => setActiveTab('debuff')}
+          aria-pressed={activeTab === 'debuff'}
+        >
+          {activeTab === 'debuff' ? (
+            <img className="combat-v2-passive-tab__frame" src={asset('passive_tab_frame.png')} alt="" aria-hidden="true" />
+          ) : (
+            <img className="combat-v2-passive-tab__single-icon" src={asset('status_icon_2.png')} alt="" aria-hidden="true" />
+          )}
+          <span>负面效果</span>
         </button>
         <button
           type="button"
@@ -251,10 +351,24 @@ const PassiveEquipmentPanel: React.FC = () => {
       </div>
       <img className="combat-v2-passive-divider" src={asset('divider_line.png')} alt="" aria-hidden="true" />
       <div className="combat-v2-passive-content">
-        {activeTab === 'passive' ? (
-          visibleEffects.length > 0 ? (
-            visibleEffects.slice(0, 6).map((effect, index) => (
-              <div key={effect.id} className="combat-v2-passive-row">
+        {activeTab !== 'equipment' ? (
+          activeEffects.length > 0 ? (
+            activeEffects.map((effect, index) => (
+              <button
+                key={effect.id}
+                type="button"
+                className="combat-v2-passive-row"
+                title={effect.description}
+                aria-label={`查看${effect.name}完整说明`}
+                onClick={() =>
+                  setSelectedDetail({
+                    kind: 'effect',
+                    title: effect.name,
+                    meta: `${effectLabel}效果${effect.stacks > 0 ? ` x${effect.stacks}` : ''}`,
+                    description: effect.description,
+                  })
+                }
+              >
                 <EnemyStatusIcon effect={effect} index={index} />
                 <div className="combat-v2-passive-row__copy">
                   <strong>
@@ -263,13 +377,13 @@ const PassiveEquipmentPanel: React.FC = () => {
                   </strong>
                   <span>{effect.description}</span>
                 </div>
-                <em>{effect.type === 'buff' ? '增益' : '减益'}</em>
-              </div>
+                <em>{effectLabel}</em>
+              </button>
             ))
           ) : (
             <div className="combat-v2-passive-empty">
               <img src={asset('passive_unselected_marker.png')} alt="" aria-hidden="true" />
-              <span>当前没有持续生效的被动效果</span>
+              <span>{emptyEffectText}</span>
             </div>
           )
         ) : equipmentRows.length > 0 ? (
@@ -278,7 +392,22 @@ const PassiveEquipmentPanel: React.FC = () => {
               const card = CARD_LIBRARY[relic.id];
               const image = card?.image ? resolveAssetUrl(card.image) : null;
               return (
-                <div key={relic.id} className="combat-v2-equipment-row">
+                <button
+                  key={relic.id}
+                  type="button"
+                  className="combat-v2-equipment-row"
+                  title={card?.description ?? relic.description}
+                  aria-label={`查看${card?.name ?? relic.name}完整说明`}
+                  onClick={() =>
+                    setSelectedDetail({
+                      kind: 'equipment',
+                      title: card?.name ?? relic.name,
+                      meta: count > 1 ? `装备 x${count}` : '装备',
+                      description: card?.description ?? relic.description,
+                      image,
+                    })
+                  }
+                >
                   {image ? <img src={image} alt="" aria-hidden="true" /> : <img src={asset('equipment_icon.png')} alt="" aria-hidden="true" />}
                   <div className="combat-v2-equipment-row__copy">
                     <strong>
@@ -287,7 +416,7 @@ const PassiveEquipmentPanel: React.FC = () => {
                     </strong>
                     <span>{card?.description ?? relic.description}</span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -298,6 +427,7 @@ const PassiveEquipmentPanel: React.FC = () => {
           </div>
         )}
       </div>
+      {detailModal}
     </section>
   );
 };
@@ -778,9 +908,9 @@ export const CombatView: React.FC = () => {
             {longHoveredCard ? (
               <motion.div
                 className="combat-v2-card-preview"
-                initial={{ opacity: 0, scale: 0.85, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.85, y: 10 }}
+                initial={{ opacity: 0, scale: 1.2, y: 10 }}
+                animate={{ opacity: 1, scale: 1.5, y: 0 }}
+                exit={{ opacity: 0, scale: 1.2, y: 10 }}
                 transition={{ duration: 0.18 }}
               >
                 <Card card={longHoveredCard} interactive={false} hoverLift={false} layoutVariant="default" />

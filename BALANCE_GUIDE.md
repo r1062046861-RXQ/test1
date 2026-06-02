@@ -1,12 +1,13 @@
 # 五行医道平衡性调整手册
 
-更新日期：2026-05-26
+更新日期：2026-06-02
+当前版本：`1.0.0`
 
 这份文档面向后续大量数值调整使用。它把玩家卡牌、敌方机制卡、起始牌组、药方蓝图、装备、敌人基础属性和敌方行动候选数值集中到一个地方。
 
-数据来源：`shared/data/cards.ts`、`shared/data/formulas.ts`、`shared/data/enemies.ts`、`shared/core/enemyStrategies.ts`。
+数据来源：`shared/data/cards.ts`、`shared/data/formulas.ts`、`shared/data/enemies.ts`、`shared/core/gameCore.ts`、`shared/core/enemyStrategies.ts`、`game/src/store/gameStore.ts`、`game/src/components/ShopView.tsx`、`game/src/components/RewardView.tsx`。
 
-本次资产发布说明：2026-05-26 仅优化美术资源体积、更新线上与离线包，不改变第五轮平衡后的卡牌、敌人、事件、商店、休憩或掉落数值。
+`1.0.0` 文档校准说明：本次执行 P1-P5 平衡更新，已同步玩家卡牌、起始牌组、药方牌、敌人基础属性、敌方行动复杂度、奖励/药房进攻保底阈值与测试断言。2026-05-26 的资产发布仅优化美术资源体积、更新线上与离线包。
 
 ## 使用原则
 
@@ -25,6 +26,8 @@
 | 玩家卡牌实际结算 | shared/core/gameCore.ts | resolveCardPlay 中对应 effectId 分支、相关测试 |
 | 药方配方和合成材料 | shared/data/formulas.ts | FORMULA_BLUEPRINTS、合成测试、图鉴展示 |
 | 装备被动强度 | shared/data/cards.ts + shared/core/gameCore.ts | equipment_* effectId、countRelic/countEquipment 倍乘逻辑 |
+| 装备掉落分池/掉率 | game/src/store/gameStore.ts | EQUIPMENT_REWARD_POOLS、EQUIPMENT_DROP_CHANCES、pendingEquipmentRewardId |
+| 商店/奖励出牌密度 | game/src/components/ShopView.tsx + game/src/components/RewardView.tsx | Act 限制、低进攻牌组保底、重复上限 |
 | 敌人 HP/初始格挡/初始意图 | shared/data/enemies.ts | ENEMY_POOLS、管理员挑战列表、图鉴 |
 | 敌人行动/攻击/负面效果 | shared/core/enemyStrategies.ts | getPrimaryIntent、getFollowUpIntent、executeIntent、getEnemyActionCount |
 | 楼层缩放 | shared/core/gameCore.ts | getEnemyScaling；当前普通开战流程只实装 HP 缩放 |
@@ -71,8 +74,18 @@
 - 功能攻击牌补轻伤害：白芍柔肝、点穴：合谷、酸枣仁安眠、厚朴行气、细辛通窍、麻黄汤现在都有直接或下一击伤害收益。
 - 抽牌牌降拥堵：陈皮理气改为 0 费滤牌；葛根解肌改为 1 费抽 1；赤芍凉血改为抽 2 弃 1；桔梗宣肺改为 0 费，满手时抽 1 弃 1；枳实行气给予下一张攻击牌 -1 费。
 - 子午流注只在回合开始手牌少于 5 张时额外抽 1，避免保留手牌制下越抽越堵。
-- 气虚质、痰湿质、特禀质、阴虚质、气郁质起始牌组补足攻击下限；低攻击体质现在至少 5 张攻击牌。
+- 气虚质、痰湿质、特禀质、阴虚质、气郁质起始牌组补足攻击下限；第五轮时低攻击体质先补到至少 5 张攻击牌，`1.0.0` 后续追补到 7 张。
 - 战斗奖励和药房购买在牌组有效进攻牌低于 40% 时，会保证本次选项中至少有 1 张进攻牌。
+
+## `1.0.0` P1-P5 平衡更新记录（2026-06-02）
+
+- P1 回血密度下调：葛根解肌、当归补血、山萸肉固涩、甘草和中、山药平补、天冬养阴、苏叶解表、豆豉宣郁、柴胡疏肝、艾灸：关元等恢复数值下调；平和、气虚、气郁起始牌组用黄芩/川芎/麻黄替换部分续航牌。
+- P1 攻击供给提高：战斗奖励和药房购买在有效进攻牌低于 45% 时保底给进攻牌。
+- P1 追加起始攻击密度：平和、阴虚、气虚、阳虚、痰湿、气郁、特禀起始牌组补到 7 张攻击牌；湿热保持 8 张、血瘀保持 10 张，不继续增强高攻击体质。
+- P2 曲线平滑：Act 1/2/3 普通敌 HP 小幅上调；主要 Boss HP 小幅下调；普通敌 Act 2 双动概率提高到 55%，Act 3 提高到 85%。
+- P3 后期启动降速：石斛益胃改为 1 费且滋阴上限 +1，五味敛阴改为 1 费 2 滋阴/3 格挡，桔梗宣肺改为 1 费，枳实行气只有本回合已打出攻击牌时才给下一张攻击牌 -1 费。
+- P4 药方特色增强：葛根汤和酸枣仁汤加入一次性减伤，麻杏石甘汤按目标热邪增伤，理中丸加入温阳并清寒，四君子汤强化下张技能，小青龙汤对寒邪目标附加虚弱；药方整体从“高数值药材”转向复合配伍效果。
+- P5 敌人招式复杂度提高：风寒客、风热袭、湿浊缠、紫荆囚徒、臃肿肉山、夺息雾妖会读取玩家寒邪/热邪/湿邪/血瘀/真气压制等状态，切换或强化行动。
 
 ## 当前总体统计
 
@@ -82,7 +95,7 @@
 | 卡牌分类 | 敌方机制:10 / 装备被动:11 / 玩家药方:12 / 玩家药材:75 |
 | 战斗类型 | 攻击:28 / 能力:36 / 技能:44 |
 | 稀有度 | 普通:22 / 稀有:30 / 精良:56 |
-| 费用曲线 | 0:38 / 1:52 / 2:14 / 3:4 |
+| 费用曲线 | 0:35 / 1:55 / 2:14 / 3:4 |
 | 目标类型 | 全体敌人:12 / 自身:72 / 单体敌人:24 |
 | 敌人总数 | 20 |
 | 敌方机制卡 | 10 |
@@ -95,15 +108,15 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 敌方机制 | 10 | 0 | 能力:10 | 稀有:10 | 0:10 | - | - |
 | 装备被动 | 11 | 0 | 能力:11 | 普通:3 / 稀有:4 / 精良:4 | 0:11 | - | - |
-| 玩家药方 | 12 | 1.0 | 攻击:5 / 能力:1 / 技能:6 | 稀有:12 | 0:1 / 1:10 / 2:1 | 5-10 / 均7.4 | 1-6 / 均2.1 |
-| 玩家药材 | 75 | 1.1 | 攻击:23 / 能力:14 / 技能:38 | 普通:19 / 稀有:26 / 精良:30 | 0:16 / 1:42 / 2:13 / 3:4 | 0.3-20 / 均5.0 | 1-8 / 均3.0 |
+| 玩家药方 | 12 | 1.0 | 攻击:5 / 能力:1 / 技能:6 | 稀有:12 | 0:1 / 1:10 / 2:1 | 3-9 / 均6.0 | 1-6 / 均2.1 |
+| 玩家药材 | 75 | 1.1 | 攻击:23 / 能力:14 / 技能:38 | 普通:19 / 稀有:26 / 精良:30 | 0:13 / 1:45 / 2:13 / 3:4 | 0.25-20 / 均4.6 | 1-5 / 均2.8 |
 
 ### 按费用统计
 
 | 费用 | 数量 | 占比 | 分类分布 | 类型分布 |
 | --- | --- | --- | --- | --- |
-| 0 | 38 | 38 (35.2%) | 敌方机制:10 / 装备被动:11 / 玩家药方:1 / 玩家药材:16 | 攻击:7 / 能力:24 / 技能:7 |
-| 1 | 52 | 52 (48.1%) | 玩家药方:10 / 玩家药材:42 | 攻击:17 / 能力:4 / 技能:31 |
+| 0 | 35 | 35 (32.4%) | 敌方机制:10 / 装备被动:11 / 玩家药方:1 / 玩家药材:13 | 攻击:7 / 能力:23 / 技能:5 |
+| 1 | 55 | 55 (50.9%) | 玩家药方:10 / 玩家药材:45 | 攻击:17 / 能力:5 / 技能:33 |
 | 2 | 14 | 14 (13.0%) | 玩家药方:1 / 玩家药材:13 | 攻击:4 / 能力:7 / 技能:3 |
 | 3 | 4 | 4 (3.7%) | 玩家药材:4 | 能力:1 / 技能:3 |
 
@@ -121,15 +134,15 @@
 
 | 牌组 ID | 体质 | 张数 | 平均费用 | 类型分布 | 费用曲线 | 稀有度 | 卡牌组成 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| balanced | 平和质 | 15 | 0.9 | 攻击:5 / 能力:2 / 技能:8 | 0:4 / 1:8 / 2:3 | 普通:10 / 稀有:3 / 精良:2 | 山楂消食、川芎行气、麻黄发汗、黄连燥湿、白芍柔肝、陈皮理气、桂枝通络、薏苡除湿、甘草和中、大枣养血、葛根解肌、黄芪固表、当归补血、山药平补、针刺：足三里 |
-| yin_deficiency | 阴虚质 | 15 | 0.9 | 攻击:5 / 能力:1 / 技能:9 | 0:5 / 1:6 / 2:4 | 普通:2 / 稀有:8 / 精良:5 | 麦冬滋阴、生地凉血、知母清热、石斛益胃、玉竹生津、玄参泻火、黄芩清肺、鳖甲软坚、山萸肉固涩、五味敛阴、杏仁降气、金银花露、连翘解毒、人参补气、蒲公英消肿 |
-| qi_deficiency | 气虚质 | 15 | 0.9 | 攻击:5 / 能力:1 / 技能:9 | 0:4 / 1:9 / 2:2 | 普通:8 / 稀有:5 / 精良:2 | 黄芪固表、党参补气、白术健脾、黄连燥湿、山药平补、麻黄发汗、防风祛风、竹叶清心、金银花露、天冬养阴、黄芩清肺、山楂消食、桂枝通络、甘草和中、陈皮理气 |
-| yang_deficiency | 阳虚质 | 15 | 0.9 | 攻击:6 / 能力:2 / 技能:7 | 0:5 / 1:8 / 2:1 / 3:1 | 普通:9 / 稀有:3 / 精良:3 | 附子回阳、肉桂引火、艾灸：关元、陈皮理气、甘草和中、黄芩清肺、桂枝通络、生姜发散、大枣养血、麻黄发汗、细辛通窍、大黄攻下、山楂消食、茯苓渗湿、薄荷疏风 |
-| phlegm_dampness | 痰湿质 | 15 | 0.9 | 攻击:5 / 能力:3 / 技能:7 | 0:4 / 1:9 / 2:2 | 普通:6 / 稀有:6 / 精良:3 | 陈皮理气、枳实行气、茯苓渗湿、薏苡除湿、泽泻利水、黄芩清肺、半夏燥湿、酸枣仁安眠、防风祛风、点穴：合谷、白术健脾、耳穴：神门、温针灸：三阴交、苍术健脾、山楂消食 |
+| balanced | 平和质 | 15 | 0.8 | 攻击:7 / 能力:2 / 技能:6 | 0:6 / 1:6 / 2:3 | 普通:11 / 稀有:3 / 精良:1 | 山楂消食、川芎行气、麻黄发汗、黄连燥湿、白芍柔肝、陈皮理气、桂枝通络、薏苡除湿、黄芩清肺、大枣养血、葛根解肌、黄芪固表、山楂消食、山药平补、针刺：足三里 |
+| yin_deficiency | 阴虚质 | 15 | 0.9 | 攻击:7 / 能力:1 / 技能:7 | 0:5 / 1:6 / 2:4 | 普通:3 / 稀有:7 / 精良:5 | 麦冬滋阴、生地凉血、知母清热、石斛益胃、玉竹生津、玄参泻火、黄芩清肺、鳖甲软坚、黄芩清肺、杏仁降气、杏仁降气、金银花露、连翘解毒、人参补气、蒲公英消肿 |
+| qi_deficiency | 气虚质 | 15 | 0.8 | 攻击:7 / 技能:8 | 0:4 / 1:10 / 2:1 | 普通:9 / 稀有:4 / 精良:2 | 黄芪固表、党参补气、白术健脾、黄连燥湿、川芎行气、麻黄发汗、防风祛风、竹叶清心、金银花露、天冬养阴、黄芩清肺、山楂消食、桂枝通络、川芎行气、陈皮理气 |
+| yang_deficiency | 阳虚质 | 15 | 0.9 | 攻击:7 / 能力:2 / 技能:6 | 0:5 / 1:8 / 2:1 / 3:1 | 普通:9 / 稀有:3 / 精良:3 | 附子回阳、肉桂引火、艾灸：关元、陈皮理气、麻黄发汗、黄芩清肺、桂枝通络、生姜发散、大枣养血、麻黄发汗、细辛通窍、大黄攻下、山楂消食、茯苓渗湿、薄荷疏风 |
+| phlegm_dampness | 痰湿质 | 15 | 0.9 | 攻击:7 / 能力:1 / 技能:7 | 0:4 / 1:9 / 2:2 | 普通:7 / 稀有:6 / 精良:2 | 陈皮理气、枳实行气、茯苓渗湿、薏苡除湿、泽泻利水、黄芩清肺、半夏燥湿、酸枣仁安眠、防风祛风、点穴：合谷、白术健脾、黄芩清肺、点穴：合谷、苍术健脾、山楂消食 |
 | damp_heat | 湿热质 | 15 | 0.9 | 攻击:8 / 技能:7 | 0:4 / 1:9 / 2:2 | 普通:5 / 稀有:6 / 精良:4 | 板蓝根清热、黄连燥湿、金银花露、连翘解毒、石膏清热、牛蒡解毒、黄芩清肺、蒲公英消肿、大黄攻下、甘草和中、知母清热、生地凉血、玄参泻火、杏仁降气、刮痧：大椎 |
 | blood_stasis | 血瘀质 | 15 | 1.1 | 攻击:10 / 能力:1 / 技能:4 | 0:2 / 1:11 / 2:1 / 3:1 | 普通:6 / 稀有:4 / 精良:5 | 三棱破血、三七化瘀、厚朴行气、川芎行气、桂枝通络、细辛通窍、白芍柔肝、大黄攻下、肉桂引火、生姜发散、枳实行气、点穴：合谷、雷火灸：命门、薄荷疏风、莪术破积 |
-| qi_stagnation | 气郁质 | 15 | 0.7 | 攻击:5 / 能力:2 / 技能:8 | 0:5 / 1:10 | 普通:6 / 稀有:6 / 精良:3 | 陈皮理气、枳实行气、赤芍凉血、桔梗宣肺、川芎行气、白芍柔肝、点穴：合谷、酸枣仁安眠、耳穴：神门、推拿：捏脊、黄芩清肺、葛根解肌、泽泻利水、天冬养阴、大枣养血 |
-| special_diathesis | 特禀质 | 15 | 0.8 | 攻击:5 / 能力:8 / 技能:2 | 0:6 / 1:6 / 2:3 | 普通:2 / 稀有:5 / 精良:8 | 砭石：阿是穴、芥穗散风、朱砂安神、干姜温中、桔梗宣肺、薄荷疏风、艾灸：关元、针刺：足三里、耳穴：神门、拔罐：走罐、点穴：合谷、酸枣仁安眠、赤芍凉血、黄芩清肺、山楂消食 |
+| qi_stagnation | 气郁质 | 15 | 0.9 | 攻击:7 / 能力:1 / 技能:7 | 0:2 / 1:13 | 普通:7 / 稀有:5 / 精良:3 | 陈皮理气、枳实行气、赤芍凉血、桔梗宣肺、川芎行气、白芍柔肝、点穴：合谷、酸枣仁安眠、白芍柔肝、推拿：捏脊、黄芩清肺、葛根解肌、泽泻利水、天冬养阴、麻黄发汗 |
+| special_diathesis | 特禀质 | 15 | 0.6 | 攻击:7 / 能力:6 / 技能:2 | 0:7 / 1:7 / 2:1 | 普通:4 / 稀有:4 / 精良:7 | 砭石：阿是穴、芥穗散风、朱砂安神、干姜温中、桔梗宣肺、薄荷疏风、黄芩清肺、山楂消食、耳穴：神门、拔罐：走罐、点穴：合谷、酸枣仁安眠、赤芍凉血、黄芩清肺、山楂消食 |
 | admin | 管理员 | 15 | 0.9 | 攻击:9 / 能力:1 / 技能:5 | 0:4 / 1:8 / 2:3 | 普通:8 / 稀有:5 / 精良:2 | 石膏清热、人参补气、金银花露、连翘解毒、甘草和中、黄芪固表、党参补气、白术健脾、山药平补、陈皮理气、山楂消食、川芎行气、麻黄发汗、黄连燥湿、白芍柔肝 |
 
 ### 起始牌组矩阵
@@ -157,7 +170,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | status_enemy | 10 | 敌方机制:10 | 能力:10 | 0:10 | - | - | 肝火旺、脾虚湿困、风寒束表、热入营血、肾不纳气、气滞血瘀、心肾不交、痰蒙心窍、阳明腑实、冲任不固 |
 | block | 2 | 玩家药材:2 | 技能:2 | 1:1 / 2:1 | 10-14 / 均12 | - | 黄芪固表、竹叶清心 |
-| heal_draw | 2 | 玩家药材:2 | 技能:2 | 1:2 | 4-12 / 均8 | 1-2 / 均1.5 | 甘草和中、豆豉宣郁 |
+| heal_draw | 2 | 玩家药材:2 | 技能:2 | 1:2 | 3-8 / 均5.5 | 1-2 / 均1.5 | 甘草和中、豆豉宣郁 |
 | aoe_damage | 1 | 玩家药材:1 | 攻击:1 | 0:1 | 5-5 / 均5 | - | 拔罐：走罐 |
 | aoe_damage_cleanse | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 3-3 / 均3 | - | 金银花露 |
 | aoe_damage_cleanse_all_buffs | 1 | 玩家药材:1 | 攻击:1 | 2:1 | 8-8 / 均8 | - | 牛蒡解毒 |
@@ -185,7 +198,7 @@
 | cleanse_enemy_buffs | 1 | 玩家药材:1 | 攻击:1 | 0:1 | 3-3 / 均3 | - | 厚朴行气 |
 | cleanse_heat_aoe_damage | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 蒲公英消肿 |
 | cleanse_heat_cold | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 刮痧：大椎 |
-| cleanse_self_heal | 1 | 玩家药材:1 | 技能:1 | 0:1 | 10-10 / 均10 | - | 苏叶解表 |
+| cleanse_self_heal | 1 | 玩家药材:1 | 技能:1 | 0:1 | 6-6 / 均6 | - | 苏叶解表 |
 | cleanse_two_draw | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 推拿：捏脊 |
 | copy_buff_exhaust | 1 | 玩家药材:1 | 能力:1 | 0:1 | - | - | 砭石：阿是穴 |
 | cost_reduction_turn | 1 | 玩家药材:1 | 能力:1 | 1:1 | - | - | 薄荷疏风 |
@@ -195,14 +208,14 @@
 | damage_conditional_stasis | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 5-5 / 均5 | 5-5 / 均5 | 三七化瘀 |
 | damage_debuff_stasis | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 7-7 / 均7 | 1-1 / 均1 | 三棱破血 |
 | damage_draw | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 5-5 / 均5 | - | 川芎行气 |
-| danggui_effect | 1 | 玩家药材:1 | 技能:1 | 1:1 | 5-5 / 均5 | - | 当归补血 |
+| danggui_effect | 1 | 玩家药材:1 | 技能:1 | 1:1 | 4-4 / 均4 | - | 当归补血 |
 | debuff_weak_draw | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 1-1 / 均1 | 3-3 / 均3 | 白芍柔肝 |
 | double_block_buff | 1 | 玩家药材:1 | 能力:1 | 2:1 | - | - | 苍术健脾 |
 | draw_discard | 1 | 玩家药材:1 | 技能:1 | 0:1 | 2-2 / 均2 | 1-1 / 均1 | 陈皮理气 |
 | draw_if_attack | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 枳实行气 |
-| draw_to_hand | 1 | 玩家药材:1 | 能力:1 | 0:1 | - | - | 桔梗宣肺 |
-| end_turn_heal_power | 1 | 玩家药材:1 | 能力:1 | 2:1 | 2-2 / 均2 | - | 山药平补 |
-| energy_max_heal | 1 | 玩家药材:1 | 能力:1 | 2:1 | 1-1 / 均1 | 3-3 / 均3 | 艾灸：关元 |
+| draw_to_hand | 1 | 玩家药材:1 | 能力:1 | 1:1 | - | - | 桔梗宣肺 |
+| end_turn_heal_power | 1 | 玩家药材:1 | 能力:1 | 2:1 | 1-1 / 均1 | - | 山药平补 |
+| energy_max_heal | 1 | 玩家药材:1 | 能力:1 | 2:1 | 1-1 / 均1 | 2-2 / 均2 | 艾灸：关元 |
 | equipment_bianzheng | 1 | 装备被动:1 | 能力:1 | 0:1 | - | - | 辨证论治 |
 | equipment_jingluo | 1 | 装备被动:1 | 能力:1 | 0:1 | - | - | 经络学说 |
 | equipment_qiji | 1 | 装备被动:1 | 能力:1 | 0:1 | - | - | 气机升降 |
@@ -217,18 +230,18 @@
 | formula_banxia_houpu_tang | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 8-8 / 均8 | 2-2 / 均2 | 半夏厚朴汤 |
 | formula_gegen_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 8-8 / 均8 | 1-1 / 均1 | 葛根汤 |
 | formula_jiaotai_wan | 1 | 玩家药方:1 | 技能:1 | 0:1 | 6-6 / 均6 | - | 交泰丸 |
-| formula_lizhong_wan | 1 | 玩家药方:1 | 技能:1 | 1:1 | 8-8 / 均8 | 1-1 / 均1 | 理中丸 |
+| formula_lizhong_wan | 1 | 玩家药方:1 | 技能:1 | 1:1 | 5-5 / 均5 | 1-1 / 均1 | 理中丸 |
 | formula_mahuang_tang | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 4-4 / 均4 | - | 麻黄汤 |
-| formula_maxing_shigan_tang | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 10-10 / 均10 | 2-2 / 均2 | 麻杏石甘汤 |
-| formula_sijunzi_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 10-10 / 均10 | 6-6 / 均6 | 四君子汤 |
-| formula_suanzaoren_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 5-5 / 均5 | 1-1 / 均1 | 酸枣仁汤 |
-| formula_xiaochaihu_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 6-6 / 均6 | 2-2 / 均2 | 小柴胡汤 |
+| formula_maxing_shigan_tang | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 9-9 / 均9 | 2-2 / 均2 | 麻杏石甘汤 |
+| formula_sijunzi_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 6-6 / 均6 | 6-6 / 均6 | 四君子汤 |
+| formula_suanzaoren_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 3-3 / 均3 | 1-1 / 均1 | 酸枣仁汤 |
+| formula_xiaochaihu_tang | 1 | 玩家药方:1 | 技能:1 | 1:1 | 4-4 / 均4 | 2-2 / 均2 | 小柴胡汤 |
 | formula_xiaoqinglong_tang | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 7-7 / 均7 | 3-3 / 均3 | 小青龙汤 |
 | formula_yinqiao_san | 1 | 玩家药方:1 | 攻击:1 | 1:1 | 6-6 / 均6 | 1-1 / 均1 | 银翘散 |
 | formula_zhenwu_tang | 1 | 玩家药方:1 | 能力:1 | 2:1 | - | - | 真武汤 |
-| heal_block | 1 | 玩家药材:1 | 技能:1 | 1:1 | 12-12 / 均12 | 4-4 / 均4 | 天冬养阴 |
+| heal_block | 1 | 玩家药材:1 | 技能:1 | 1:1 | 8-8 / 均8 | 4-4 / 均4 | 天冬养阴 |
 | heal_block_exhaust | 1 | 玩家药材:1 | 技能:1 | 0:1 | 2-2 / 均2 | 2-2 / 均2 | 大枣养血 |
-| heal_draw_block | 1 | 玩家药材:1 | 技能:1 | 1:1 | 5-5 / 均5 | 4-4 / 均4 | 葛根解肌 |
+| heal_draw_block | 1 | 玩家药材:1 | 技能:1 | 1:1 | 3-3 / 均3 | 4-4 / 均4 | 葛根解肌 |
 | huangqin_effect | 1 | 玩家药材:1 | 攻击:1 | 0:1 | 4-4 / 均4 | 1-1 / 均1 | 黄芩清肺 |
 | mahuang_effect | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 8-8 / 均8 | 4-4 / 均4 | 麻黄发汗 |
 | percent_damage | 1 | 玩家药材:1 | 攻击:1 | 2:1 | 0.25-0.25 / 均0.25 | - | 莪术破积 |
@@ -242,12 +255,12 @@
 | strength_temp | 1 | 玩家药材:1 | 攻击:1 | 1:1 | 3-3 / 均3 | - | 肉桂引火 |
 | true_damage | 1 | 玩家药材:1 | 攻击:1 | 2:1 | 18-18 / 均18 | - | 人参补气 |
 | yin_attack_virtual_heat | 1 | 玩家药材:1 | 技能:1 | 1:1 | 1-1 / 均1 | - | 知母清热 |
-| yin_block | 1 | 玩家药材:1 | 技能:1 | 0:1 | 3-3 / 均3 | 4-4 / 均4 | 五味敛阴 |
+| yin_block | 1 | 玩家药材:1 | 技能:1 | 1:1 | 2-2 / 均2 | 3-3 / 均3 | 五味敛阴 |
 | yin_block_scaling | 1 | 玩家药材:1 | 技能:1 | 2:1 | 5-5 / 均5 | - | 鳖甲软坚 |
-| yin_cap_increase | 1 | 玩家药材:1 | 技能:1 | 0:1 | 1-1 / 均1 | - | 石斛益胃 |
+| yin_cap_increase | 1 | 玩家药材:1 | 技能:1 | 1:1 | 1-1 / 均1 | - | 石斛益胃 |
 | yin_cleanse | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 百合安神 |
 | yin_gain_exhaust | 1 | 玩家药材:1 | 技能:1 | 2:1 | 4-4 / 均4 | - | 生地凉血 |
-| yin_heal_scaling | 1 | 玩家药材:1 | 技能:1 | 1:1 | 3-3 / 均3 | - | 山萸肉固涩 |
+| yin_heal_scaling | 1 | 玩家药材:1 | 技能:1 | 1:1 | 2-2 / 均2 | - | 山萸肉固涩 |
 | yin_power_energy | 1 | 玩家药材:1 | 能力:1 | 2:1 | - | - | 玉竹生津 |
 | yin_spend_damage_random | 1 | 玩家药材:1 | 技能:1 | 1:1 | - | - | 玄参泻火 |
 | yin_spend_double_damage | 1 | 玩家药材:1 | 攻击:1 | 0:1 | 6-6 / 均6 | - | 杏仁降气 |
@@ -269,54 +282,54 @@
 | xiaoyao | 赤芍凉血 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | cleanse_draw | 2 | 1 |  | 清除所有负面状态，抽2张牌，丢弃1张牌。消耗。 |
 | dazao | 大枣养血 | 玩家药材 | 技能 | 普通 | 0 | 自身 | 2 | heal_block_exhaust | 2 | 2 |  | 恢复2点生命，获得2点格挡。消耗。 |
 | hegu | 点穴：合谷 | 玩家药材 | 攻击 | 精良 | 1 | 单体敌人 | 2 | apply_weak | 2 | 4 |  | 造成4点伤害，使一个敌人虚弱2回合。 |
-| guipi | 豆豉宣郁 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | heal_draw | 12 | 2 |  | 恢复12点生命，并抽2张牌。消耗。 |
+| guipi | 豆豉宣郁 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | heal_draw | 8 | 2 |  | 恢复8点生命，并抽2张牌。消耗。 |
 | shenmen | 耳穴：神门 | 玩家药材 | 能力 | 精良 | 0 | 自身 | 2 | block_reduce_next_damage | 5 | 3 |  | 获得5点格挡。本回合敌人第一次伤害减少3点。 |
 | xuefu | 厚朴行气 | 玩家药材 | 攻击 | 稀有 | 0 | 全体敌人 | 2 | cleanse_enemy_buffs | 3 |  |  | 清除所有敌人正面状态。每清除1个正面状态，对所有敌人造成3点伤害；若没有清除状态，对所有敌人造成3点伤害。消耗。 |
-| baohe | 桔梗宣肺 | 玩家药材 | 能力 | 稀有 | 0 | 自身 | 2 | draw_to_hand |  |  |  | 若手牌少于5张，抽牌直到达到5张；否则抽1张牌，丢弃1张牌。消耗。 |
+| baohe | 桔梗宣肺 | 玩家药材 | 能力 | 稀有 | 1 | 自身 | 2 | draw_to_hand |  |  |  | 若手牌少于5张，抽牌直到达到5张；否则抽1张牌，丢弃1张牌。消耗。 |
 | lianqiao | 连翘解毒 | 玩家药材 | 攻击 | 精良 | 0 | 全体敌人 | 2 | aoe_damage_cleanse_heat | 4 |  |  | 对所有敌人造成4点伤害，并清除1层热邪。 |
 | rougui | 肉桂引火 | 玩家药材 | 攻击 | 精良 | 1 | 自身 | 2 | strength_temp | 3 |  |  | 获得3点力量。本回合结束时失去3点力量。 |
 | sanqi | 三七化瘀 | 玩家药材 | 攻击 | 精良 | 1 | 单体敌人 | 2 | damage_conditional_stasis | 5 | 5 |  | 造成5点伤害。如果目标有血瘀，则额外造成5点伤害。 |
 | yinqiao | 石膏清热 | 玩家药材 | 攻击 | 稀有 | 1 | 全体敌人 | 2 | aoe_damage_heat | 7 | 1 |  | 对所有敌人造成7点伤害，并施加1层热邪。消耗。 |
-| shihu | 石斛益胃 | 玩家药材 | 技能 | 精良 | 0 | 自身 | 2 | yin_cap_increase | 1 |  |  | 获得1层滋阴。本场战斗中，滋阴层数上限+2。消耗。 |
-| huoxiang | 苏叶解表 | 玩家药材 | 技能 | 稀有 | 0 | 自身 | 2 | cleanse_self_heal | 10 |  |  | 清除所有负面状态，并恢复10点生命。消耗。 |
+| shihu | 石斛益胃 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | yin_cap_increase | 1 |  |  | 获得1层滋阴。本场战斗中，滋阴层数上限+1。消耗。 |
+| huoxiang | 苏叶解表 | 玩家药材 | 技能 | 稀有 | 0 | 自身 | 2 | cleanse_self_heal | 6 |  |  | 清除所有负面状态，并恢复6点生命。消耗。 |
 | suanzaoren | 酸枣仁安眠 | 玩家药材 | 攻击 | 精良 | 1 | 单体敌人 | 2 | sleep_debuff | 4 |  |  | 造成4点伤害，使一个敌人获得1层困倦（下回合跳过行动）。 |
-| sijunzi | 天冬养阴 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | heal_block | 12 | 4 |  | 恢复12点生命，并获得4点格挡。消耗。 |
+| sijunzi | 天冬养阴 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | heal_block | 8 | 4 |  | 恢复8点生命，并获得4点格挡。消耗。 |
 | mahuangtang | 细辛通窍 | 玩家药材 | 攻击 | 稀有 | 1 | 自身 | 2 | attack_pierce_all | 3 |  |  | 本回合攻击卡无视敌人所有格挡，下一张攻击额外造成3点伤害。消耗。 |
 | qinggusan | 杏仁降气 | 玩家药材 | 攻击 | 稀有 | 0 | 单体敌人 | 2 | yin_spend_double_damage | 6 |  |  | 造成6点伤害。消耗3层滋阴使伤害翻倍。 |
-| zhishi | 枳实行气 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | draw_if_attack |  |  |  | 抽1张牌。本回合下一张攻击牌消耗-1；如果本回合已打出攻击牌，额外抽1张。 |
+| zhishi | 枳实行气 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | draw_if_attack |  |  |  | 抽1张牌。若本回合已打出攻击牌，额外抽1张，且下一张攻击牌消耗-1。 |
 | yupingfeng | 竹叶清心 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 2 | block | 14 |  |  | 获得14点格挡。消耗。 |
 | aiye | 艾叶温经 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | block_per_card | 3 |  |  | 获得3点格挡。本回合每打出一张卡牌，获得1点格挡。 |
 | baizhu | 白术健脾 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | block_if_no_damage_strength | 6 | 2 |  | 获得6点格挡。如果本回合未受到攻击伤害，获得2点力量。 |
 | baihe | 百合安神 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | yin_cleanse |  |  |  | 移除自身1个负面状态。若有至少3层滋阴，改为移除所有负面状态。 |
 | dangshen | 党参补气 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | block_next_skill_bonus | 4 | 2 |  | 获得4点格挡。下回合第一张技能卡效果+2。 |
 | fangfeng | 防风祛风 | 玩家药材 | 技能 | 精良 | 1 | 单体敌人 | 2 | block_apply_vulnerable | 7 |  |  | 获得7点格挡。赋予一个敌人易伤。 |
-| gancao | 甘草和中 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | heal_draw | 4 | 1 |  | 恢复4点生命，抽1张牌。 |
+| gancao | 甘草和中 | 玩家药材 | 技能 | 普通 | 1 | 自身 | 2 | heal_draw | 3 | 1 |  | 恢复3点生命，抽1张牌。 |
 | guasha | 刮痧：大椎 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | cleanse_heat_cold |  |  |  | 移除自身所有热邪和寒邪。 |
 | maidong | 麦冬滋阴 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | buff_yin | 2 |  |  | 获得2层滋阴。抽1张牌。 |
-| shanyurou | 山萸肉固涩 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | yin_heal_scaling | 3 |  |  | 恢复3点生命，并额外恢复等同于滋阴层数的生命值。 |
+| shanyurou | 山萸肉固涩 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | yin_heal_scaling | 2 |  |  | 恢复2点生命，并额外恢复等同于滋阴层数的生命值。 |
 | shengma | 升麻升提 | 玩家药材 | 能力 | 精良 | 1 | 自身 | 2 | block_to_strength |  |  |  | 本回合每次获得格挡，获得1点临时力量。 |
 | tuina | 推拿：捏脊 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | cleanse_two_draw |  |  |  | 移除自身2个负面状态，抽1张牌。 |
 | xuanshen | 玄参泻火 | 玩家药材 | 技能 | 精良 | 1 | 全体敌人 | 2 | yin_spend_damage_random |  |  |  | 消耗所有滋阴。每消耗1层，对随机敌人造成3点伤害。 |
 | zexie | 泽泻利水 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | cleanse_damp_convert_block |  |  |  | 移除自身所有湿邪，每层获得2点格挡。 |
 | zhimu | 知母清热 | 玩家药材 | 技能 | 精良 | 1 | 自身 | 2 | yin_attack_virtual_heat | 1 |  |  | 获得1层滋阴。本回合你的攻击卡额外施加1层虚热。 |
 | zhusha | 朱砂安神 | 玩家药材 | 能力 | 稀有 | 1 | 自身 | 2 | attack_stun_chance |  |  |  | (能力)攻击卡有15%几率使敌人眩晕。 |
-| aijiu | 艾灸：关元 | 玩家药材 | 能力 | 精良 | 2 | 自身 | 2 | energy_max_heal | 1 | 3 |  | 获得1点真气上限，并恢复3点生命。 |
+| aijiu | 艾灸：关元 | 玩家药材 | 能力 | 精良 | 2 | 自身 | 2 | energy_max_heal | 1 | 2 |  | 获得1点真气上限，并恢复2点生命。 |
 | biejia | 鳖甲软坚 | 玩家药材 | 技能 | 精良 | 2 | 自身 | 2 | yin_block_scaling | 5 |  |  | 获得5点格挡。每有1层滋阴，额外获得1点格挡。 |
-| shanyao | 山药平补 | 玩家药材 | 能力 | 精良 | 2 | 自身 | 2 | end_turn_heal_power | 2 |  |  | (能力)回合结束时恢复2点生命。 |
+| shanyao | 山药平补 | 玩家药材 | 能力 | 精良 | 2 | 自身 | 2 | end_turn_heal_power | 1 |  |  | (能力)回合结束时恢复1点生命。 |
 | shengdi | 生地凉血 | 玩家药材 | 技能 | 精良 | 2 | 自身 | 2 | yin_gain_exhaust | 4 |  |  | 获得4层滋阴。消耗。 |
 | yuzhu | 玉竹生津 | 玩家药材 | 能力 | 稀有 | 2 | 自身 | 2 | yin_power_energy |  |  |  | (能力)回合开始时若有滋阴，获得1点真气。 |
 | fuzi | 附子回阳 | 玩家药材 | 技能 | 稀有 | 3 | 自身 | 2 | strength_dex_block | 1 | 5 |  | 获得1点力量和1点敏捷，获得5点格挡。消耗。 |
 | banxia | 半夏燥湿 | 玩家药材 | 攻击 | 稀有 | 2 | 全体敌人 | 3 | aoe_stun | 1 |  |  | 使所有敌人眩晕1回合。消耗。 |
 | bianshi | 砭石：阿是穴 | 玩家药材 | 能力 | 稀有 | 0 | 自身 | 3 | copy_buff_exhaust |  |  |  | 复制自身一个正面状态。消耗。 |
 | zhenwu | 苍术健脾 | 玩家药材 | 能力 | 稀有 | 2 | 自身 | 3 | double_block_buff |  |  |  | 本场战斗中，你的格挡效果 +50%。消耗。 |
-| jinkui | 柴胡疏肝 | 玩家药材 | 技能 | 稀有 | 3 | 自身 | 3 | strength_dex_heal | 2 | 8 |  | 获得2点力量和2点敏捷，恢复8点生命。消耗。 |
+| jinkui | 柴胡疏肝 | 玩家药材 | 技能 | 稀有 | 3 | 自身 | 3 | strength_dex_heal | 2 | 4 |  | 获得2点力量和2点敏捷，恢复4点生命。消耗。 |
 | dachengqi | 莪术破积 | 玩家药材 | 攻击 | 稀有 | 2 | 单体敌人 | 3 | percent_damage | 0.25 |  |  | 对一个敌人造成其当前生命值25%的伤害。消耗。 |
 | angong | 干姜温中 | 玩家药材 | 能力 | 稀有 | 2 | 自身 | 3 | revive_buff | 20 |  |  | 使你在本场战斗中免疫下一次死亡，并恢复20%生命。消耗。 |
 | wumei | 芥穗散风 | 玩家药材 | 技能 | 稀有 | 1 | 单体敌人 | 3 | steal_buffs |  |  |  | 偷取一个敌人所有正面状态。消耗。 |
 | huanglianjiedu | 牛蒡解毒 | 玩家药材 | 攻击 | 稀有 | 2 | 全体敌人 | 3 | aoe_damage_cleanse_all_buffs | 8 |  |  | 对所有敌人造成8点伤害，并清除其所有正面状态。消耗。 |
 | qingying | 蒲公英消肿 | 玩家药材 | 技能 | 稀有 | 1 | 全体敌人 | 3 | cleanse_heat_aoe_damage |  |  |  | 清除场上所有热邪，每清除1层对所有敌人造成2点伤害。消耗。 |
 | longdan | 人参补气 | 玩家药材 | 攻击 | 稀有 | 2 | 单体敌人 | 3 | true_damage | 18 |  |  | 对一个敌人造成18点真实伤害。消耗。 |
-| liuwei | 五味敛阴 | 玩家药材 | 技能 | 稀有 | 0 | 自身 | 3 | yin_block | 3 | 4 |  | 获得3层滋阴和4点格挡。消耗。 |
+| liuwei | 五味敛阴 | 玩家药材 | 技能 | 稀有 | 1 | 自身 | 3 | yin_block | 2 | 3 |  | 获得2层滋阴和3点格挡。消耗。 |
 | sanyinjiao | 温针灸：三阴交 | 玩家药材 | 能力 | 稀有 | 1 | 自身 | 3 | retain_block_power |  |  |  | (能力)回合结束时若有格挡，则格挡不消失。 |
 | mingmen | 雷火灸：命门 | 玩家药材 | 技能 | 稀有 | 3 | 自身 | 3 | strength_block | 3 | 5 |  | 获得3点力量和5点格挡。 |
 | buzhongyiqi | 熟地滋阴 | 玩家药材 | 能力 | 稀有 | 3 | 自身 | 3 | block_echo_power |  |  |  | (能力)每当你获得格挡时，额外获得50%护盾。 |
@@ -328,22 +341,22 @@
 | danshen | 三棱破血 | 玩家药材 | 攻击 | 普通 | 1 | 单体敌人 |  | damage_debuff_stasis | 7 | 1 |  | 造成7点伤害。给予目标1层血瘀。 |
 | shanzha | 山楂消食 | 玩家药材 | 攻击 | 普通 | 0 | 单体敌人 |  | damage_block | 3 | 5 |  | 造成3点伤害，获得5点格挡。 |
 | chenpi | 陈皮理气 | 玩家药材 | 技能 | 普通 | 0 | 自身 |  | draw_discard | 2 | 1 |  | 抽2张牌，丢弃1张牌。 |
-| danggui | 当归补血 | 玩家药材 | 技能 | 稀有 | 1 | 自身 |  | danggui_effect | 5 |  |  | 恢复 5 点生命。如果生命已满，改为获得 5 点护盾。 |
+| danggui | 当归补血 | 玩家药材 | 技能 | 稀有 | 1 | 自身 |  | danggui_effect | 4 |  |  | 恢复 4 点生命。如果生命已满，改为获得 4 点护盾。 |
 | guizhi | 桂枝通络 | 玩家药材 | 技能 | 普通 | 1 | 自身 |  | block_pierce_buff | 3 | 3 |  | 获得3点格挡，本回合你的攻击卡无视敌人3点格挡。 |
 | yiyi | 薏苡除湿 | 玩家药材 | 技能 | 普通 | 1 | 自身 |  | block_cleanse_self | 4 |  |  | 获得4点格挡，并移除自身的1个负面状态。 |
-| xiaochaihu | 葛根解肌 | 玩家药材 | 技能 | 精良 | 1 | 自身 |  | heal_draw_block | 5 | 4 |  | 恢复5点生命，抽1张牌，获得4点格挡。 |
+| xiaochaihu | 葛根解肌 | 玩家药材 | 技能 | 精良 | 1 | 自身 |  | heal_draw_block | 3 | 4 |  | 恢复3点生命，抽1张牌，获得4点格挡。 |
 | huangqi | 黄芪固表 | 玩家药材 | 技能 | 精良 | 2 | 自身 |  | block | 10 |  |  | 获得 10 点护盾。 |
 | zusanli | 针刺：足三里 | 玩家药材 | 能力 | 稀有 | 2 | 自身 |  | zusanli_effect | 1 |  |  | (能力)每当你打出攻击卡时，每层恢复1点生命。 |
 | formula_placeholder_06 | 交泰丸 | 玩家药方 | 技能 | 稀有 | 0 | 自身 | 1 | formula_jiaotai_wan | 6 |  |  | 获得6点格挡，清除自身1个负面状态。消耗。 |
 | formula_placeholder_11 | 麻黄汤 | 玩家药方 | 攻击 | 稀有 | 1 | 自身 | 1 | formula_mahuang_tang | 4 |  |  | 本回合攻击无视格挡，下一张攻击额外造成4点伤害，抽1张牌。消耗。 |
 | formula_placeholder_05 | 半夏厚朴汤 | 玩家药方 | 攻击 | 稀有 | 1 | 单体敌人 | 1 | formula_banxia_houpu_tang | 8 | 2 |  | 对单体造成8点伤害，施加2回合虚弱；若目标有痰湿禁锢或湿邪，额外抽1张。 |
-| formula_placeholder_01 | 葛根汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_gegen_tang | 8 | 1 |  | 获得8点格挡，清除自身1个负面状态，抽1张牌。 |
-| formula_placeholder_04 | 理中丸 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_lizhong_wan | 8 | 1 |  | 恢复8点生命，获得1点力量。 |
-| formula_placeholder_02 | 麻杏石甘汤 | 玩家药方 | 攻击 | 稀有 | 1 | 单体敌人 | 1 | formula_maxing_shigan_tang | 10 | 2 |  | 对单体造成10点伤害，并施加2层热邪。 |
-| formula_placeholder_07 | 四君子汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_sijunzi_tang | 10 | 6 |  | 恢复10点生命，获得6点格挡。 |
-| formula_placeholder_10 | 酸枣仁汤 | 玩家药方 | 技能 | 稀有 | 1 | 单体敌人 | 1 | formula_suanzaoren_tang | 5 | 1 |  | 使一个敌人困倦1回合，恢复5点生命。 |
-| formula_placeholder_03 | 小柴胡汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_xiaochaihu_tang | 6 | 2 |  | 恢复6点生命，抽2张牌，清除自身1个负面状态。 |
-| formula_placeholder_09 | 小青龙汤 | 玩家药方 | 攻击 | 稀有 | 1 | 全体敌人 | 1 | formula_xiaoqinglong_tang | 7 | 3 |  | 对所有敌人造成7点伤害；若目标有寒邪，额外3点伤害。 |
+| formula_placeholder_01 | 葛根汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_gegen_tang | 8 | 1 |  | 获得8点格挡，清除自身1个负面状态，抽1张牌，本回合首次受伤-3。 |
+| formula_placeholder_04 | 理中丸 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_lizhong_wan | 5 | 1 |  | 恢复5点生命，获得1点力量与1层温阳；若有寒邪，清除1层。 |
+| formula_placeholder_02 | 麻杏石甘汤 | 玩家药方 | 攻击 | 稀有 | 1 | 单体敌人 | 1 | formula_maxing_shigan_tang | 9 | 2 |  | 对单体造成9点伤害；目标每层热邪额外+1（最多4），并施加2层热邪。 |
+| formula_placeholder_07 | 四君子汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_sijunzi_tang | 6 | 6 |  | 恢复6点生命，获得6点格挡，下张技能核心效果+1。 |
+| formula_placeholder_10 | 酸枣仁汤 | 玩家药方 | 技能 | 稀有 | 1 | 单体敌人 | 1 | formula_suanzaoren_tang | 3 | 1 |  | 使一个敌人困倦1回合，恢复3点生命，并令本回合首次受伤-3。 |
+| formula_placeholder_03 | 小柴胡汤 | 玩家药方 | 技能 | 稀有 | 1 | 自身 | 1 | formula_xiaochaihu_tang | 4 | 2 |  | 恢复4点生命，抽2张牌，清除自身1个负面状态。 |
+| formula_placeholder_09 | 小青龙汤 | 玩家药方 | 攻击 | 稀有 | 1 | 全体敌人 | 1 | formula_xiaoqinglong_tang | 7 | 3 |  | 对所有敌人造成7点伤害；若目标有寒邪，额外3点伤害并施加1回合虚弱。 |
 | formula_placeholder_12 | 银翘散 | 玩家药方 | 攻击 | 稀有 | 1 | 全体敌人 | 1 | formula_yinqiao_san | 6 | 1 |  | 对所有敌人造成6点伤害并施加1层热邪，清除敌人1层正面状态。 |
 | formula_placeholder_08 | 真武汤 | 玩家药方 | 能力 | 稀有 | 2 | 自身 | 1 | formula_zhenwu_tang |  |  |  | 本场战斗格挡效果 +50%，回合开始获得1点格挡。 |
 | equipment_bianzheng | 辨证论治 | 装备被动 | 能力 | 稀有 | 0 | 自身 |  | equipment_bianzheng |  |  | 是 | 装备牌：回合开始自动择策，低血回复，否则补盾或得临时力量，最多1件生效。 |
@@ -374,16 +387,16 @@
 
 | 蓝图 ID | 蓝图名 | 药方牌 | 难度 | 材料数 | 材料 | 药方费用 | effectId | 值1 | 值2 | 药方效果 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| blueprint_formula_placeholder_01 | 葛根汤蓝图 | 葛根汤(formula_placeholder_01) | 简单 | 7 | 葛根解肌、麻黄发汗、桂枝通络、赤芍凉血、甘草和中、生姜发散、大枣养血 | 1 | formula_gegen_tang | 8 | 1 | 获得8点格挡，清除自身1个负面状态，抽1张牌。 |
-| blueprint_formula_placeholder_02 | 麻杏石甘汤蓝图 | 麻杏石甘汤(formula_placeholder_02) | 简单 | 4 | 麻黄发汗、杏仁降气、石膏清热、甘草和中 | 1 | formula_maxing_shigan_tang | 10 | 2 | 对单体造成10点伤害，并施加2层热邪。 |
-| blueprint_formula_placeholder_03 | 小柴胡汤蓝图 | 小柴胡汤(formula_placeholder_03) | 中等 | 7 | 柴胡疏肝、黄芩清肺、人参补气、半夏燥湿、甘草和中、生姜发散、大枣养血 | 1 | formula_xiaochaihu_tang | 6 | 2 | 恢复6点生命，抽2张牌，清除自身1个负面状态。 |
-| blueprint_formula_placeholder_04 | 理中丸蓝图 | 理中丸(formula_placeholder_04) | 简单 | 4 | 人参补气、白术健脾、干姜温中、甘草和中 | 1 | formula_lizhong_wan | 8 | 1 | 恢复8点生命，获得1点力量。 |
+| blueprint_formula_placeholder_01 | 葛根汤蓝图 | 葛根汤(formula_placeholder_01) | 简单 | 7 | 葛根解肌、麻黄发汗、桂枝通络、赤芍凉血、甘草和中、生姜发散、大枣养血 | 1 | formula_gegen_tang | 8 | 1 | 获得8点格挡，清除自身1个负面状态，抽1张牌，本回合首次受伤-3。 |
+| blueprint_formula_placeholder_02 | 麻杏石甘汤蓝图 | 麻杏石甘汤(formula_placeholder_02) | 简单 | 4 | 麻黄发汗、杏仁降气、石膏清热、甘草和中 | 1 | formula_maxing_shigan_tang | 9 | 2 | 对单体造成9点伤害；目标每层热邪额外+1（最多4），并施加2层热邪。 |
+| blueprint_formula_placeholder_03 | 小柴胡汤蓝图 | 小柴胡汤(formula_placeholder_03) | 中等 | 7 | 柴胡疏肝、黄芩清肺、人参补气、半夏燥湿、甘草和中、生姜发散、大枣养血 | 1 | formula_xiaochaihu_tang | 4 | 2 | 恢复4点生命，抽2张牌，清除自身1个负面状态。 |
+| blueprint_formula_placeholder_04 | 理中丸蓝图 | 理中丸(formula_placeholder_04) | 简单 | 4 | 人参补气、白术健脾、干姜温中、甘草和中 | 1 | formula_lizhong_wan | 5 | 1 | 恢复5点生命，获得1点力量与1层温阳；若有寒邪，清除1层。 |
 | blueprint_formula_placeholder_05 | 半夏厚朴汤蓝图 | 半夏厚朴汤(formula_placeholder_05) | 中等 | 5 | 半夏燥湿、厚朴行气、茯苓渗湿、生姜发散、苏叶解表 | 1 | formula_banxia_houpu_tang | 8 | 2 | 对单体造成8点伤害，施加2回合虚弱；若目标有痰湿禁锢或湿邪，额外抽1张。 |
 | blueprint_formula_placeholder_06 | 交泰丸蓝图 | 交泰丸(formula_placeholder_06) | 极简 | 2 | 黄连燥湿、肉桂引火 | 0 | formula_jiaotai_wan | 6 |  | 获得6点格挡，清除自身1个负面状态。消耗。 |
-| blueprint_formula_placeholder_07 | 四君子汤蓝图 | 四君子汤(formula_placeholder_07) | 简单 | 4 | 人参补气、白术健脾、茯苓渗湿、甘草和中 | 1 | formula_sijunzi_tang | 10 | 6 | 恢复10点生命，获得6点格挡。 |
+| blueprint_formula_placeholder_07 | 四君子汤蓝图 | 四君子汤(formula_placeholder_07) | 简单 | 4 | 人参补气、白术健脾、茯苓渗湿、甘草和中 | 1 | formula_sijunzi_tang | 6 | 6 | 恢复6点生命，获得6点格挡，下张技能核心效果+1。 |
 | blueprint_formula_placeholder_08 | 真武汤蓝图 | 真武汤(formula_placeholder_08) | 偏难 | 5 | 茯苓渗湿、白芍柔肝、生姜发散、白术健脾、附子回阳 | 2 | formula_zhenwu_tang |  |  | 本场战斗格挡效果 +50%，回合开始获得1点格挡。 |
-| blueprint_formula_placeholder_09 | 小青龙汤蓝图 | 小青龙汤(formula_placeholder_09) | 偏难 | 8 | 麻黄发汗、白芍柔肝、五味敛阴、干姜温中、甘草和中、细辛通窍、桂枝通络、半夏燥湿 | 1 | formula_xiaoqinglong_tang | 7 | 3 | 对所有敌人造成7点伤害；若目标有寒邪，额外3点伤害。 |
-| blueprint_formula_placeholder_10 | 酸枣仁汤蓝图 | 酸枣仁汤(formula_placeholder_10) | 中等 | 5 | 酸枣仁安眠、甘草和中、知母清热、茯苓渗湿、川芎行气 | 1 | formula_suanzaoren_tang | 5 | 1 | 使一个敌人困倦1回合，恢复5点生命。 |
+| blueprint_formula_placeholder_09 | 小青龙汤蓝图 | 小青龙汤(formula_placeholder_09) | 偏难 | 8 | 麻黄发汗、白芍柔肝、五味敛阴、干姜温中、甘草和中、细辛通窍、桂枝通络、半夏燥湿 | 1 | formula_xiaoqinglong_tang | 7 | 3 | 对所有敌人造成7点伤害；若目标有寒邪，额外3点伤害并施加1回合虚弱。 |
+| blueprint_formula_placeholder_10 | 酸枣仁汤蓝图 | 酸枣仁汤(formula_placeholder_10) | 中等 | 5 | 酸枣仁安眠、甘草和中、知母清热、茯苓渗湿、川芎行气 | 1 | formula_suanzaoren_tang | 3 | 1 | 使一个敌人困倦1回合，恢复3点生命，并令本回合首次受伤-3。 |
 | blueprint_formula_placeholder_11 | 麻黄汤蓝图 | 麻黄汤(formula_placeholder_11) | 极简 | 4 | 麻黄发汗、桂枝通络、甘草和中、杏仁降气 | 1 | formula_mahuang_tang | 4 |  | 本回合攻击无视格挡，下一张攻击额外造成4点伤害，抽1张牌。消耗。 |
 | blueprint_formula_placeholder_12 | 银翘散蓝图 | 银翘散(formula_placeholder_12) | 简单 | 9 | 连翘解毒、金银花露、桔梗宣肺、薄荷疏风、竹叶清心、甘草和中、芥穗散风、豆豉宣郁、牛蒡解毒 | 1 | formula_yinqiao_san | 6 | 1 | 对所有敌人造成6点伤害并施加1层热邪，清除敌人1层正面状态。 |
 
@@ -428,40 +441,40 @@
 
 | 敌人 ID | 名称 | 幕 | 层级 | 基础 HP | 初始格挡 | 初始意图 | 初始值 | 连击 | 初始描述 | behavior | meta |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| wind_cold_guest | 风寒客 | 1 | common | 30 | 0 | attack | 5 |  | 寒邪侵袭 | wind_cold_guest |  |
-| wind_heat_attack | 风热袭 | 1 | common | 28 | 0 | attack | 3 |  | 热邪灼烧 | wind_heat_attack |  |
-| damp_turbidity | 湿浊缠 | 1 | common | 35 | 0 | debuff | 0 |  | 湿邪困脾 | damp_turbidity |  |
+| wind_cold_guest | 风寒客 | 1 | common | 33 | 0 | attack | 5 |  | 寒邪侵袭 | wind_cold_guest |  |
+| wind_heat_attack | 风热袭 | 1 | common | 31 | 0 | attack | 3 |  | 热邪灼烧 | wind_heat_attack |  |
+| damp_turbidity | 湿浊缠 | 1 | common | 38 | 0 | debuff | 0 |  | 湿邪困脾 | damp_turbidity |  |
 | external_combination | 斑斓厄兽 | 1 | elite | 80 | 10 | special | 0 |  | 形态切换 | external_combination | {"form":"cold","formTurns":3} |
-| boss_wind_cold | 寒霜封卫 | 1 | boss | 150 | 0 | attack | 12 |  | 寒凝血瘀 | boss_wind_cold |  |
-| boss_liver_fire | 怒炎狂客 | 1 | boss | 140 | 0 | attack | 8 |  | 火旺伤阴 | boss_liver_fire |  |
-| qi_blood_stasis | 紫荆囚徒 | 2 | common | 50 | 5 | attack | 8 |  | 郁而作痛 | qi_blood_stasis |  |
-| spleen_dampness | 臃肿肉山 | 2 | common | 55 | 8 | debuff | 0 |  | 湿困中焦 | spleen_dampness |  |
-| heart_kidney_gap | 水火双生鬼 | 2 | common | 45 | 0 | debuff | 0 |  | 心悸不安 | heart_kidney_gap |  |
-| tanmengxinqiao | 迷心浊灵 | 2 | common | 52 | 0 | debuff | 0 |  | 痰蒙心窍 | tanmengxinqiao | {"turn":0} |
+| boss_wind_cold | 寒霜封卫 | 1 | boss | 138 | 0 | attack | 12 |  | 寒凝血瘀 | boss_wind_cold |  |
+| boss_liver_fire | 怒炎狂客 | 1 | boss | 132 | 0 | attack | 8 |  | 火旺伤阴 | boss_liver_fire |  |
+| qi_blood_stasis | 紫荆囚徒 | 2 | common | 56 | 5 | attack | 8 |  | 郁而作痛 | qi_blood_stasis |  |
+| spleen_dampness | 臃肿肉山 | 2 | common | 61 | 8 | debuff | 0 |  | 湿困中焦 | spleen_dampness |  |
+| heart_kidney_gap | 水火双生鬼 | 2 | common | 50 | 0 | debuff | 0 |  | 心悸不安 | heart_kidney_gap |  |
+| tanmengxinqiao | 迷心浊灵 | 2 | common | 58 | 0 | debuff | 0 |  | 痰蒙心窍 | tanmengxinqiao | {"turn":0} |
 | phlegm_stasis | 顽石死骸 | 2 | elite | 120 | 15 | buff | 0 |  | 痰凝血瘀 | phlegm_stasis |  |
-| boss_spleen_damp | 沉沦泥怪 | 2 | boss | 250 | 20 | special | 0 |  | 水湿不运 | boss_spleen_damp | {"turn":0} |
+| boss_spleen_damp | 沉沦泥怪 | 2 | boss | 230 | 20 | special | 0 |  | 水湿不运 | boss_spleen_damp | {"turn":0} |
 | damp_minion | 水湿小怪 | 2 | 召唤 | 20 | 0 | debuff | 0 |  | 湿邪侵体 | damp_minion | {} |
-| yin_yang_split | 终焉虚影 | 3 | common | 70 | 0 | special | 0 |  | 阴阳格拒 | yin_yang_split | {"form":"yin"} |
-| chong_ren_instability | 散华残躯 | 3 | common | 65 | 0 | debuff | 0 |  | 崩漏不止 | chong_ren_instability |  |
-| reruyingxue | 沸血暗影 | 3 | common | 72 | 0 | debuff | 0 |  | 热入营血 | reruyingxue | {"turn":0} |
-| shenbunaqi | 夺息雾妖 | 3 | common | 68 | 6 | debuff | 0 |  | 肾不纳气 | shenbunaqi | {"turn":0} |
-| yangmingfushi | 焦土巨汉 | 3 | common | 78 | 8 | special | 0 |  | 阳明腑实 | yangmingfushi | {"turn":0} |
+| yin_yang_split | 终焉虚影 | 3 | common | 78 | 0 | special | 0 |  | 阴阳格拒 | yin_yang_split | {"form":"yin"} |
+| chong_ren_instability | 散华残躯 | 3 | common | 72 | 0 | debuff | 0 |  | 崩漏不止 | chong_ren_instability |  |
+| reruyingxue | 沸血暗影 | 3 | common | 80 | 0 | debuff | 0 |  | 热入营血 | reruyingxue | {"turn":0} |
+| shenbunaqi | 夺息雾妖 | 3 | common | 76 | 6 | debuff | 0 |  | 肾不纳气 | shenbunaqi | {"turn":0} |
+| yangmingfushi | 焦土巨汉 | 3 | common | 86 | 8 | special | 0 |  | 阳明腑实 | yangmingfushi | {"turn":0} |
 | jueyin_complex | 紫渊幽影 | 3 | elite | 180 | 20 | debuff | 0 |  | 寒热错杂 | jueyin_complex | {"turn":0} |
-| boss_five_elements | 逆源修罗 | 3 | boss | 500 | 50 | special | 0 |  | 五行流转 | boss_five_elements | {"phase":"wood"} |
+| boss_five_elements | 逆源修罗 | 3 | boss | 470 | 50 | special | 0 |  | 五行流转 | boss_five_elements | {"phase":"wood"} |
 
 ### 敌池统计
 
 | 幕 | 层级 | 数量 | 平均 HP | HP 范围 | 平均初始格挡 | 敌人 |
 | --- | --- | --- | --- | --- | --- | --- |
-| act1 | common | 3 | 31 | 28-35 | 0 | 风寒客、风热袭、湿浊缠 |
+| act1 | common | 3 | 34 | 31-38 | 0 | 风寒客、风热袭、湿浊缠 |
 | act1 | elite | 1 | 80 | 80-80 | 10 | 斑斓厄兽 |
-| act1 | boss | 2 | 145 | 140-150 | 0 | 寒霜封卫、怒炎狂客 |
-| act2 | common | 4 | 50.5 | 45-55 | 3.3 | 紫荆囚徒、臃肿肉山、水火双生鬼、迷心浊灵 |
+| act1 | boss | 2 | 135 | 132-138 | 0 | 寒霜封卫、怒炎狂客 |
+| act2 | common | 4 | 57.25 | 50-61 | 3.3 | 紫荆囚徒、臃肿肉山、水火双生鬼、迷心浊灵 |
 | act2 | elite | 1 | 120 | 120-120 | 15 | 顽石死骸 |
-| act2 | boss | 1 | 250 | 250-250 | 20 | 沉沦泥怪 |
-| act3 | common | 5 | 70.6 | 65-78 | 2.8 | 终焉虚影、散华残躯、沸血暗影、夺息雾妖、焦土巨汉 |
+| act2 | boss | 1 | 230 | 230-230 | 20 | 沉沦泥怪 |
+| act3 | common | 5 | 78.8 | 72-86 | 2.8 | 终焉虚影、散华残躯、沸血暗影、夺息雾妖、焦土巨汉 |
 | act3 | elite | 1 | 180 | 180-180 | 20 | 紫渊幽影 |
-| act3 | boss | 1 | 500 | 500-500 | 50 | 逆源修罗 |
+| act3 | boss | 1 | 470 | 470-470 | 50 | 逆源修罗 |
 | act2 | summon | 1 | 20 | 20-20 | 0 | 水湿小怪 |
 
 ### 敌方行动次数规则
@@ -469,8 +482,8 @@
 | 敌人层级/幕 | 行动次数 |
 | --- | --- |
 | 普通敌 Act 1 | 1 次 |
-| 普通敌 Act 2 | 45% 概率 2 次，否则 1 次 |
-| 普通敌 Act 3 | 80% 概率 2 次，否则 1 次 |
+| 普通敌 Act 2 | 55% 概率 2 次，否则 1 次 |
+| 普通敌 Act 3 | 85% 概率 2 次，否则 1 次 |
 | 精英 | 2 次 |
 | Boss | 2 次 |
 
@@ -480,14 +493,17 @@
 
 | behavior | 行动槽 | 类型 | 值 | 连击 | 描述 |
 | --- | --- | --- | --- | --- | --- |
+| wind_cold_guest | 主行动 | attack | 8 + Math.min(2, coldStacks) | 1 | 寒邪入络 |
 | wind_cold_guest | 主行动 | attack | 7 | 1 | 寒邪侵袭 |
 | wind_cold_guest | 主行动 | debuff | 0 | 1 | 风寒束表 |
 | wind_cold_guest | 追加行动 | debuff | 0 | 1 | 风寒束表 |
 | wind_cold_guest | 追加行动 | attack | 6 | 1 | 寒邪追袭 |
+| wind_heat_attack | 主行动 | attack | 5 | 2 | 热盛连灼 |
 | wind_heat_attack | 主行动 | attack | 4 | 2 | 热邪连袭 |
 | wind_heat_attack | 主行动 | debuff | 0 | 1 | 热邪灼络 |
 | wind_heat_attack | 追加行动 | debuff | 0 | 1 | 热邪灼络 |
 | wind_heat_attack | 追加行动 | attack | 4 | 2 | 火毒追击 |
+| damp_turbidity | 主行动 | defend | 8 | 1 | 湿浊蓄势 |
 | damp_turbidity | 主行动 | attack | 6 | 1 | 湿浊侵身 |
 | damp_turbidity | 主行动 | debuff | 0 | 1 | 湿邪困脾 |
 | damp_turbidity | 追加行动 | debuff | 0 | 1 | 湿邪困脾 |
@@ -503,9 +519,11 @@
 | external_combination | 追加行动 | debuff | 0 | 1 | form === 'cold' ? '风寒束表' : '热邪蒸腾' |
 | external_combination | 追加行动 | attack | form === 'cold' ? 8 : 4 + ctx.getStacks(enemy, 'heat_evil') | form === 'cold' ? 1 : 2 | form === 'cold' ? '寒袭追打' : '热邪连袭' |
 | qi_blood_stasis | 主行动 | debuff | 0 | 1 | 气滞血瘀 |
+| qi_blood_stasis | 主行动 | attack | 11 + Math.min(2, bloodStacks) | 1 | 瘀阻痛甚 |
 | qi_blood_stasis | 主行动 | attack | 10 | 1 | 郁阻作痛 |
 | qi_blood_stasis | 追加行动 | attack | 10 | 1 | 瘀阻重击 |
 | qi_blood_stasis | 追加行动 | debuff | 0 | 1 | 气滞血瘀 |
+| spleen_dampness | 主行动 | defend | 12 | 1 | 湿聚成形 |
 | spleen_dampness | 主行动 | attack | 8 | 1 | 湿浊压身 |
 | spleen_dampness | 主行动 | defend | 10 | 1 | 脾虚护体 |
 | spleen_dampness | 主行动 | debuff | 0 | 1 | 湿困中焦 |
@@ -534,6 +552,8 @@
 | reruyingxue | 追加行动 | attack | 8 + Math.min(3, ctx.getStacks(ctx.player, 'heat_evil')) | 1 | 营热追袭 |
 | reruyingxue | 追加行动 | debuff | 0 | 1 | 热入营血 |
 | shenbunaqi | 主行动 | debuff | 0 | 1 | 肾不纳气 |
+| shenbunaqi | 主行动 | debuff | 0 | 1 | 寒饮压气 |
+| shenbunaqi | 主行动 | attack | 12 | 1 | 纳气反冲 |
 | shenbunaqi | 主行动 | attack | 11 | 1 | 纳气失司 |
 | shenbunaqi | 追加行动 | attack | 10 | 1 | 逆气冲胸 |
 | shenbunaqi | 追加行动 | debuff | 0 | 1 | 肾不纳气 |
@@ -592,6 +612,7 @@
 | wind_cold_guest | executeIntent | 玩家 | 施加负面/状态 | cold_evil | 寒邪 | debuff | 1 |  | 寒邪缠身 |
 | wind_cold_guest | executeIntent | 玩家 | 施加负面/状态 | weak | 虚弱 | debuff | 1 | 2 | 造成伤害降低25% |
 | wind_heat_attack | executeIntent | 玩家 | 施加负面/状态 | heat_evil | 热邪 | debuff | 2 |  | 回合结束受到伤害 |
+| damp_turbidity | executeIntent | 敌人自身 | 添加状态 | strength | 浊气加压 | buff | 1 |  | 湿浊蓄势后攻击伤害提高 |
 | damp_turbidity | executeIntent | 玩家 | 施加负面/状态 | dampness_evil | 湿邪 | debuff | 1 |  | 格挡获得降低 |
 | damp_minion | executeIntent | 玩家 | 施加负面/状态 | dampness_evil | 湿邪 | debuff | 1 |  | 格挡获得降低 |
 | external_combination | executeIntent | 玩家 | 施加负面/状态 | cold_evil | 寒邪 | debuff | 1 |  | 寒邪缠身 |
@@ -599,7 +620,8 @@
 | external_combination | executeIntent | 玩家 | 施加负面/状态 | heat_evil | 热邪 | debuff | 2 |  | 回合结束受到伤害 |
 | qi_blood_stasis | executeIntent | 玩家 | 施加负面/状态 | cost_up_next | 气滞 | debuff | 1 |  | 下一张卡牌消耗 +1 |
 | qi_blood_stasis | executeIntent | 玩家 | 施加负面/状态 | blood_stasis | 血瘀 | debuff | 1 |  | 受到伤害增加 |
-| spleen_dampness | executeIntent | 玩家 | 施加负面/状态 | cost_up | 脾虚湿困 | debuff | 1 | 3 | 卡牌消耗增加 |
+| spleen_dampness | executeIntent | 敌人自身 | 添加状态 | strength | 湿聚压迫 | buff | 1 |  | 湿聚成形后攻击伤害提高 |
+| spleen_dampness | executeIntent | 玩家 | 施加负面/状态 | cost_up | 脾虚湿困 | debuff | 1 | 2 | 卡牌消耗增加 |
 | spleen_dampness | executeIntent | 玩家 | 施加负面/状态 | dampness_evil | 湿邪 | debuff | 1 |  | 格挡获得降低 |
 | heart_kidney_gap | executeIntent | 玩家 | 施加负面/状态 | draw_down | 心悸不安 | debuff | 1 | 1 | 下回合少抽牌 |
 | heart_kidney_gap | executeIntent | 玩家 | 施加负面/状态 | no_block | 心肾不交 | debuff | 1 | 1 | 下回合无法获得格挡 |
@@ -609,10 +631,9 @@
 | tanmengxinqiao | executeIntent | 玩家 | 施加负面/状态 | no_block | 窍闭失固 | debuff | 1 | 1 | 下回合无法获得格挡 |
 | phlegm_stasis | onTurnStart | 敌人自身 | 添加状态 | strength | 力量 | buff | 1 |  | 攻击伤害提高 |
 | reruyingxue | executeIntent | 玩家 | 施加负面/状态 | heat_evil | 热邪 | debuff | 2 |  | 回合结束受到伤害 |
-| shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | energy_drain | 肾不纳气 | debuff | 1 | 2 | 真气上限降低 |
-| shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | max_energy_down | 纳气失司 | debuff | 1 | 1 | 下回合真气上限 -1 |
+| shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | energy_drain | 肾不纳气 | debuff | 1 | 1 | 真气上限降低 |
 | shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | cold_evil | 寒邪 | debuff | 1 |  | 寒邪缠身 |
-| shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | weak | 气虚失摄 | debuff | 1 | 1 | 造成伤害降低25% |
+| shenbunaqi | executeIntent | 玩家 | 施加负面/状态 | weak | 虚弱 | debuff | 1 | 1 | 寒饮压气时造成伤害降低25% |
 | yangmingfushi | executeIntent | 玩家 | 施加负面/状态 | remove_block_end | 阳明腑实 | debuff | 1 | 1 | 回合结束时清空格挡 |
 | jueyin_complex | executeIntent | 玩家 | 施加负面/状态 | cold_evil | 寒邪 | debuff | 1 |  | 寒邪缠身 |
 | jueyin_complex | executeIntent | 玩家 | 施加负面/状态 | weak | 虚弱 | debuff | 1 | 2 | 造成伤害降低25% |
@@ -649,7 +670,8 @@
 | yangmingfushi | executeIntent: ctx.player.block = 0 |
 | boss_wind_cold | executeIntent: removeStatus(ctx.player, 'cold_evil') |
 | boss_liver_fire | executeIntent: removeStatus(ctx.player, 'yin') |
-| boss_spleen_damp | executeIntent: removeStatus(enemy, 'dampness_evil') |
+| boss_spleen_damp | executeIntent: 水湿不运会检查 `canSummonEnemy(ctx.enemies)` 并记录召唤提示；当前 `enemyStrategies` 分支不直接插入 `damp_minion` |
+| boss_spleen_damp | executeIntent: 化热时 removeStatus(enemy, 'dampness_evil') |
 
 ## 平衡调整建议模板
 
@@ -669,7 +691,7 @@
 - **每费用收益**：攻击卡看伤害/费，防御卡看格挡/费，抽牌卡看净手牌/费，治疗卡看治疗/费。
 - **0 费密度**：当前 0 费卡很多，任何“抽牌、回能、状态叠层”类 0 费卡都要警惕循环。
 - **起始牌组平均费用**：体质强度不只来自被动，也来自 0 费和攻击/技能比例。
-- **敌人双行动峰值**：Act 2 普通敌有概率双动，Act 3/精英/Boss 默认双动，平衡时要按一回合总威胁看，不要只看单个 intent。
+- **敌人双行动峰值**：Act 2/Act 3 普通敌按概率双动，精英/Boss 默认双动，平衡时要按一回合总威胁看，不要只看单个 intent。
 - **持续负面状态**：寒邪、热邪、湿邪、虚弱、易伤、真气上限降低、不能格挡等效果会跨回合放大，不能只按即时伤害估值。
 - **装备有效层数上限**：装备可重复获得，但超过 `EQUIPMENT_EFFECT_CAPS` 的部分不再继续放大效果；调装备时先看上限是否合适。
 - **药方获取成本**：药方牌强度要和配方材料数、材料稀缺度、合成机会成本一起看。

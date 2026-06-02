@@ -1,7 +1,8 @@
 # Web 卡牌游戏 AI 交接文档
 
-更新日期：2026-05-27
+更新日期：2026-06-02
 项目根目录：`C:\Users\C2H6O\Desktop\wechatgame`
+当前版本：`1.0.0`
 
 本文档用于让后续 AI 或工程师快速理解当前 Web 端卡牌游戏的结构、内容、资源、测试方式和未来 Unity 迁移方向。本文只整理当前项目事实，不代表新的产品设计方案。
 
@@ -19,6 +20,7 @@
 8. 提交前必须至少执行 `cd game && npm test -- --run` 和 `cd game && npm run build`。
 9. UI 替换必须遵守 `1920×1080参考坐标系`、`资源拼装`、`同尺寸同锚点原地换图`、`manifest同步刷新`。
 10. 如果效果图和切片资源不齐，以统一网格和现有 v2 资源为准，不要靠移动文字或按钮去追旧截图偏差。
+11. 以后更新 README、AI_HANDOFF、BALANCE_GUIDE、设计文档或数据表说明时，必须写明对应版本号；游戏内显示版本号来自 `game/package.json` 的 `version` 字段，玩家可见内容或规则变化应先更新该版本号。
 
 ## 1. 项目定位
 
@@ -206,21 +208,25 @@ wechatgame/
 
 当前工作区里地图页有一个特殊点：`MapView` 自己渲染 `<SynthesisBench />`，`App.tsx` 的地图分支不再通过 `<GameSurface synthesisBench>` 注入合成台。后续修改地图页时不要重复渲染两个合成台入口，也不要删掉地图页内的合成台入口。
 
+`1.0.0` 起手牌总览抽为共享 `HandOverview` 组件：地图页按钮仍显示“手牌一览”，药房页和战斗奖励页按钮显示“查看现有手牌”，弹窗均展示当前牌组模板数量和已获装备数量；列表内每张牌可继续点击查看类别、类型、品质、目标、费用、数值参数、效果说明和中医说明。
+
 当前 UI 替换状态：
 
 - 启动页 v2 已接入：`IntroView.tsx` 使用 `game/public/assets/intro/v2/` 下的 7 张运行切片，排除源目录里的 `示例图.png`；坐标来自示例图模板匹配，后续替换必须保持 1920×1080 参考坐标。
 - 主菜单 v2 已接入：`StartMenu.tsx` 使用 `game/public/assets/main_menu/` 下的 v2/default、v2/hover、regions 等资源；默认态与 hover 态必须同尺寸同锚点原地换图。
 - 地图 v2 正在接入：`MapView.tsx` 使用 `map-v2-*` 样式和 `game/public/assets/map/v2/` 切片，包括路径框、首领进度、统计图标、提示框。
-- 战斗 v2 已接入并持续微调：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括巡诊者窗口、被动/装备窗口、生命/格挡/真气窗口、结束回合按钮、敌人信息区和战斗记录。
+- 战斗 v2 已接入并持续微调：`CombatView.tsx` 使用 `combat-v2-*` 样式和 `game/public/assets/combat/v2/` 切片，包括巡诊者窗口、增益/负面/装备效果窗口、生命/格挡/真气窗口、结束回合按钮、敌人信息区和战斗记录。
 - 战斗手牌已恢复旧版 `Hand` 组件，不使用 `CombatHandV2` 或“卡牌合并/敌人牌”示例占位图。
 - 敌人信息区必须读取真实战斗状态：`enemy.currentHp/maxHp` 驱动血条，`enemy.block` 驱动格挡，`enemy.intent` 驱动意图说明，`enemy.statusEffects` 驱动状态列表。没有真实状态时不显示占位状态图。
-- 被动/装备窗口是同窗标签页：被动页只展示 `player.statusEffects`，装备页按 `player.relics` 聚合并用 `CARD_LIBRARY[relic.id].image` 展示真实装备卡图、名称、数量和描述。
+- 战斗效果窗口是同窗标签页：增益页只展示 `player.statusEffects` 中 `type === 'buff'` 的非隐藏状态，负面页只展示 `type === 'debuff'` 的非隐藏状态，装备页按 `player.relics` 聚合并用 `CARD_LIBRARY[relic.id].image` 展示真实装备卡图、名称、数量和描述；`1.0.0` 起效果/装备条目可点击查看完整说明。
 - 战斗 UI 动画 cue 是表现层逻辑：玩家/敌人生命、格挡、真气变化、敌人受击、敌人获得负面效果、敌人不同意图类型释放反馈都由 `CombatView` 本地 diff 和 CSS 动画生成，不应改变核心结算。
 - `game/src/data/runtimeAssetManifest.ts` 已随当前资源变化更新；继续改运行时资源后必须重新执行 `npm run assets:manifest`。
 
 ## 7. 体质系统
 
 体质由 `shared/baseTypes.ts` 的 `Constitution` 限定，局内初始化主要在 `game/src/store/gameStore.ts`。9 种体质当前全部可选，均有被动状态和 15 张起始牌组。
+
+`1.0.0` 起，混合体质被动在 UI 状态中拆成“收益 buff + 代价 debuff”两条展示状态；原 `*_passive` ID 仍保留给 `shared/core/gameCore.ts` 规则结算使用，新增 `*_drawback` ID 仅用于正确进入负面效果分栏。`warm_yang_start_count` 等规则计数器应保持隐藏。
 
 当前语义：
 
@@ -237,6 +243,8 @@ wechatgame/
 | `special_diathesis` | 特禀质 | 玩家回合开始随机触发真气、抽牌、格挡、治疗、临时力量或无事发生 |
 
 当前每种体质的起始牌组均为 15 张，以 `STARTING_DECKS` 为准。`卡牌清单.xlsx` 的“九大体质初始卡牌”列按中文体质名反向标记了每张卡出现在哪些起始牌组。
+
+`1.0.0` 起始攻击密度追补后，平和、阴虚、气虚、阳虚、痰湿、气郁、特禀起始牌组均为 7 张攻击牌；湿热保持 8 张攻击牌，血瘀保持 10 张攻击牌，避免继续增强本来就偏进攻的体质。
 
 ## 8. 卡牌、药方与装备系统
 
@@ -309,26 +317,26 @@ wechatgame/
 
 | ID | 中文语义 | 幕 / 类型 | HP | 图片 |
 | --- | --- | --- | ---: | --- |
-| `wind_cold_guest` | 风寒客 | Act 1 普通 | 30 | `89.webp` |
-| `wind_heat_attack` | 风热袭 | Act 1 普通 | 28 | `90.webp` |
-| `damp_turbidity` | 湿浊缠 | Act 1 普通 | 35 | `91.webp` |
+| `wind_cold_guest` | 风寒客 | Act 1 普通 | 33 | `89.webp` |
+| `wind_heat_attack` | 风热袭 | Act 1 普通 | 31 | `90.webp` |
+| `damp_turbidity` | 湿浊缠 | Act 1 普通 | 38 | `91.webp` |
 | `external_combination` | 斑斓厄兽 | Act 1 精英 | 80 | `92.webp` |
-| `boss_wind_cold` | 寒霜封卫 | Act 1 Boss | 150 | `93.webp` |
-| `boss_liver_fire` | 怒炎狂客 | Act 1 Boss | 140 | `94.webp` |
-| `qi_blood_stasis` | 紫荆囚徒 | Act 2 普通 | 50 | `95.webp` |
-| `spleen_dampness` | 臃肿肉山 | Act 2 普通 | 55 | `96.webp` |
-| `heart_kidney_gap` | 水火双生鬼 | Act 2 普通 | 45 | `97.webp` |
-| `tanmengxinqiao` | 迷心浊灵 | Act 2 普通 | 52 | `83.webp` |
+| `boss_wind_cold` | 寒霜封卫 | Act 1 Boss | 138 | `93.webp` |
+| `boss_liver_fire` | 怒炎狂客 | Act 1 Boss | 132 | `94.webp` |
+| `qi_blood_stasis` | 紫荆囚徒 | Act 2 普通 | 56 | `95.webp` |
+| `spleen_dampness` | 臃肿肉山 | Act 2 普通 | 61 | `96.webp` |
+| `heart_kidney_gap` | 水火双生鬼 | Act 2 普通 | 50 | `97.webp` |
+| `tanmengxinqiao` | 迷心浊灵 | Act 2 普通 | 58 | `83.webp` |
 | `phlegm_stasis` | 顽石死骸 | Act 2 精英 | 120 | `98.webp` |
-| `boss_spleen_damp` | 沉沦泥怪 | Act 2 Boss | 250 | `99.webp` |
+| `boss_spleen_damp` | 沉沦泥怪 | Act 2 Boss | 230 | `99.webp` |
 | `damp_minion` | 水湿小怪 | Act 2 召唤单位 | 20 | `104.webp` |
-| `yin_yang_split` | 终焉虚影 | Act 3 普通 | 70 | `100.webp` |
-| `chong_ren_instability` | 散华残躯 | Act 3 普通 | 65 | `101.webp` |
-| `reruyingxue` | 沸血暗影 | Act 3 普通 | 72 | `79.webp` |
-| `shenbunaqi` | 夺息雾妖 | Act 3 普通 | 68 | `80.webp` |
-| `yangmingfushi` | 焦土巨汉 | Act 3 普通 | 78 | `84.webp` |
+| `yin_yang_split` | 终焉虚影 | Act 3 普通 | 78 | `100.webp` |
+| `chong_ren_instability` | 散华残躯 | Act 3 普通 | 72 | `101.webp` |
+| `reruyingxue` | 沸血暗影 | Act 3 普通 | 80 | `79.webp` |
+| `shenbunaqi` | 夺息雾妖 | Act 3 普通 | 76 | `80.webp` |
+| `yangmingfushi` | 焦土巨汉 | Act 3 普通 | 86 | `84.webp` |
 | `jueyin_complex` | 紫渊幽影 | Act 3 精英 | 180 | `102.webp` |
-| `boss_five_elements` | 逆源修罗 | Act 3 Boss | 500 | `103.webp` |
+| `boss_five_elements` | 逆源修罗 | Act 3 Boss | 470 | `103.webp` |
 
 敌池分布：
 
@@ -340,7 +348,7 @@ wechatgame/
 
 关键敌人行为：
 
-- `boss_spleen_damp` 会召唤 `damp_minion`，但当前核心规则限制同屏存活敌人数最多 2 个；小怪死亡后可补召回到 2 个。
+- `boss_spleen_damp` 的 `onTurnStart` 会在偶数回合且场上有空位时插入正式 `damp_minion` 实例；同屏存活敌人数上限仍为 2，已有核心测试覆盖召唤、满场不召唤和小怪阵亡后补召。
 - `yin_yang_split` 通过 `meta.form` 做阴/阳形态切换。
 - `boss_five_elements` 使用五行阶段循环。
 - `boss_liver_fire` 曾经出现首回合攻击不掉血回归问题，相关测试应保留。
@@ -397,7 +405,7 @@ wechatgame/
 - Zustand 全局状态。
 - `persist` 本地持久化。
 - 存储 key：`wuxing-yidao-storage`。
-- 当前持久化 version：14。
+- 当前持久化 version：15。
 - 新增状态字段：`eventLog`（已触发事件ID列表）、`eventMarkers`（事件分叉标记）、`eventQueue`（支线事件线性队列）、`lastEnemyId`（防重复敌人）、`shopPriceMultiplier`（商店价格倍率）、`eventChosenIndex`（事件选项确认状态）。
 - 创建新局、选择体质、进入地图节点、启动战斗。
 - 连接 UI 操作和 `shared/core/gameCore.ts` 规则函数。
@@ -457,7 +465,7 @@ wechatgame/
 
 当前 UI 替换新增资源目录：
 
-- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 32 个文件，包含 `background.webp`、`background_act2.webp`、玩家资源/生命面板、被动/装备面板、按钮、血条和状态图标。
+- `game/public/assets/combat/v2/`：战斗 v2 资源拼装切片，当前约 32 个文件，包含 `background.webp`、`background_act2.webp`、玩家资源/生命面板、增益/负面/装备效果面板、按钮、血条和状态图标。
 - `game/public/assets/map/v2/`：地图 v2 资源拼装切片，当前约 12 个文件，包含路线框、首领进度、提示面板和统计图标。
 - `game/public/assets/intro/v2/`：启动页 v2 资源拼装切片，包含标题、顶部文案、进入主菜单按钮、公告/活动/图鉴/设置四个入口；源素材中的 `示例图.png` 只作参考，不进入运行资源。
 - `game/public/assets/main_menu/`：主菜单 v2 运行资源、按钮文字、hover 图和字体子集；旧大字体、旧区域切片和 QA 截图已清理，不要按旧截图重新偏移文字或 icon。
@@ -502,7 +510,7 @@ npm test -- --run
 npm run build
 ```
 
-当前验证（2026-05-27）：`npm test -- --run` 为 6 个测试文件、90 个测试用例通过；`npm run build` 通过。当前主 JS chunk 约 489 kB。
+当前验证（2026-06-02）：`npm test -- --run` 为 6 个测试文件、90 个测试用例通过；`npm run build` 通过。当前主 JS chunk 约 497 kB。
 
 测试重点：
 
@@ -534,12 +542,12 @@ npm run build
 - 当前 UI v2 主要 class 前缀是 `map-v2-*` 和 `combat-v2-*`。改地图或战斗时优先沿用这些前缀，不要再新建一套并行 UI 系统。
 - `CombatView.tsx` 当前已重写为资源拼装界面；如果战斗出牌、选敌、结束回合异常，先检查 v2 组件是否仍正确调用 `playCard`、`selectEnemy`、`endTurn`、`completeCombat`。
 - `CombatView.tsx` 里敌人/玩家受击、格挡、真气、负面效果和敌方行动动画均为 UI-only cue。不要为了动画反馈去修改 `shared/core/gameCore.ts` 的结算结果或 store 字段结构。
-- 战斗左侧被动/装备窗口采用标签页，不要重新把装备列表混回被动页；被动页需要避免图标、文字、类型标签重叠。
+- 战斗左侧效果窗口采用增益/负面/装备三栏标签页，不要把装备列表混回状态页；各栏需要避免图标、文字、类型标签重叠。
 - 战斗手牌当前依赖旧版 `Hand` 组件和 `viewportTier`，不要恢复已删除的 `CombatHandV2` 占位手牌。
 - `ConstitutionIntroOverlay.tsx` 的体质选择前动画已恢复为旧版真实卡面“小包洗牌”过场，`CONSTITUTION_CINEMATIC_MS` 为 2200ms；体质选择页本身仍保留当前新版。
 - `MapView.tsx` 当前已重写为资源拼装界面；如果节点不可点击或 Boss 通道异常，先检查 `startCombat(node.id)`、`combatWinsThisCycle`、`getBossUnlockWinsRequired()` 是否仍按原逻辑使用。
 - 敌方动画是最大图片体积风险。当前主链路为动画 WebP + poster；新增动图前必须压缩并更新 manifest。
-- `npm run build` 当前通过，主 JS chunk 约 488.8 kB；后续做功能增长时仍需要留意拆包或按需加载。
+- `npm run build` 当前通过，主 JS chunk 约 497 kB；后续做功能增长时仍需要留意拆包或按需加载。
 - `game/public/assets/cards_enemy/<slot>.png` 多数是 fallback；动画 WebP 与 poster 当前是主链路，不要误删 fallback。
 - 根目录 `未使用/` 保存原始素材、历史记录和导入来源，不应删除。
 - 根目录 `codex_crash_log.md` 是 Codex 闪退、浏览器插件和本机修复记录，后续排查异常退出时优先追加记录，不要当作普通临时日志删除。
@@ -596,7 +604,7 @@ npm run build
 - 浏览器控制台无资源 404。
 - 地图节点可点击；普通节点能进入对应页面；Boss 通道仍需 3 场战斗胜利后解锁。
 - 战斗可正常选敌、出牌、结束回合、返回地图；管理员体质仍可跳过战斗并正常领取奖励。
-- 地图页合成台入口仍可用，不遮挡“手牌一览”按钮，不重复出现两个入口。
+- 地图页合成台入口仍可用，不遮挡“手牌一览”按钮，不重复出现两个入口；药房页和战斗奖励页仍显示“查看现有手牌”入口。
 - 改资源后执行 `cd game && npm run assets:manifest`。
 - 提交前执行 `cd game && npm test -- --run` 和 `cd game && npm run build`。
 - 自动化检查 UI 时优先调用 `window.render_game_to_text()`，不要只凭截图猜状态。
@@ -656,18 +664,23 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 
 | 变更 | 说明 |
 |------|------|
+| `1.0.0` 首页公告更新日志 | 首页右侧“公告”入口现在展示 1.0.0 更新日志，内容在 `IntroView.tsx` 的 `UPDATE_LOG_SECTIONS` 中维护；战斗平衡部分已逐卡写明旧效果与新效果，并补充起始牌组、进攻保底、敌人血量和招式变化。公告红点按版本号写入 `localStorage`，首次点开后消失。 |
+| `1.0.0` 效果完整说明与体质负面拆分 | 战斗效果/装备条目点击可查看完整说明；阴虚、气虚、阳虚、湿热、血瘀、气郁等混合体质被动拆成增益与负面展示；内部持久化 version 升至 15 以刷新老存档体质状态。 |
+| `1.0.0` 战斗效果与卡牌可读性 | 路径选择页“真气”改为“真气上限”；战斗效果面板拆为增益效果/负面效果/装备三栏；战斗手牌字体随卡牌尺寸放大，长悬浮 3 秒显示 1.5 倍卡牌预览。 |
+| `1.0.0` 手牌总览扩展 | `HandOverview` 已抽为共享组件；地图页保留“手牌一览”，药房页和战斗奖励页新增“查看现有手牌”，弹窗继续显示当前牌组数量与已获装备；总览条目现在可点击打开单牌详细属性。 |
+| `1.0.0` 平衡更新 P1-P5 | 回血牌整体下调，平和/阴虚/气虚/阳虚/痰湿/气郁/特禀起始牌组补到 7 张攻击牌，低进攻奖励/药房保底阈值提高到 45%；石斛/五味敛阴/桔梗/枳实等启动牌降速；普通敌 HP 和双动概率上调、Boss HP 小幅回落；药方牌加入减伤、温阳、热邪增伤、虚弱等配伍特色；普通敌招式会根据玩家寒邪/热邪/湿邪/血瘀/真气压制状态变化。 |
 | Trae 接手 (2026-05-27) | 首页/主菜单动图替换为原始 GIF（46MB+37MB），放弃 animated WebP 压缩；主菜单「返回首页」按钮改为右下角圆角方形，字体统一为 JingHuaSongti/SimSun。 |
 | 启动页 v2 资源拼装接入 | `IntroView.tsx` 使用 `game/public/assets/intro/v2/` 资源按示例图精准还原：首页标题、顶部文案、右侧公告/活动/图鉴/设置入口和底部进入按钮均为独立切片；`runtimeAssetManifest.ts` 已刷新。 |
 | 美术资产压缩与离线包刷新 | 敌人动画从大体积 GIF 改为 480px 宽动画 WebP；首页、主菜单、战斗和第二幕地图等大背景改用 WebP；首页和主菜单动图后续已替换为原始 GIF（清晰度优先于体积）；`public/assets` 当前约 198MiB。 |
 | Windows 11 离线版 | 新增 `offline-windows/open-game.cmd` 与 `open-game.ps1`，用 PowerShell 内置本地 HTTP 服务启动 `offline-windows/web`，目标电脑不需要 Node.js、npm、Python 或网络；`web/` 和 zip 为本机构建产物，不进 Git。 |
-| 第五轮平衡调整 | 每回合首张攻击牌费用 -1；白芍柔肝/点穴/酸枣仁/厚朴/细辛/麻黄汤补进攻收益；陈皮、葛根、赤芍、桔梗、枳实和子午流注改为更少堵手；低攻击体质开局补到至少 5 张攻击牌；奖励和药房在低进攻牌组时保底给进攻牌。 |
+| 第五轮平衡调整 | 每回合首张攻击牌费用 -1；白芍柔肝/点穴/酸枣仁/厚朴/细辛/麻黄汤补进攻收益；陈皮、葛根、赤芍、桔梗、枳实和子午流注改为更少堵手；低攻击体质开局先补到至少 5 张攻击牌，`1.0.0` 后续追补到 7 张；奖励和药房在低进攻牌组时保底给进攻牌。 |
 | 首页右侧按钮 v2 切片 | 首页右侧“公告/活动/图鉴/设置”已改为 `intro/v2` 下的独立入口切片，不再使用旧静态 `side_menu.png`。 |
 | 事件装备点亮图鉴 | `handleEventChoice` 的 `addRelic` 分支现在会把真实装备牌同步加入 `player.obtainedCardIds`，修复事件获得装备后卡牌图鉴不点亮的问题，并补充 store 回归测试。 |
 | 2026-05-26 线上发布 | 本项目通过 `origin/main` 触发 GitHub Pages；线上 `https://test1.renxuanqi.top` 以后续 Actions 最新成功运行为准。 |
 | 体质抽牌动画回退 | `ConstitutionIntroOverlay.tsx` 已恢复旧版真实卡面“小包洗牌”动画；接口 `ConstitutionIntroStage`、`CONSTITUTION_CINEMATIC_MS`、`onSkip/onClose/onSelect` 保持不变，选择页本身不回滚。 |
 | 战斗手牌回退旧版 | 战斗中手牌使用现有 `Hand` 组件，保留长按预览和出牌逻辑；不再使用新写的占位式 `CombatHandV2`。 |
 | 战斗敌人信息真实化 | 敌人 HP 血条、生命数字、格挡、意图、状态全部读取真实 `enemy` 数据；没有真实状态时不显示占位状态图。 |
-| 被动/装备窗口标签页 | 左侧被动窗口改为“被动效果/装备”同窗标签页；被动页只显示状态，装备页按 `player.relics` 聚合显示真实装备卡图、数量和描述。 |
+| 战斗效果窗口三栏 | 左侧效果窗口改为“增益效果/负面效果/装备”同窗标签页；增益和负面按 `player.statusEffects.type` 分栏，装备页按 `player.relics` 聚合显示真实装备卡图、数量和描述；效果和装备条目可点击查看完整说明。 |
 | 战斗反馈增强 | 玩家/敌人掉血、回血、格挡、真气变化有更明显浮字；敌人受攻击或获得负面效果有视觉反馈；敌方 attack/defend/buff/debuff/special 意图有不同释放动画。 |
 | `黄芩清肺` 可打出 | `huangqin` 改为 0 费单体攻击牌，造成 4 点伤害并施加 1 层热邪，同时仍作为药方合成材料；已补充规则和 store 测试。 |
 | 第一轮平衡调整 | 取消攻击牌强制 0 费；高收益 0 费牌、控制牌、起始牌组、普通敌双动概率和装备重复收益已削峰，详见 `BALANCE_GUIDE.md`。 |
@@ -694,7 +707,7 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | 管理员跳过战斗 | CombatView 右上角新增跳过按钮，调用 `completeCombat` 走正常奖励 |
 | 路径延展断连修复 | `connectMapSegments` 连接新旧地图段，消除末端按钮不可点击 |
 | EventView 交互修复 | 确认→结果→继续三步流程，效果标签显示，不再跳空占位页 |
-| 手牌列表显示装备 | MapView 手牌总览新增装备牌分区，含卡图缩略 |
+| 手牌列表显示装备 | 手牌总览弹窗新增装备牌分区，含卡图缩略 |
 | 名声系统移除 | 所有名声相关逻辑替换为金币/商店价格 |
 | 药方牌图片替换 | 12 张药方牌全部替换为真实 450×600 PNG（43–75 KB） |
 | 新药材牌图片替换 | 24 张药材牌全部替换为真实 450×600 PNG（21–62 KB） |
@@ -720,7 +733,7 @@ Unity 迁移时不要直接照搬 React/Zustand 架构。应保留“数据 + �
 | 巡诊者面板分幕配色 | PlayerStats 按 Act 切换 sky(1)/rose(2)/violet(3) 主题 |
 | 战斗去框 | Arena 大框、敌人框、MapView/RestView/ShopView 的 ornate-panel 全部移除 |
 | 汤头歌诀动画 | 药方合成成功后全屏弹出卷轴动画，逐行展示歌诀 |
-| 手牌总览按钮 | MapView 右下角新增按钮，查看当前所有手牌及数量（含卡图缩略图） |
+| 手牌总览按钮 | 地图页显示“手牌一览”，药房和战斗奖励页显示“查看现有手牌”，可查看当前所有手牌及数量（含卡图缩略图） |
 | 药方合成无上限 | 同一药方牌可重复合成，不受 `MAX_CARD_COPIES` 限制 |
 | 蓝图药材高亮 | 合成台中当前蓝图所需药材显示金色高亮边框 |
 | `_templateId` 精确匹配 | 卡牌运行时实例携带模板ID，修复合成时药材匹配不准确的问题 |

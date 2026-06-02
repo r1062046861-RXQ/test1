@@ -95,3 +95,91 @@ Re-export the intro and main-menu animated backgrounds from the original GIF ass
 - Keep `game/public/assets/intro/background.webp` and `game/public/assets/main_menu/v2/background.webp` as the runtime paths.
 - Each animated background must be below 10MB.
 - Do not stage or commit local crash/planning files unless explicitly asked.
+
+---
+
+# Documentation consistency audit plan
+
+## Goal
+Deeply re-read the project documents and compare their claims against current source/data/assets to identify stale or inconsistent documentation.
+
+## Phases
+- [x] Phase 1: Reconfirm working tree status and key documents to audit.
+- [x] Phase 2: Extract current source-of-truth counts from `shared/`, store code, package config, and runtime assets.
+- [x] Phase 3: Extract explicit claims from README, AI handoff, balance guide, exhibit/tutorial/event docs, and spreadsheets.
+- [x] Phase 4: Compare claims against source truth and classify mismatches by severity.
+- [x] Phase 5: Summarize findings with file references and recommended doc updates.
+
+## Constraints
+- Do not modify gameplay/source/assets during this audit.
+- Treat TypeScript source and generated runtime asset manifest as current truth unless contradicted by tests or package config.
+- Keep documentation snippets summarized; avoid copying large source or spreadsheet contents into findings.
+
+## Errors Encountered
+| Error | Attempt | Resolution |
+|-------|---------|------------|
+| Python received Chinese workbook path literals as `????.xlsx` in a PowerShell-piped script | Passed workbook names directly through the pipeline | Let Python enumerate `Path('.').glob('*.xlsx')` so file names come from the filesystem |
+
+---
+
+# 1.0.0 balance P1-P5 implementation plan
+
+## Goal
+Continue the interrupted 1.0.0 balance pass, finish P1-P5 card/enemy tuning, synchronize README/AI_HANDOFF/BALANCE_GUIDE/progress documentation, and verify with tests/build.
+
+## Phases
+- [x] Phase 1: Restore interrupted context and inspect current implementation/doc state.
+- [x] Phase 2: Finish stale BALANCE_GUIDE rows for changed cards, formula cards, enemy HP/actions, and special notes.
+- [x] Phase 3: Update progress/finding notes for completed balance implementation.
+- [x] Phase 4: Run search checks, `npm test -- --run`, and `npm run build`.
+- [x] Phase 5: Summarize final changes and remaining risks.
+
+## Constraints
+- Preserve unrelated local changes and untracked files.
+- Keep gameplay rules in `shared/` and UI-specific changes in React/CSS.
+- Use `1.0.0` version tags in updated documentation.
+
+## Errors Encountered
+| Error | Attempt | Resolution |
+|-------|---------|------------|
+| Initial `npm test -- --run` after adding the `山药平补` assertion failed because `shared/data/cards.ts` still had `effectValue: 2` for `shanyao` | Patched a generic `effectValue: 2` earlier without enough local context | Re-patched the `shanyao` block with surrounding context and changed core fallback to 1; reran tests successfully |
+| Search command for UI labels failed due PowerShell quote escaping in a regex containing `label=\"...\"` | Used double quotes around a regex that contained escaped quotes | Reran the search with single quotes |
+| `Select-Object -Tail` is unavailable in this PowerShell environment | Tried to tail `progress.md`/`findings.md` with `Select-Object -Tail` | Use `Get-Content -Tail` instead |
+
+---
+
+# 1.0.0 starting attack density follow-up plan
+
+## Goal
+Address player feedback that some constitutions still start with too few attack cards by raising low-attack starting decks to 7 attack cards while preserving 15-card deck size and avoiding further buffs to already attack-heavy constitutions.
+
+## Phases
+- [x] Phase 1: Raise 5-attack starting decks to 7 attacks: 阴虚质、痰湿质、特禀质.
+- [x] Phase 2: Raise 6-attack starting decks to 7 attacks: 平和质、气虚质、阳虚质、气郁质.
+- [x] Phase 3: Keep 湿热质 and 血瘀质 unchanged and verify resulting attack counts.
+- [x] Phase 4: Keep reward/shop low-offense threshold at 45% and verify no accidental threshold drift.
+- [x] Phase 5: Update tests, README, AI_HANDOFF, BALANCE_GUIDE, intro notice, and run test/build.
+
+## Constraints
+- Do not change single-card effects, enemy logic, save schema, or shop/reward offer logic for this follow-up.
+- Keep every starting deck at exactly 15 playable herb cards.
+- Use `1.0.0` tags in all changed documentation and player-facing update log entries.
+
+---
+
+# 1.0.0 production deploy plan
+
+## Goal
+Commit the completed 1.0.0 UI, readability, notice, hand overview, and balance changes, push them to `https://github.com/r1062046861-RXQ/test1`, and deploy the production build for `test1.renxuanqi.top`.
+
+## Phases
+- [x] Phase 1: Confirm current branch, remote, GitHub Pages workflow, and EdgeOne CLI login.
+- [ ] Phase 2: Stage release files while excluding local `qzj.txt`.
+- [ ] Phase 3: Commit and push `main` to GitHub.
+- [ ] Phase 4: Run EdgeOne production deploy.
+- [ ] Phase 5: Verify the online URL and record final deployment status.
+
+## Constraints
+- Do not commit `qzj.txt`.
+- Do not use destructive git commands.
+- Preserve all existing user/worktree changes that are part of the requested 1.0.0 release.

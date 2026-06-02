@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../utils/cn';
@@ -8,6 +8,8 @@ import { cardReleaseTransition, handHoverTransition, handSettleTransition } from
 import { getCardEnergyCost } from '../../../shared/core/gameCore';
 
 type CombatViewportTier = 'regular' | 'compact' | 'tight';
+
+const LONG_HOVER_PREVIEW_DELAY_MS = 3000;
 
 interface HandProps {
   viewportTier?: CombatViewportTier;
@@ -109,18 +111,25 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const longHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearLongHoverTimer = () => {
+    if (!longHoverTimerRef.current) return;
+    clearTimeout(longHoverTimerRef.current);
+    longHoverTimerRef.current = null;
+  };
+
   const handleCardMouseEnter = (card: (typeof player.hand)[number]) => {
     if (playingCardId) return;
     setHoveredCardId(card.id);
-    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    clearLongHoverTimer();
     longHoverTimerRef.current = setTimeout(() => {
+      longHoverTimerRef.current = null;
       onLongHoverCard?.(card);
-    }, 3000);
+    }, LONG_HOVER_PREVIEW_DELAY_MS);
   };
 
   const handleCardMouseLeave = (card: (typeof player.hand)[number]) => {
     setHoveredCardId((current) => (current === card.id ? null : current));
-    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    clearLongHoverTimer();
     onLongHoverCard?.(null);
   };
 
@@ -131,11 +140,26 @@ export const Hand: React.FC<HandProps> = ({ viewportTier = 'regular', onLongHove
 
   const layout = useMemo(() => getHandLayout(player.hand.length, viewportTier), [player.hand.length, viewportTier]);
 
+  useEffect(() => {
+    if (!hoveredCardId || player.hand.some((card) => card.id === hoveredCardId)) return;
+    clearLongHoverTimer();
+    setHoveredCardId(null);
+    onLongHoverCard?.(null);
+  }, [hoveredCardId, onLongHoverCard, player.hand]);
+
+  useEffect(
+    () => () => {
+      clearLongHoverTimer();
+      onLongHoverCard?.(null);
+    },
+    [onLongHoverCard],
+  );
+
   const handleCardClick = (card: (typeof player.hand)[number]) => {
     const effectiveCost = getCardEnergyCost(card, player, enemies, turnFlags);
     if (player.energy < effectiveCost || card.unplayable || playingCardId) return;
 
-    if (longHoverTimerRef.current) clearTimeout(longHoverTimerRef.current);
+    clearLongHoverTimer();
     onLongHoverCard?.(null);
     setPlayingCardId(card.id);
     window.setTimeout(() => {

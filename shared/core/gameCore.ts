@@ -28,12 +28,18 @@ export const BASE_YIN_CAP = 5;
 export const CONSTITUTION_PASSIVE_IDS = new Set([
   'balanced_passive',
   'yin_deficiency_passive',
+  'yin_deficiency_drawback',
   'qi_deficiency_passive',
+  'qi_deficiency_drawback',
   'yang_deficiency_passive',
+  'yang_deficiency_drawback',
   'phlegm_dampness_passive',
   'damp_heat_passive',
+  'damp_heat_drawback',
   'blood_stasis_passive',
+  'blood_stasis_drawback',
   'qi_stagnation_passive',
+  'qi_stagnation_drawback',
   'special_diathesis_passive',
 ]);
 
@@ -914,11 +920,21 @@ export const resolveCardPlay = (
       applyBlock(card.effectValue || 8);
       removeDebuffs(newPlayer, 1);
       drawCardsLocal(card.secondaryValue || 1);
-      log('葛根汤舒筋解表：获得格挡、清除负面状态并抽牌');
+      applyBuffToPlayer({
+        id: 'reduce_next_damage',
+        name: '舒筋护表',
+        type: 'buff',
+        stacks: 3,
+        canStack: false,
+        description: '本回合首次受伤-3',
+        duration: 1,
+      });
+      log('葛根汤舒筋解表：获得格挡、清除负面状态、抽牌并护表减伤');
       break;
     case 'formula_maxing_shigan_tang':
       if (targetEnemy) {
-        applyAttackDamage(card.effectValue || 10);
+        const heatBonus = Math.min(4, getStacks(targetEnemy, 'heat_evil'));
+        applyAttackDamage((card.effectValue || 9) + heatBonus);
         applyDebuffToEnemy(targetEnemy, {
           id: 'heat_evil',
           name: '热邪',
@@ -937,7 +953,7 @@ export const resolveCardPlay = (
       log('小柴胡汤和解少阳：恢复生命、抽牌并清除负面状态');
       break;
     case 'formula_lizhong_wan':
-      applyHealToPlayer(newPlayer, card.effectValue || 8);
+      applyHealToPlayer(newPlayer, card.effectValue || 5);
       applyBuffToPlayer({
         id: 'strength',
         name: '力量',
@@ -946,7 +962,22 @@ export const resolveCardPlay = (
         canStack: true,
         description: '攻击伤害提高',
       });
-      log('理中丸温中补气：恢复生命并获得力量');
+      applyBuffToPlayer({
+        id: 'warm_yang',
+        name: '温阳',
+        type: 'buff',
+        stacks: 1,
+        canStack: true,
+        description: '达到3层时爆发群体伤害',
+      });
+      {
+        const cold = getStatus(newPlayer, 'cold_evil');
+        if (cold) {
+          cold.stacks -= 1;
+          if (cold.stacks <= 0) removeStatus(newPlayer, 'cold_evil');
+        }
+      }
+      log('理中丸温中补气：恢复生命，获得力量与温阳，并驱散寒邪');
       break;
     case 'formula_banxia_houpu_tang':
       if (targetEnemy) {
@@ -973,9 +1004,18 @@ export const resolveCardPlay = (
       log('交泰丸交通心肾：获得格挡并清除负面状态');
       break;
     case 'formula_sijunzi_tang':
-      applyHealToPlayer(newPlayer, card.effectValue || 10);
+      applyHealToPlayer(newPlayer, card.effectValue || 6);
       applyBlock(card.secondaryValue || 6);
-      log('四君子汤益气健脾：恢复生命并获得格挡');
+      applyBuffToPlayer({
+        id: 'next_skill_bonus',
+        name: '四君子益气',
+        type: 'buff',
+        stacks: 1,
+        canStack: false,
+        description: '下回合首张技能+1',
+        duration: 2,
+      });
+      log('四君子汤益气健脾：恢复生命、获得格挡并强化下张技能');
       break;
     case 'formula_zhenwu_tang':
       applyBuffToPlayer({
@@ -994,6 +1034,15 @@ export const resolveCardPlay = (
         let dmg = (card.effectValue || 7) + getStrength(newPlayer);
         if (getStacks(enemy, 'cold_evil') > 0) {
           dmg += card.secondaryValue || 3;
+          applyDebuffToEnemy(enemy, {
+            id: 'weak',
+            name: '虚弱',
+            type: 'debuff',
+            stacks: 1,
+            canStack: true,
+            description: '造成伤害降低25%',
+            duration: 1,
+          });
         }
         if (hasPassive(newPlayer, 'balanced_passive')) dmg += 1;
         if (hasPassive(newPlayer, 'qi_deficiency_passive')) dmg -= 1;
@@ -1017,7 +1066,16 @@ export const resolveCardPlay = (
         });
         log(`酸枣仁汤安神：${targetEnemy.name} 困倦`);
       }
-      applyHealToPlayer(newPlayer, card.effectValue || 5);
+      applyHealToPlayer(newPlayer, card.effectValue || 3);
+      applyBuffToPlayer({
+        id: 'reduce_next_damage',
+        name: '养血安神',
+        type: 'buff',
+        stacks: 3,
+        canStack: false,
+        description: '本回合首次受伤-3',
+        duration: 1,
+      });
       break;
     case 'formula_mahuang_tang':
       applyBuffToPlayer({
@@ -1239,7 +1297,7 @@ export const resolveCardPlay = (
       if (delta > 0) {
         log(`获得 ${delta} 层滋阴`);
       }
-      applyBuffToPlayer({ id: 'yin_cap', name: '滋阴上限', type: 'buff', stacks: 2, canStack: true, description: '滋阴上限+2' });
+      applyBuffToPlayer({ id: 'yin_cap', name: '滋阴上限', type: 'buff', stacks: 1, canStack: true, description: '滋阴上限+1' });
       log(`滋阴上限提升`);
       break;
     }
@@ -1277,7 +1335,7 @@ export const resolveCardPlay = (
       log(`恢复生命并抽牌`);
       break;
     case 'end_turn_heal_power':
-      applyBuffToPlayer({ id: 'end_turn_heal', name: '山药平补', type: 'buff', stacks: card.effectValue || 2, canStack: true, description: '回合结束恢复生命' });
+      applyBuffToPlayer({ id: 'end_turn_heal', name: '山药平补', type: 'buff', stacks: card.effectValue || 1, canStack: true, description: '回合结束恢复生命' });
       log(`获得平补效果`);
       break;
     case 'block_next_skill_bonus':
@@ -1326,9 +1384,9 @@ export const resolveCardPlay = (
       drawCardsLocal(1);
       if (turnFlags.playedAttack) {
         drawCardsLocal(1);
+        applyBuffToPlayer({ id: 'next_attack_cost_reduction', name: '枳实行气', type: 'buff', stacks: 1, canStack: false, description: '本回合下一张攻击牌消耗-1', duration: 1 });
         log(`已出攻击牌，额外抽牌`);
       }
-      applyBuffToPlayer({ id: 'next_attack_cost_reduction', name: '枳实行气', type: 'buff', stacks: 1, canStack: false, description: '本回合下一张攻击牌消耗-1', duration: 1 });
       break;
     case 'aoe_damage_cleanse_heat':
       applyAoeDamage(card.effectValue || 0);
@@ -2185,6 +2243,7 @@ export const resolveEnemyTurn = (
       stacks: 1,
       canStack: true,
       description: '记录阳虚质前期启动回合',
+      hidden: true,
     });
     const warmYang = getStatus(newPlayer, 'warm_yang');
     if (warmYang && warmYang.stacks >= 3) {
